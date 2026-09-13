@@ -2,7 +2,7 @@
 
 client_id = "ce0ab02aa2c699519934f02e1811a8f2"
 name = "Cartwala Gift Personalizer"
-application_url = "https://example.com"
+application_url = "https://cartwala-gift-personalizer.onrender.com"
 embedded = true
 
 [build]
@@ -17,7 +17,7 @@ api_version = "2026-07"
 scopes = "read_files,read_products,write_files,write_products"
 
 [auth]
-redirect_urls = [ "https://example.com/auth/callback" ]
+redirect_urls = [ "https://cartwala-gift-personalizer.onrender.com/auth/callback" ]
 
 [product.metafields.app.personalizer_config]
 type = "json"
