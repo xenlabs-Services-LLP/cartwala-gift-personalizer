@@ -1,0 +1,29 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "ce0ab02aa2c699519934f02e1811a8f2"
+name = "Cartwala Gift Personalizer"
+application_url = "https://example.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+include_config_on_deploy = true
+
+[webhooks]
+api_version = "2026-07"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_files,read_products,write_files,write_products"
+
+[auth]
+redirect_urls = [ "https://example.com/auth/callback" ]
+
+[product.metafields.app.personalizer_config]
+type = "json"
+name = "Cartwala Personalizer Configuration"
+description = "Controls the Cartwala photo personalizer for this product"
+
+  [product.metafields.app.personalizer_config.access]
+  admin = "merchant_read_write"
+  storefront = "public_read"

@@ -1,0 +1,19 @@
+CARTWALA V5 PSD AUTO TEMPLATE GUIDE
+
+1. Choose the Shopify product in the Cartwala app.
+2. Keep each customer-replaceable photo area in its own PSD layer or group.
+3. Name those layers PHOTO_1, PHOTO_2, PHOTO_3 or UPLOAD_1, UPLOAD_2, and so on.
+4. The PHOTO/UPLOAD layer transparency is used as that photo slot's exact mask.
+5. Every visible Photoshop text layer becomes an editable customer text field automatically.
+6. Prefix decorative/non-editable text layers with STATIC_ or LOCKED_.
+7. Keep the product/background/frame design in normally named layers.
+8. Upload the PSD in "PSD auto template import". Review the result and click Save configuration.
+
+There is no fixed photo or text count. The importer supports up to 200 editable fields in one product.
+
+Recommended PSD setup:
+- Use RGB colour mode and 8-bit channels.
+- Keep the canvas at the final artwork ratio.
+- Use transparent PHOTO/UPLOAD shapes with clean edges.
+- Rasterize unsupported Photoshop effects if their appearance must be exact.
+- Upload any non-system font separately under Custom fonts if customers must see that exact font in the browser.

@@ -1,0 +1,4 @@
+product_handle,enabled,ratio,overlay_url,slot_label,x,y,width,height,mask_url,required,rotation
+baby-photo-frame,true,1:1,https://cdn.shopify.com/overlay.png,Photo 1,25,25,20,20,https://cdn.shopify.com/mask-1.png,true,false
+baby-photo-frame,true,1:1,https://cdn.shopify.com/overlay.png,Photo 2,50,25,20,20,https://cdn.shopify.com/mask-2.png,true,false
+baby-photo-frame,true,1:1,https://cdn.shopify.com/overlay.png,Photo 3,75,25,20,20,https://cdn.shopify.com/mask-3.png,true,false

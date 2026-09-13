@@ -1,0 +1,29 @@
+CARTWALA GIFT PERSONALIZER V5 — RELEASE PACKAGE
+
+Included:
+- Dynamic PSD auto import: every PHOTO/UPLOAD layer becomes a masked upload slot and every editable Photoshop text layer becomes a text field.
+- PSD positions, sizes, original ratio, default text, fonts and colours are imported; generated overlay/masks are uploaded to Shopify Files.
+- Visual artwork editor with numbered, draggable photo slots.
+- Per-slot X, Y, width, height and transparent mask upload.
+- One-click creation of many photo slots; configuration supports up to 200 fields.
+- Shopify Files uploads for artwork, masks and WOFF/WOFF2/TTF/OTF fonts.
+- CSV bulk product/template import by Shopify product handle.
+- Customer photo upload buttons inside their mapped artwork positions.
+- Desktop/mobile drag and zoom; optional per-slot rotation.
+- Single Preview & Save action; standalone Preview, visible Zoom and Buy it now controls are removed.
+- Add to cart is hidden until Preview & Save succeeds.
+- Saved preview replaces the product image; Edit Again restores the draft.
+- Original uploads, text, Canva links, design ID and preview travel with the cart line.
+- Exact saved preview mapping for common full-cart and cart-drawer markup, including cart line keys and variant fallbacks.
+
+Verified in this package:
+- ESLint and TypeScript pass.
+- Production React Router build passes.
+- Storefront JavaScript syntax passes.
+- Shopify Admin GraphQL operations for image upload/status and bulk metafield save pass schema validation.
+- Automated 13-slot and 50-slot configuration tests pass.
+- Preview/save, IndexedDB restore, original-file and cart-preview contracts are checked.
+
+Final test required in your development store:
+- Run through product -> Preview & Save -> Add to cart -> cart -> test order once with your active theme.
+- Enable both theme blocks listed in START-HERE-WINDOWS.txt.

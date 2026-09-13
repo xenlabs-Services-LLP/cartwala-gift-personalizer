@@ -1,0 +1,22 @@
+{
+  "personalizer": {
+    "block_name": "Cartwala Personalizer",
+    "accent_color": "Accent color",
+    "customize": "Customize Now",
+    "heading": "Customize your gift",
+    "close": "Close",
+    "customer_photo": "Customer photo preview",
+    "upload": "Upload Photo",
+    "reset": "Reset",
+    "zoom": "Zoom",
+    "rotation": "Rotation",
+    "font": "Font",
+    "required": "Required",
+    "choose_file": "Choose File",
+    "change_photo": "Change Photo",
+    "preview": "Preview",
+    "edit_again": "Edit Again",
+    "saved_preview": "Your personalized design",
+    "preview_save": "Preview & Save"
+  }
+}

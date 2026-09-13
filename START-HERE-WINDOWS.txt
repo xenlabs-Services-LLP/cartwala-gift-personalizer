@@ -1,0 +1,56 @@
+CARTWALA GIFT PERSONALIZER V5 - WINDOWS SETUP
+
+Requirements:
+- Node.js 20.19 or newer
+- Shopify CLI
+- Chrome or Edge
+
+Open Command Prompt inside this extracted folder and run these commands one at a time:
+
+1. npm install
+2. npm run setup
+3. shopify app dev --use-localhost
+
+When Shopify CLI shows "Ready, watching for changes in your app", press p.
+
+If npm says install scripts were blocked, run:
+npm install-scripts approve @parcel/watcher @prisma/client @prisma/engines esbuild prisma unrs-resolver
+
+Then run "npm run setup" again.
+
+Important:
+- Keep Command Prompt open while testing the app.
+- This V5 requests Shopify Files access so PSD-generated overlays, masks and custom fonts can be uploaded.
+- If Shopify asks to update app access, approve it once.
+- Select the Cartwala organization, existing Cartwala Gift Personalizer app,
+  and cartwala-app-test-store.myshopify.com when Shopify CLI asks.
+- Do not create a new Shopify app.
+
+V5 PSD AUTO TEMPLATE BUILDER:
+- Choose the Shopify product first.
+- Name every customer photo/smart-object layer PHOTO_1, PHOTO_2, UPLOAD_1, and so on.
+- Keep customer-editable text as Photoshop text layers. Prefix decorative text with STATIC_ or LOCKED_.
+- Upload the layered PSD under "PSD auto template import".
+- Review the detected slots/text and click Save configuration.
+
+MANUAL TEMPLATE BUILDER:
+- Upload the product overlay, then place numbered photo slots in the Visual artwork editor.
+- Enter 13 (or another count) under Number of photo slots to add them together.
+- Upload each slot's transparent PNG mask inside that slot's settings.
+- Add Photo, Text, Design File, or Canva Link fields for every product.
+- Use each Photo field's rotation switch only where rotation is needed.
+- Text-only products are supported by removing every Photo field.
+- Save configuration after uploading a custom font.
+
+THEME EDITOR (required once per theme):
+1. Open Online Store > Themes > Customize.
+2. Open a product template and add the "Cartwala Personalizer" app block near the product form.
+3. Open App embeds and enable "Cartwala cart previews".
+4. Save the theme.
+
+FINAL STORE TEST:
+1. Open a configured product and click Customize Now.
+2. Fill all required slots, then click Preview & Save.
+3. Confirm the personalised image appears on the product page.
+4. Add to cart and confirm the same image appears in the cart/drawer.
+5. Place one test order and confirm original files and the preview are present in line-item properties.

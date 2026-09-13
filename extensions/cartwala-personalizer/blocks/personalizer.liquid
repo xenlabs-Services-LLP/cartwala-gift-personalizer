@@ -1,0 +1,44 @@
+{% liquid
+  assign personalizer_config = product.metafields['$app'].personalizer_config.value
+  assign personalizer_enabled = personalizer_config.enabled
+  if request.design_mode
+    assign personalizer_enabled = true
+  endif
+%}
+
+{% if personalizer_enabled %}
+  <div class="cw-personalizer" data-cw-personalizer data-label-edit="{{ 'personalizer.edit_again' | t | escape }}" data-label-saved="{{ 'personalizer.saved_preview' | t | escape }}" data-product-id="{{ product.id }}" data-overlay="{{ personalizer_config.overlayUrl | escape }}" data-accent="{{ block.settings.accent_color }}" data-label-upload="{{ 'personalizer.upload' | t | escape }}" data-label-reset="{{ 'personalizer.reset' | t | escape }}" data-label-zoom="{{ 'personalizer.zoom' | t | escape }}" data-label-rotation="{{ 'personalizer.rotation' | t | escape }}" data-label-change="{{ 'personalizer.change_photo' | t | escape }}" data-label-font="{{ 'personalizer.font' | t | escape }}" data-label-required="{{ 'personalizer.required' | t | escape }}" data-label-file="{{ 'personalizer.choose_file' | t | escape }}" {{ block.shopify_attributes }}>
+    <div data-cw-config="{{ personalizer_config | json | escape }}" hidden></div>
+    <button class="cw-personalizer__open" type="button" data-cw-open>{{ 'personalizer.customize' | t }}</button>
+    <dialog class="cw-personalizer__dialog" data-cw-dialog>
+      <div class="cw-personalizer__panel">
+        <div class="cw-personalizer__header">
+          <strong>{{ 'personalizer.heading' | t }}</strong>
+          <button type="button" class="cw-personalizer__close" data-cw-close aria-label="{{ 'personalizer.close' | t }}">×</button>
+        </div>
+        <div class="cw-personalizer__stage" data-cw-stage>
+          <div class="cw-personalizer__photo-layers" data-cw-photo-layers></div>
+          <div class="cw-personalizer__text-layers" data-cw-text-layers></div>
+          <img class="cw-personalizer__overlay" data-cw-overlay alt="" aria-hidden="true" width="1200" height="1200">
+          <div class="cw-personalizer__result" data-cw-result hidden><img data-cw-result-image class="cw-personalizer__result-image" alt="{{ 'personalizer.saved_preview' | t }}" width="800" height="800"></div>
+        </div>
+        <div class="cw-personalizer__fields" data-cw-editor-fields></div>
+        <button type="button" class="cw-personalizer__preview" data-cw-save disabled>{{ 'personalizer.preview_save' | t }}</button>
+      </div>
+    </dialog>
+  </div>
+
+{% endif %}
+
+{% schema %}
+{
+  "name": "t:personalizer.block_name",
+  "target": "section",
+  "javascript": "cartwala-personalizer.js",
+  "stylesheet": "cartwala-personalizer.css",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "color", "id": "accent_color", "label": "t:personalizer.accent_color", "default": "#ff6200" }
+  ]
+}
+{% endschema %}
