@@ -2,7 +2,7 @@
   const clamp=(value,min,max,fallback)=>{const number=Number(value);return Math.min(max,Math.max(min,Number.isFinite(number)?number:fallback))};
   const array=value=>Array.isArray(value)?value:[];
   const MAX_FIELDS=200;const MAX_FONTS=50;
-  const createId=()=>{try{if(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function')return crypto.randomUUID()}catch(error){}return 'cw-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10)};
+  const createId=()=>{try{if(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function')return crypto.randomUUID()}catch(error){/* fall through to the manual id below */}return 'cw-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10)};
   const normalize=raw=>{
     const input=raw&&typeof raw==='object'?raw:{};
     let photos=[];let texts=[];

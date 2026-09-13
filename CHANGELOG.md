@@ -13,6 +13,7 @@ Structural refactor of the admin app - no intended change to the merchant or cus
 - Added: the CSV bulk importer now reports which rows didn't match a Shopify product handle instead of silently dropping them.
 - Storefront (`extensions/cartwala-personalizer/assets/cartwala-personalizer.js`): replaced the repeated literal `200`/`50` field-count caps with named `MAX_FIELDS`/`MAX_FONTS` constants; added a `crypto.randomUUID()` fallback so a non-secure context can't hard-crash setup; wrapped each product block's initialization in its own `try/catch` so one broken block can no longer take down every other personalizer block on the page.
 - `scripts/verify-personalizer.mjs` updated to match: points its source-pinning assertions at the new `app/lib/*` files, and adds assertions for each fix above.
+- Added `overrides`/`resolutions`/`pnpm.overrides` entries pinning `deepmerge-ts@^8.0.2`, `lodash@^4.18.1`, and `minimatch@^9.0.8` - clears the three `npm audit` high-severity findings (all in transitive dev-tooling dependencies of `prisma`, `@shopify/api-codegen-preset`, and `@typescript-eslint/parser`, none reachable at runtime) without bumping any of those tools to a new major version. Run `npm install` after pulling this change so the overrides take effect, then `npm audit` to confirm clean.
 
 ## Cartwala V5.0.3 selected-photo controls and cart preview fix
 

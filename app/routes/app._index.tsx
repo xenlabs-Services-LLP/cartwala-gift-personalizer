@@ -35,11 +35,26 @@ import {
 
 type Product = { id: string; title: string; handle: string; personalizer?: { jsonValue?: unknown } | null };
 
+// Every action intent returns this same shape (with only the fields relevant
+// to that intent populated) so `typeof action` gives useFetcher<typeof action>
+// one concrete, precise type instead of TypeScript widening/narrowing the
+// union down to whichever handler it can see most directly (which is what
+// caused each fetcher's `.data?.xyzUpload` access to fail to typecheck when
+// the five intents were split into separate named handler functions below).
+type ActionResult = {
+  ok: boolean;
+  error?: string;
+  fontUpload?: { id: string; name: string; url: string };
+  imageUpload?: { url: string; target: string };
+  psdImport?: { config: Config; photos: number; texts: number };
+  bulkSaved?: number;
+};
+
 // ---------------------------------------------------------------------------
 // Action - five intents on one route, dispatched by `intent`.
 // ---------------------------------------------------------------------------
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const action = async ({ request }: ActionFunctionArgs): Promise<ActionResult> => {
   const { admin } = await authenticate.admin(request);
   const data = await request.formData();
   const intent = data.get("intent");
@@ -51,7 +66,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return handleSave(admin, data);
 };
 
-async function handleUploadFont(admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"], data: FormData) {
+async function handleUploadFont(admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"], data: FormData): Promise<ActionResult> {
   const file = data.get("fontFile");
   if (!(file instanceof File) || !file.size) return { ok: false, error: "Choose a font file first." };
   try {
@@ -62,7 +77,7 @@ async function handleUploadFont(admin: Awaited<ReturnType<typeof authenticate.ad
   }
 }
 
-async function handleUploadImage(admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"], data: FormData) {
+async function handleUploadImage(admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"], data: FormData): Promise<ActionResult> {
   const file = data.get("imageFile");
   if (!(file instanceof File) || !file.size) return { ok: false, error: "Choose an image first." };
   try {
@@ -73,7 +88,7 @@ async function handleUploadImage(admin: Awaited<ReturnType<typeof authenticate.a
   }
 }
 
-async function handlePsdImport(admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"], data: FormData) {
+async function handlePsdImport(admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"], data: FormData): Promise<ActionResult> {
   try {
     const overlayFile = data.get("overlayFile");
     const maskFiles = data.getAll("maskFiles");
@@ -104,7 +119,7 @@ async function handlePsdImport(admin: Awaited<ReturnType<typeof authenticate.adm
   }
 }
 
-async function handleBulkImport(admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"], data: FormData) {
+async function handleBulkImport(admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"], data: FormData): Promise<ActionResult> {
   try {
     const entries = JSON.parse(String(data.get("entries") || "[]")) as Array<{ productId: string; config: unknown }>;
     if (!Array.isArray(entries) || !entries.length || entries.length > 1000) {
@@ -134,7 +149,7 @@ async function handleBulkImport(admin: Awaited<ReturnType<typeof authenticate.ad
   }
 }
 
-async function handleSave(admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"], data: FormData) {
+async function handleSave(admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"], data: FormData): Promise<ActionResult> {
   const productId = String(data.get("productId") || "");
   let config: Config;
   try {
@@ -355,7 +370,9 @@ export default function PersonalizerHome() {
   const importCsv = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files?.[0];
     if (!file) return;
-    const lines = (await file.text()).replace(/^﻿/, "").split(/\r?\n/).filter((line) => line.trim());
+    const rawText = await file.text();
+    const bomStripped = rawText.charCodeAt(0) === 0xfeff ? rawText.slice(1) : rawText;
+    const lines = bomStripped.split(/\r?\n/).filter((line) => line.trim());
     const split = (line: string) => {
       const cells: string[] = [];
       let value = "";
