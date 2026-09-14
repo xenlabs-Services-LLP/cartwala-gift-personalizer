@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: shopify-app-deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -32,7 +34,23 @@ jobs:
       - name: Install latest Shopify CLI
         run: npm install -g @shopify/cli@latest
 
+      - name: Verify this is still the latest master commit
+        id: latest
+        shell: bash
+        run: |
+          git fetch origin master
+          LATEST_SHA="$(git rev-parse origin/master)"
+          echo "latest_sha=$LATEST_SHA" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_SHA" != "$LATEST_SHA" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Skipping stale deploy: $GITHUB_SHA is no longer latest master ($LATEST_SHA)."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "Deploying latest master commit: $GITHUB_SHA"
+          fi
+
       - name: Deploy app configuration and extensions
+        if: steps.latest.outputs.skip == 'false'
         env:
           SHOPIFY_APP_AUTOMATION_TOKEN: ${{ secrets.SHOPIFY_APP_AUTOMATION_TOKEN }}
         run: shopify app deploy --allow-updates
