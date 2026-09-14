@@ -37,4 +37,10 @@
 .cw-personalizer__result{position:absolute;inset:0;z-index:9;background:#f2f2f2}
 .cw-personalizer__result-image{display:block;width:100%;height:100%;object-fit:contain;margin:0}
 .cw-personalizer__preview{margin-top:10px}
-@media(max-width:640px){.cw-personalizer__stage{max-height:none;width:100%}}
+.cw-personalizer__photo-selection{position:absolute;z-index:8;box-sizing:border-box;border:1.5px solid #2684ff;transform-origin:center;pointer-events:none}
+.cw-personalizer__photo-selection-handle{position:absolute;width:10px;height:10px;border:1.5px solid #2684ff;background:#fff;box-sizing:border-box;border-radius:2px}
+.cw-personalizer__photo-selection-handle--1{left:0;top:0;transform:translate(-50%,-50%)}
+.cw-personalizer__photo-selection-handle--2{right:0;top:0;transform:translate(50%,-50%)}
+.cw-personalizer__photo-selection-handle--3{right:0;bottom:0;transform:translate(50%,50%)}
+.cw-personalizer__photo-selection-handle--4{left:0;bottom:0;transform:translate(-50%,50%)}
+@media(max-width:640px){.cw-personalizer__stage{max-height:none;width:100%}.cw-personalizer__photo-selection-handle{width:12px;height:12px}}
