@@ -3,6 +3,18 @@
   const money=cents=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format((Number(cents)||0)/100);
   const productCache=new Map();
 
+  const hideNameRows=root=>{
+    if(!root)return;
+    const candidates=[...root.querySelectorAll('.product-option,.cart-item__property,[class*="property"],dd,dt,p,li,span,div')];
+    candidates.forEach(node=>{
+      if(node.closest('.cw-cart-price-block'))return;
+      const text=(node.textContent||'').replace(/\s+/g,' ').trim();
+      if(!/^Your\s+Name\s*:\s*.+$/i.test(text))return;
+      const childMatch=[...node.children].some(child=>/^Your\s+Name\s*:\s*.+$/i.test((child.textContent||'').replace(/\s+/g,' ').trim()));
+      if(!childMatch){node.style.setProperty('display','none','important');node.setAttribute('data-cw-hidden-name','true')}
+    });
+  };
+
   const cleanPrivateRows=root=>{
     if(!root)return;
     root.querySelectorAll('dl,ul,.product-option,.cart-item__details,.cart-item__properties,.properties').forEach(container=>{
@@ -23,10 +35,7 @@
       const row=link.closest('.product-option,li,dd,p,div');
       if(row&&row!==root)row.remove();else link.remove();
     });
-    root.querySelectorAll('.product-option,.cart-item__property,dd,p,li').forEach(node=>{
-      const text=(node.textContent||'').trim();
-      if(/^Your\s+Name\s*:/i.test(text))node.remove();
-    });
+    hideNameRows(root);
   };
 
   const getDraft=designId=>new Promise((resolve,reject)=>{
@@ -37,7 +46,7 @@
   });
 
   const replaceNewestCartImage=async()=>{
-    const designId=sessionStorage.getItem('cartwala-last-design');if(!designId)return;
+    let designId=null;try{designId=sessionStorage.getItem('cartwala-last-design')}catch{}if(!designId)return;
     try{const record=await getDraft(designId);if(!record?.blob)return;const drawer=document.querySelector('cart-drawer,#CartDrawer,[data-cart-drawer],.cart-drawer');if(!drawer)return;const rows=[...drawer.querySelectorAll('.cart-item,[data-cart-item],cart-drawer-item,.drawer__cart-item')];const row=rows[rows.length-1]||drawer;const image=row.querySelector('.cart-item__image,img');if(!image||image.dataset.cwDraftId===designId)return;const url=URL.createObjectURL(record.blob);image.removeAttribute('srcset');image.removeAttribute('sizes');image.closest('picture')?.querySelectorAll('source').forEach(source=>{source.removeAttribute('srcset');source.removeAttribute('sizes')});image.src=url;image.dataset.cwDraftId=designId;image.style.objectFit='contain'}catch(error){console.warn('Cartwala cart preview restore unavailable',error)}
   };
 
