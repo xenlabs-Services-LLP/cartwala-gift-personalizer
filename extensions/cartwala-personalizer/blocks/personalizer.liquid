@@ -7,6 +7,7 @@
 %}
 
 {% if personalizer_enabled %}
+  {{ 'cartwala-loading.css' | asset_url | stylesheet_tag }}
   <div class="cw-personalizer" data-cw-personalizer data-label-edit="{{ 'personalizer.edit_again' | t | escape }}" data-label-saved="{{ 'personalizer.saved_preview' | t | escape }}" data-product-id="{{ product.id }}" data-overlay="{{ personalizer_config.overlayUrl | escape }}" data-accent="#ff6200" data-label-upload="{{ 'personalizer.upload' | t | escape }}" data-label-reset="{{ 'personalizer.reset' | t | escape }}" data-label-zoom="{{ 'personalizer.zoom' | t | escape }}" data-label-rotation="{{ 'personalizer.rotation' | t | escape }}" data-label-change="{{ 'personalizer.change_photo' | t | escape }}" data-label-font="{{ 'personalizer.font' | t | escape }}" data-label-required="{{ 'personalizer.required' | t | escape }}" data-label-file="{{ 'personalizer.choose_file' | t | escape }}" {{ block.shopify_attributes }}>
     <div data-cw-config="{{ personalizer_config | json | escape }}" hidden></div>
     <button class="cw-personalizer__open" type="button" data-cw-open>{{ 'personalizer.customize' | t }}</button>
@@ -42,6 +43,7 @@
   <script src="{{ 'cartwala-selection-box.js' | asset_url }}" defer></script>
   <script src="{{ 'cartwala-editor-ui.js' | asset_url }}" defer></script>
   <script src="{{ 'cartwala-cart-fix.js' | asset_url }}" defer></script>
+  <script src="{{ 'cartwala-loading.js' | asset_url }}" defer></script>
 {% endif %}
 
 {% schema %}
