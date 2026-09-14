@@ -18,8 +18,11 @@
         </div>
 
         <div class="cw-personalizer__toolbar">
-          <button type="button" class="cw-personalizer__toolbar-reset" data-cw-reset-all>↻ Reset</button>
-          <div class="cw-personalizer__toolbar-help">Move · Drag &nbsp; | &nbsp; Zoom · Pinch / Corners</div>
+          <div class="cw-personalizer__toolbar-left">
+            <button type="button" class="cw-personalizer__toolbar-reset" data-cw-reset-all>↻ Reset</button>
+            <button type="button" class="cw-personalizer__toolbar-change" data-cw-change-photo>▣ Change Photo</button>
+            <div class="cw-personalizer__toolbar-text-tools" data-cw-text-tools></div>
+          </div>
           <button type="button" class="cw-personalizer__preview cw-personalizer__preview--top" data-cw-save disabled>Preview →</button>
         </div>
 
@@ -31,10 +34,9 @@
               <img class="cw-personalizer__overlay" data-cw-overlay alt="" aria-hidden="true" width="1200" height="1200">
               <div class="cw-personalizer__result" data-cw-result hidden><img data-cw-result-image class="cw-personalizer__result-image" alt="{{ 'personalizer.saved_preview' | t }}" width="800" height="800"></div>
             </div>
-            <div class="cw-personalizer__tip">Tip: drag to move · pinch, mouse wheel or corner handles to zoom</div>
+            <div class="cw-personalizer__tip"><strong>Tip:</strong> To Move - Swipe / Drag &nbsp; · &nbsp; To Zoom - Pinch in/out / Corners</div>
           </div>
           <aside class="cw-personalizer__controls-pane">
-            <div class="cw-personalizer__controls-title">Customize your design</div>
             <div class="cw-personalizer__fields" data-cw-editor-fields></div>
           </aside>
         </div>
