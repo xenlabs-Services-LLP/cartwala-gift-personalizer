@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Typecheck app
+        run: npm run typecheck
+
       - name: Run personalizer QA
         run: npm run qa
 
