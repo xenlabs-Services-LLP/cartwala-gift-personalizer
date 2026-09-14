@@ -16,7 +16,6 @@
           <div class="cw-personalizer__brand"><span class="cw-personalizer__brand-mark">C</span><strong>Cartwala Customizer</strong></div>
           <button type="button" class="cw-personalizer__close" data-cw-close aria-label="{{ 'personalizer.close' | t }}">×</button>
         </div>
-
         <div class="cw-personalizer__toolbar">
           <div class="cw-personalizer__toolbar-left">
             <button type="button" class="cw-personalizer__toolbar-reset" data-cw-reset-all>↻ Reset</button>
@@ -25,7 +24,6 @@
           </div>
           <button type="button" class="cw-personalizer__preview cw-personalizer__preview--top" data-cw-save disabled>Preview &amp; Save</button>
         </div>
-
         <div class="cw-personalizer__workspace">
           <div class="cw-personalizer__canvas-pane">
             <div class="cw-personalizer__stage" data-cw-stage>
@@ -36,15 +34,14 @@
             </div>
             <div class="cw-personalizer__tip"><strong>Tip:</strong> To Move - Swipe / Drag &nbsp; · &nbsp; To Zoom - Pinch in/out / Corners</div>
           </div>
-          <aside class="cw-personalizer__controls-pane">
-            <div class="cw-personalizer__fields" data-cw-editor-fields></div>
-          </aside>
+          <aside class="cw-personalizer__controls-pane"><div class="cw-personalizer__fields" data-cw-editor-fields></div></aside>
         </div>
       </div>
     </dialog>
   </div>
   <script src="{{ 'cartwala-selection-box.js' | asset_url }}" defer></script>
   <script src="{{ 'cartwala-editor-ui.js' | asset_url }}" defer></script>
+  <script src="{{ 'cartwala-cart-fix.js' | asset_url }}" defer></script>
 {% endif %}
 
 {% schema %}
