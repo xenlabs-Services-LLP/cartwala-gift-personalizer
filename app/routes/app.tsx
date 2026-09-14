@@ -53,7 +53,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     if (hasNextPage && !cursor) hasNextPage = false;
   }
 
-  // eslint-disable-next-line no-undef
   return {
     apiKey: process.env.SHOPIFY_API_KEY || "",
     products,
@@ -67,13 +66,13 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
         <s-link href="/app">Personalizer</s-link>
+        <s-link href="/app/print-files">Print Files</s-link>
       </s-app-nav>
       <Outlet />
     </AppProvider>
   );
 }
 
-// Shopify needs React Router to catch some thrown responses, so that their headers are included in the response.
 export function ErrorBoundary() {
   return boundary.error(useRouteError());
 }
