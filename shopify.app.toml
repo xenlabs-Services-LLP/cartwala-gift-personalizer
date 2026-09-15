@@ -1,6 +1,6 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "421161926657"
+client_id = "ce0ab02aa2c699519934f02e1811a8f2"
 name = "Cartwala Gift Personalizer"
 application_url = "https://cartwala-gift-personalizer.fly.dev"
 embedded = true
