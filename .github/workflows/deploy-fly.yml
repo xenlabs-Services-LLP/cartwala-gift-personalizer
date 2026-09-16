@@ -24,11 +24,7 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
           set -e
-          IPS="$(flyctl ips list -a cartwala-gift-personalizer 2>/dev/null || true)"
-          echo "$IPS"
-          if [ -z "$(echo "$IPS" | sed '1d' | tr -d '[:space:]')" ]; then
-            flyctl ips allocate -a cartwala-gift-personalizer
-          fi
+          flyctl ips allocate -a cartwala-gift-personalizer || true
           flyctl ips list -a cartwala-gift-personalizer
 
       - name: Deploy backend
