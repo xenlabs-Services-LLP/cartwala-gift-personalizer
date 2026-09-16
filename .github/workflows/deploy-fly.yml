@@ -30,7 +30,7 @@ jobs:
             flyctl ips allocate-v6 -a cartwala-gift-personalizer
           fi
           if ! echo "$IPS" | grep -Eq '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
-            flyctl ips allocate-v4 -a cartwala-gift-personalizer
+            flyctl ips allocate-v4 --shared -a cartwala-gift-personalizer
           fi
           flyctl ips list -a cartwala-gift-personalizer
 
