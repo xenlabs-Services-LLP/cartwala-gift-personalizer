@@ -26,13 +26,10 @@ jobs:
           set -e
           IPS="$(flyctl ips list -a cartwala-gift-personalizer 2>/dev/null || true)"
           echo "$IPS"
-          if ! echo "$IPS" | grep -qE 'v6|IPv6'; then
-            flyctl ips allocate-v6 -a cartwala-gift-personalizer
+          if [ -z "$(echo "$IPS" | sed '1d' | tr -d '[:space:]')" ]; then
+            flyctl ips allocate -a cartwala-gift-personalizer
           fi
-          IPS="$(flyctl ips list -a cartwala-gift-personalizer 2>/dev/null || true)"
-          if ! echo "$IPS" | grep -qE 'v4|IPv4'; then
-            flyctl ips allocate-v4 --shared -a cartwala-gift-personalizer
-          fi
+          flyctl ips list -a cartwala-gift-personalizer
 
       - name: Deploy backend
         env:
