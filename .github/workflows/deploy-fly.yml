@@ -26,10 +26,10 @@ jobs:
           set -e
           IPS="$(flyctl ips list -a cartwala-gift-personalizer 2>/dev/null || true)"
           echo "$IPS"
-          if ! echo "$IPS" | grep -q 'v6'; then
+          if ! echo "$IPS" | grep -q ':'; then
             flyctl ips allocate-v6 -a cartwala-gift-personalizer
           fi
-          if ! echo "$IPS" | grep -q 'v4'; then
+          if ! echo "$IPS" | grep -Eq '([0-9]{1,3}\.){3}[0-9]{1,3}'; then
             flyctl ips allocate-v4 -a cartwala-gift-personalizer
           fi
           flyctl ips list -a cartwala-gift-personalizer
