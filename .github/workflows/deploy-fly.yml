@@ -19,13 +19,12 @@ jobs:
       - name: Setup flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Ensure public IPs
+      - name: Ensure public addresses
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
           set -e
-          flyctl ips allocate-v6 -a cartwala-gift-personalizer || true
-          flyctl ips allocate-v4 -a cartwala-gift-personalizer || true
+          flyctl ips allocate -a cartwala-gift-personalizer || true
           flyctl ips list -a cartwala-gift-personalizer
 
       - name: Deploy backend
