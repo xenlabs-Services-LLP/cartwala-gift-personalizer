@@ -15,43 +15,23 @@
   {{ 'cartwala-loading.css' | asset_url | stylesheet_tag }}
   <div class="cw-personalizer" data-cw-personalizer data-label-edit="{{ 'personalizer.edit_again' | t | escape }}" data-label-saved="{{ 'personalizer.saved_preview' | t | escape }}" data-product-id="{{ product.id }}" data-overlay="{% unless heart_magic_mirror_test %}{{ personalizer_config.overlayUrl | escape }}{% endunless %}" data-accent="#ff6200" data-label-upload="{{ 'personalizer.upload' | t | escape }}" data-label-reset="{{ 'personalizer.reset' | t | escape }}" data-label-zoom="{{ 'personalizer.zoom' | t | escape }}" data-label-rotation="{{ 'personalizer.rotation' | t | escape }}" data-label-change="{{ 'personalizer.change_photo' | t | escape }}" data-label-font="{{ 'personalizer.font' | t | escape }}" data-label-required="{{ 'personalizer.required' | t | escape }}" data-label-file="{{ 'personalizer.choose_file' | t | escape }}" {{ block.shopify_attributes }}>
     {% if heart_magic_mirror_test %}
-      <div data-cw-config='{"enabled":true,"canvasRatio":"1:1","overlayUrl":"","photoFields":[{"id":"heart-photo-1","label":"Photo","maskUrl":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgOTAiPjxwYXRoIGZpbGw9IndoaXRlIiBkPSJNNTAgODZDNDMgNzggNiA1MSA2IDI1QzYgMTAgMTcgMiAyOSAyQzM4IDIgNDYgNyA1MCAxNUM1NCA3IDYyIDIgNzEgMkM4MyAyIDk0IDEwIDk0IDI1Qzk0IDUxIDU3IDc4IDUwIDg2WiIvPjwvc3ZnPg==","x":50,"y":50,"width":56,"height":52,"rotationEnabled":false,"required":true}],"textFields":[],"fileFields":[],"linkFields":[],"customFonts":[]}' hidden></div>
+      <div data-cw-config='{"enabled":true,"canvasRatio":"1:1","overlayUrl":"","photoFields":[{"id":"heart-photo-1","label":"Photo","maskUrl":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgOTAiPjxwYXRoIGZpbGw9IndoaXRlIiBkPSJNNTAgODZDNDMgNzggNiA1MSA2IDI1QzYgMTAgMTcgMiAyIDKZCzM4IDIgNDYgNyA1MCAxNUM1NCA3IDYyIDIgNzEgMkM4MyAyIDk0IDEwIDk0IDI1Qzk0IDUxIDU3IDc4IDUwIDg2WiIvPjwvc3ZnPg==","x":50,"y":50,"width":56,"height":52,"rotationEnabled":false,"required":true}],"textFields":[],"fileFields":[],"linkFields":[],"customFonts":[]}' hidden></div>
     {% else %}
       <div data-cw-config="{{ personalizer_config | json | escape }}" hidden></div>
     {% endif %}
     <button class="cw-personalizer__open" type="button" data-cw-open>{{ 'personalizer.customize' | t }}</button>
     <dialog class="cw-personalizer__dialog" data-cw-dialog>
       <div class="cw-personalizer__panel">
-        <div class="cw-personalizer__header">
-          <div class="cw-personalizer__brand"><span class="cw-personalizer__brand-mark">C</span><strong>Cartwala Customizer</strong></div>
-          <button type="button" class="cw-personalizer__close" data-cw-close aria-label="{{ 'personalizer.close' | t }}">×</button>
-        </div>
-        <div class="cw-personalizer__toolbar">
-          <div class="cw-personalizer__toolbar-left">
-            <button type="button" class="cw-personalizer__toolbar-reset" data-cw-reset-all>↻ Reset</button>
-            <button type="button" class="cw-personalizer__toolbar-change" data-cw-change-photo>▣ Change Photo</button>
-            <div class="cw-personalizer__toolbar-text-tools" data-cw-text-tools></div>
-          </div>
-          <button type="button" class="cw-personalizer__preview cw-personalizer__preview--top" data-cw-save disabled>Preview &amp; Save</button>
-        </div>
-        <div class="cw-personalizer__workspace">
-          <div class="cw-personalizer__canvas-pane">
-            <div class="cw-personalizer__stage" data-cw-stage>
-              <div class="cw-personalizer__photo-layers" data-cw-photo-layers></div>
-              <div class="cw-personalizer__text-layers" data-cw-text-layers></div>
-              <img class="cw-personalizer__overlay" data-cw-overlay alt="" aria-hidden="true" width="1200" height="1200">
-              <div class="cw-personalizer__result" data-cw-result hidden><img data-cw-result-image class="cw-personalizer__result-image" alt="{{ 'personalizer.saved_preview' | t }}" width="800" height="800"></div>
-            </div>
-            <div class="cw-personalizer__tip"><strong>Tip:</strong> To Move - Swipe / Drag &nbsp; · &nbsp; To Zoom - Pinch in/out / Corners</div>
-          </div>
-          <aside class="cw-personalizer__controls-pane"><div class="cw-personalizer__fields" data-cw-editor-fields></div></aside>
-        </div>
+        <div class="cw-personalizer__header"><div class="cw-personalizer__brand"><span class="cw-personalizer__brand-mark">C</span><strong>Cartwala Customizer</strong></div><button type="button" class="cw-personalizer__close" data-cw-close aria-label="{{ 'personalizer.close' | t }}">×</button></div>
+        <div class="cw-personalizer__toolbar"><div class="cw-personalizer__toolbar-left"><button type="button" class="cw-personalizer__toolbar-reset" data-cw-reset-all>↻ Reset</button><button type="button" class="cw-personalizer__toolbar-change" data-cw-change-photo>▣ Change Photo</button><div class="cw-personalizer__toolbar-text-tools" data-cw-text-tools></div></div><button type="button" class="cw-personalizer__preview cw-personalizer__preview--top" data-cw-save disabled>Preview &amp; Save</button></div>
+        <div class="cw-personalizer__workspace"><div class="cw-personalizer__canvas-pane"><div class="cw-personalizer__stage" data-cw-stage><div class="cw-personalizer__photo-layers" data-cw-photo-layers></div><div class="cw-personalizer__text-layers" data-cw-text-layers></div><img class="cw-personalizer__overlay" data-cw-overlay alt="" aria-hidden="true" width="1200" height="1200"><div class="cw-personalizer__result" data-cw-result hidden><img data-cw-result-image class="cw-personalizer__result-image" alt="{{ 'personalizer.saved_preview' | t }}" width="800" height="800"></div></div><div class="cw-personalizer__tip"><strong>Tip:</strong> To Move - Swipe / Drag &nbsp; · &nbsp; To Zoom - Pinch in/out / Corners</div></div><aside class="cw-personalizer__controls-pane"><div class="cw-personalizer__fields" data-cw-editor-fields></div></aside></div>
       </div>
     </dialog>
   </div>
   <script src="{{ 'cartwala-cart-retry.js' | asset_url }}" defer></script>
   <script src="{{ 'cartwala-selection-box.js' | asset_url }}" defer></script>
   <script src="{{ 'cartwala-editor-ui.js' | asset_url }}" defer></script>
+  <script src="{{ 'cartwala-text-transform.js' | asset_url }}" defer></script>
   <script src="{{ 'cartwala-print-metadata.js' | asset_url }}" defer></script>
   <script src="{{ 'cartwala-cart-fix.js' | asset_url }}" defer></script>
   <script src="{{ 'cartwala-loading.js' | asset_url }}" defer></script>
@@ -59,14 +39,5 @@
 {% endif %}
 
 {% schema %}
-{
-  "name": "t:personalizer.block_name",
-  "target": "section",
-  "javascript": "cartwala-personalizer.js",
-  "stylesheet": "cartwala-personalizer.css",
-  "enabled_on": { "templates": ["product"] },
-  "settings": [
-    { "type": "color", "id": "accent_color", "label": "t:personalizer.accent_color", "default": "#ff6200" }
-  ]
-}
+{"name":"t:personalizer.block_name","target":"section","javascript":"cartwala-personalizer.js","stylesheet":"cartwala-personalizer.css","enabled_on":{"templates":["product"]},"settings":[{"type":"color","id":"accent_color","label":"t:personalizer.accent_color","default":"#ff6200"}]}
 {% endschema %}
