@@ -7,9 +7,7 @@
   const stopTimers=()=>{clearInterval(progressTimer);progressTimer=0;clearTimeout(watchdog);watchdog=0};
   const hide=()=>{clearTimeout(hideTimer);stopTimers();overlay?.classList.remove('is-visible');document.body.classList.remove('cw-processing-active','cw-cart-preparing');progress=0;shownAt=0};
   const complete=()=>{if(!document.body.classList.contains('cw-cart-preparing'))return;stopTimers();paint(100);const wait=Math.max(0,350-(Date.now()-shownAt));hideTimer=setTimeout(hide,wait+120)};
-  const start=()=>{clearTimeout(hideTimer);stopTimers();shownAt=Date.now();const el=ensure();el.querySelector('.cw-processing-text').textContent='Adding your personalised item…';paint(5);el.classList.add('is-visible');document.body.classList.add('cw-processing-active','cw-cart-preparing');progressTimer=setInterval(()=>{if(progress>=94)return;const step=progress<35?5:progress<70?3:progress<88?2:1;paint(Math.min(94,progress+step))},220);watchdog=setTimeout(hide,15000)};
-
-  // The cart POST success is authoritative. Do not wait for a theme-specific preview image marker.
+  const start=()=>{clearTimeout(hideTimer);stopTimers();shownAt=Date.now();const el=ensure();el.querySelector('.cw-processing-text').textContent='Adding your personalised item…';paint(5);el.classList.add('is-visible');document.body.classList.add('cw-processing-active','cw-cart-preparing');progressTimer=setInterval(()=>{if(progress>=99)return;const step=progress<35?5:progress<70?3:progress<90?2:1;paint(Math.min(99,progress+step))},220);watchdog=setTimeout(()=>{if(document.body.classList.contains('cw-cart-preparing')){el.querySelector('.cw-processing-subtext').textContent='Still uploading your photos…';paint(99)}},15000)};
   document.addEventListener('cartwala:cart-start',start);
   document.addEventListener('cartwala:cart-complete',complete);
   document.addEventListener('cartwala:compatibility-cart-add',complete);
