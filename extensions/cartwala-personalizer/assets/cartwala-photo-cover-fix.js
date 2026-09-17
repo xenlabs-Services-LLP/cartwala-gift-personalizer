@@ -6,23 +6,15 @@
     const isRoundMirror=()=>/round-magic-mirror-with-light-copy/i.test(location.pathname);
     const expandRoundViewport=viewport=>{
       if(!viewport||!isRoundMirror())return;
-      /* This product's configured photo field is too narrow. Expand the actual viewport
-         to the inner circular printable area so no white strips remain at the sides. */
-      viewport.style.left='25%';
-      viewport.style.top='25%';
-      viewport.style.width='50%';
-      viewport.style.height='50%';
-      viewport.style.borderRadius='50%';
-      viewport.style.overflow='hidden';
-      viewport.style.clipPath='circle(50% at 50% 50%)';
-      viewport.style.webkitClipPath='circle(50% at 50% 50%)';
+      /* Match the visible inner mirror opening: roughly 62% of the square stage. */
+      viewport.style.left='19%';viewport.style.top='19%';viewport.style.width='62%';viewport.style.height='62%';
+      viewport.style.borderRadius='50%';viewport.style.overflow='hidden';
+      viewport.style.clipPath='circle(50% at 50% 50%)';viewport.style.webkitClipPath='circle(50% at 50% 50%)';
     };
     const getParts=viewport=>{const index=viewport?.dataset.index,card=index==null?null:root.querySelector(`[data-photo-index="${index}"]`),zoom=card?.querySelector('input[type="range"]'),img=viewport?.querySelector('.cw-personalizer__photo');return{zoom,img}};
     const forceFill=viewport=>{
-      const {zoom,img}=getParts(viewport);if(!viewport||!img?.src)return;
-      expandRoundViewport(viewport);
-      const run=()=>{
-        if(!img.naturalWidth||!img.naturalHeight||!viewport.clientWidth||!viewport.clientHeight)return;
+      const {zoom,img}=getParts(viewport);if(!viewport||!img?.src)return;expandRoundViewport(viewport);
+      const run=()=>{if(!img.naturalWidth||!img.naturalHeight||!viewport.clientWidth||!viewport.clientHeight)return;
         img.style.objectFit='cover';img.style.width='100%';img.style.height='100%';
         if(zoom){zoom.min='100';zoom.value='100';zoom.dispatchEvent(new Event('input',{bubbles:true}))}
         requestAnimationFrame(()=>{expandRoundViewport(viewport);img.style.objectFit='cover';img.style.width='100%';img.style.height='100%';if(getComputedStyle(img).display==='none')img.style.display='block';save.disabled=false});
