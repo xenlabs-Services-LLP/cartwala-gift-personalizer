@@ -36,11 +36,9 @@
       const nw=image.naturalWidth||vw,nh=image.naturalHeight||vh;
       if(!viewportRect.width||!viewportRect.height||!vw||!vh||!nw||!nh){box.hidden=true;return}
 
-      // Match the exact photo rectangle rendered inside the mask. The photo uses
-      // object-fit:cover, so its untransformed visual size is the cover-fit size,
-      // not the viewport size. CSS translate is applied before scale; DOMMatrix
-      // reports the translated component scaled, so divide it back by scale.
-      const fit=Math.max(vw/nw,vh/nh);
+      // The customer photo starts fully visible (object-fit:contain). Keep the
+      // blue edit rectangle on that exact photo, then let zoom/drag transform it.
+      const fit=Math.min(vw/nw,vh/nh);
       const baseW=nw*fit,baseH=nh*fit;
       let tx=0,ty=0,scale=1,angle=0;
       const transform=getComputedStyle(image).transform;
