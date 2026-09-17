@@ -14,13 +14,15 @@
     const update=()=>{
       const v=selected||stage.querySelector('.cw-personalizer__photo-viewport.is-active'),img=v?.querySelector('.cw-personalizer__photo');
       if(!v||!img||!img.src||getComputedStyle(img).display==='none'||!dialog?.open||result?.hidden===false){box.hidden=true;return}
-      const sr=stage.getBoundingClientRect(),vr=v.getBoundingClientRect(),vw=v.clientWidth,vh=v.clientHeight,nw=img.naturalWidth||vw,nh=img.naturalHeight||vh;
-      if(!vr.width||!vr.height||!vw||!vh||!nw||!nh){box.hidden=true;return}
-      const fit=Math.min(vw/nw,vh/nh),baseW=nw*fit,baseH=nh*fit;
-      let tx=0,ty=0,scale=1,angle=0;const tr=getComputedStyle(img).transform;
-      if(tr&&tr!=='none')try{const m=new DOMMatrixReadOnly(tr);scale=Math.hypot(m.a,m.b)||1;angle=Math.atan2(m.b,m.a)*180/Math.PI;tx=m.m41;ty=m.m42}catch(e){}
-      /* The blue line represents only the actual uploaded photo bounds. */
-      box.style.left=`${vr.left-sr.left+vr.width/2+tx}px`;box.style.top=`${vr.top-sr.top+vr.height/2+ty}px`;box.style.width=`${baseW}px`;box.style.height=`${baseH}px`;box.style.transform=`translate(-50%,-50%) scale(${scale}) rotate(${angle}deg)`;box.hidden=false;
+      const sr=stage.getBoundingClientRect(),vr=v.getBoundingClientRect();
+      if(!vr.width||!vr.height){box.hidden=true;return}
+      /* Selection handles follow the editable/visible photo viewport. The image itself may be cover-cropped inside it. */
+      box.style.left=`${vr.left-sr.left+vr.width/2}px`;
+      box.style.top=`${vr.top-sr.top+vr.height/2}px`;
+      box.style.width=`${vr.width}px`;
+      box.style.height=`${vr.height}px`;
+      box.style.transform='translate(-50%,-50%)';
+      box.hidden=false;
     };
     box.addEventListener('pointerdown',e=>{const h=e.target.closest('[data-cw-resize-handle]');if(!h||!selected)return;const input=zoomInput(selected);if(!input)return;e.preventDefault();e.stopPropagation();h.setPointerCapture(e.pointerId);const r=box.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;resize={pointerId:e.pointerId,input,startDistance:Math.max(1,Math.hypot(e.clientX-cx,e.clientY-cy)),startZoom:Number(input.value)||100}});
     box.addEventListener('pointermove',e=>{if(!resize||resize.pointerId!==e.pointerId)return;e.preventDefault();e.stopPropagation();const r=box.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,d=Math.max(1,Math.hypot(e.clientX-cx,e.clientY-cy)),value=Math.max(Number(resize.input.min)||100,Math.min(Number(resize.input.max)||500,resize.startZoom*d/resize.startDistance));resize.input.value=String(Math.round(value));resize.input.dispatchEvent(new Event('input',{bubbles:true}));requestAnimationFrame(update)});
