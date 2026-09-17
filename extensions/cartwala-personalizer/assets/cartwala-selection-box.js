@@ -32,17 +32,23 @@
       if(!viewport||!image||!image.src||getComputedStyle(image).display==='none'||!dialog?.open||result?.hidden===false){box.hidden=true;return}
       const stageRect=stage.getBoundingClientRect();
       const viewportRect=viewport.getBoundingClientRect();
-      if(!viewportRect.width||!viewportRect.height){box.hidden=true;return}
+      const vw=viewport.clientWidth,vh=viewport.clientHeight;
+      const nw=image.naturalWidth||vw,nh=image.naturalHeight||vh;
+      if(!vw||!vh||!nw||!nh){box.hidden=true;return}
 
-      // The blue selection frame represents the fixed mask/slot, not the scaled
-      // source photo. Photo drag/zoom is already rendered inside the clipped
-      // viewport by cartwala-personalizer.js. Reading the image DOMMatrix here
-      // made the frame grow and jump after the first drag even though the final
-      // Preview & Save canvas was correct.
-      box.style.left=`${viewportRect.left-stageRect.left+viewportRect.width/2}px`;
-      box.style.top=`${viewportRect.top-stageRect.top+viewportRect.height/2}px`;
-      box.style.width=`${viewportRect.width}px`;
-      box.style.height=`${viewportRect.height}px`;
+      // Match the blue frame to the photo as it is actually rendered. The
+      // viewport clips the image, so intersect the transformed image bounds
+      // with the slot bounds instead of drawing the frame around the whole slot.
+      const imageRect=image.getBoundingClientRect();
+      const left=Math.max(viewportRect.left,imageRect.left);
+      const top=Math.max(viewportRect.top,imageRect.top);
+      const right=Math.min(viewportRect.right,imageRect.right);
+      const bottom=Math.min(viewportRect.bottom,imageRect.bottom);
+      if(right<=left||bottom<=top){box.hidden=true;return}
+      box.style.left=`${left-stageRect.left+(right-left)/2}px`;
+      box.style.top=`${top-stageRect.top+(bottom-top)/2}px`;
+      box.style.width=`${right-left}px`;
+      box.style.height=`${bottom-top}px`;
       box.style.transform='translate(-50%,-50%)';
       box.hidden=false;
     };
