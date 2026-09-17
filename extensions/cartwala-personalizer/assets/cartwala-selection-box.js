@@ -32,16 +32,19 @@
       if(!viewport||!image||!image.src||getComputedStyle(image).display==='none'||!dialog?.open||result?.hidden===false){box.hidden=true;return}
       const stageRect=stage.getBoundingClientRect();
       const viewportRect=viewport.getBoundingClientRect();
-      const vw=viewport.clientWidth,vh=viewport.clientHeight;
-      const nw=image.naturalWidth||vw,nh=image.naturalHeight||vh;
-      if(!vw||!vh||!nw||!nh){box.hidden=true;return}
-      const fit=Math.max(vw/nw,vh/nh);const baseW=nw*fit,baseH=nh*fit;
-      let tx=0,ty=0,scale=1,angle=0;const transform=getComputedStyle(image).transform;
-      if(transform&&transform!=='none')try{const matrix=new DOMMatrixReadOnly(transform);tx=matrix.m41;ty=matrix.m42;scale=Math.hypot(matrix.a,matrix.b)||1;angle=Math.atan2(matrix.b,matrix.a)*180/Math.PI}catch(error){}
-      box.style.left=`${viewportRect.left-stageRect.left+viewportRect.width/2+tx}px`;
-      box.style.top=`${viewportRect.top-stageRect.top+viewportRect.height/2+ty}px`;
-      box.style.width=`${baseW}px`;box.style.height=`${baseH}px`;
-      box.style.transform=`translate(-50%,-50%) scale(${scale}) rotate(${angle}deg)`;box.hidden=false;
+      if(!viewportRect.width||!viewportRect.height){box.hidden=true;return}
+
+      // The blue selection frame represents the fixed mask/slot, not the scaled
+      // source photo. Photo drag/zoom is already rendered inside the clipped
+      // viewport by cartwala-personalizer.js. Reading the image DOMMatrix here
+      // made the frame grow and jump after the first drag even though the final
+      // Preview & Save canvas was correct.
+      box.style.left=`${viewportRect.left-stageRect.left+viewportRect.width/2}px`;
+      box.style.top=`${viewportRect.top-stageRect.top+viewportRect.height/2}px`;
+      box.style.width=`${viewportRect.width}px`;
+      box.style.height=`${viewportRect.height}px`;
+      box.style.transform='translate(-50%,-50%)';
+      box.hidden=false;
     };
 
     box.addEventListener('pointerdown',event=>{
