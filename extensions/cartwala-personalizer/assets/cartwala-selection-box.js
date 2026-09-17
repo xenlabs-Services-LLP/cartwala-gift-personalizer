@@ -11,9 +11,9 @@
     box.className='cw-personalizer__photo-selection';
     box.hidden=true;
     box.setAttribute('aria-hidden','true');
-    box.style.pointerEvents='auto';
-    box.style.cursor='move';
-    box.style.touchAction='none';
+    // Photoshop-style transform outline: the mask/crop stays fixed while the
+    // uploaded photo can still be dragged through to the native editor below.
+    box.style.pointerEvents='none';
     for(let i=0;i<4;i++){
       const handle=document.createElement('span');
       handle.className=`cw-personalizer__photo-selection-handle cw-personalizer__photo-selection-handle--${i+1}`;
@@ -22,7 +22,7 @@
     }
     stage.appendChild(box);
 
-    let selected=null;let resize=null;let drag=null;
+    let selected=null;let resize=null;
     const choose=viewport=>{if(viewport){selected=viewport;requestAnimationFrame(update)}};
     const zoomInput=viewport=>{
       const index=viewport?.dataset.index;
@@ -37,8 +37,6 @@
       const ro=value.match(/rotate\(\s*(-?[\d.]+)deg\s*\)/i);
       return {x:tx?Number(tx[1]):0,y:tx?Number(tx[2]):0,scale:sc?Number(sc[1]):1,angle:ro?Number(ro[1]):0};
     };
-    const setTransform=(image,state)=>{image.style.transform=`translate(${state.x}px,${state.y}px) scale(${state.scale}) rotate(${state.angle}deg)`};
-    const dispatchTransform=image=>{image.dispatchEvent(new CustomEvent('cw:photo-transform',{bubbles:true}));requestAnimationFrame(update)};
     const update=()=>{
       const viewport=selected||stage.querySelector('.cw-personalizer__photo-viewport.is-active');
       const image=imageOf(viewport);
@@ -63,34 +61,24 @@
       box.hidden=false;
     };
 
+    // Corner handles resize the linked photo by driving the editor's own zoom
+    // input. This keeps the real photo state and the saved preview in sync.
     box.addEventListener('pointerdown',event=>{
-      if(!selected)return;
-      const image=imageOf(selected);if(!image)return;
-      const handle=event.target.closest('[data-cw-resize-handle]');
-      event.preventDefault();event.stopPropagation();box.setPointerCapture(event.pointerId);
-      if(handle){
-        const input=zoomInput(selected);if(!input)return;
-        const rect=box.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
-        resize={pointerId:event.pointerId,input,startDistance:Math.max(1,Math.hypot(event.clientX-cx,event.clientY-cy)),startZoom:Number(input.value)||100};
-      }else{
-        const state=currentTransform(image);
-        drag={pointerId:event.pointerId,image,startClientX:event.clientX,startClientY:event.clientY,startX:state.x,startY:state.y,scale:state.scale,angle:state.angle};
-      }
+      const handle=event.target.closest('[data-cw-resize-handle]');if(!handle||!selected)return;
+      const input=zoomInput(selected);if(!input)return;
+      event.preventDefault();event.stopPropagation();handle.setPointerCapture(event.pointerId);
+      const rect=box.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+      resize={pointerId:event.pointerId,input,startDistance:Math.max(1,Math.hypot(event.clientX-cx,event.clientY-cy)),startZoom:Number(input.value)||100};
     });
     box.addEventListener('pointermove',event=>{
-      if(resize&&resize.pointerId===event.pointerId){
-        event.preventDefault();event.stopPropagation();const rect=box.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
-        const distance=Math.max(1,Math.hypot(event.clientX-cx,event.clientY-cy));
-        const value=Math.max(Number(resize.input.min)||100,Math.min(Number(resize.input.max)||500,resize.startZoom*distance/resize.startDistance));
-        resize.input.value=String(Math.round(value));resize.input.dispatchEvent(new Event('input',{bubbles:true}));requestAnimationFrame(update);return;
-      }
-      if(drag&&drag.pointerId===event.pointerId){
-        event.preventDefault();event.stopPropagation();
-        const next={x:drag.startX+event.clientX-drag.startClientX,y:drag.startY+event.clientY-drag.startClientY,scale:drag.scale,angle:drag.angle};
-        setTransform(drag.image,next);dispatchTransform(drag.image);
-      }
+      if(!resize||resize.pointerId!==event.pointerId)return;
+      event.preventDefault();event.stopPropagation();
+      const rect=box.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+      const distance=Math.max(1,Math.hypot(event.clientX-cx,event.clientY-cy));
+      const value=Math.max(Number(resize.input.min)||100,Math.min(Number(resize.input.max)||500,resize.startZoom*distance/resize.startDistance));
+      resize.input.value=String(Math.round(value));resize.input.dispatchEvent(new Event('input',{bubbles:true}));requestAnimationFrame(update);
     });
-    const finish=event=>{if(resize?.pointerId===event.pointerId)resize=null;if(drag?.pointerId===event.pointerId)drag=null;requestAnimationFrame(update)};
+    const finish=event=>{if(resize?.pointerId===event.pointerId){resize=null;requestAnimationFrame(update)}};
     box.addEventListener('pointerup',finish);box.addEventListener('pointercancel',finish);
 
     stage.addEventListener('pointerdown',event=>{const viewport=event.target.closest('.cw-personalizer__photo-viewport');if(viewport)choose(viewport)},true);
