@@ -36,19 +36,30 @@
       const nw=image.naturalWidth||vw,nh=image.naturalHeight||vh;
       if(!vw||!vh||!nw||!nh){box.hidden=true;return}
 
-      // Match the blue frame to the photo as it is actually rendered. The
-      // viewport clips the image, so intersect the transformed image bounds
-      // with the slot bounds instead of drawing the frame around the whole slot.
-      const imageRect=image.getBoundingClientRect();
-      const left=Math.max(viewportRect.left,imageRect.left);
-      const top=Math.max(viewportRect.top,imageRect.top);
-      const right=Math.min(viewportRect.right,imageRect.right);
-      const bottom=Math.min(viewportRect.bottom,imageRect.bottom);
-      if(right<=left||bottom<=top){box.hidden=true;return}
-      box.style.left=`${left-stageRect.left+(right-left)/2}px`;
-      box.style.top=`${top-stageRect.top+(bottom-top)/2}px`;
-      box.style.width=`${right-left}px`;
-      box.style.height=`${bottom-top}px`;
+      // The image element itself is always 100% of the slot, so its DOM rect
+      // cannot describe the visible object-fit:cover photo. Rebuild the real
+      // photo rectangle from its natural aspect ratio and the transform used by
+      // cartwala-personalizer.js (translate + scale + rotate).
+      const imageRatio=nw/nh,viewportRatio=vw/vh;
+      const coverW=imageRatio>viewportRatio?vh*imageRatio:vw;
+      const coverH=imageRatio>viewportRatio?vh:vw/imageRatio;
+      const transform=getComputedStyle(image).transform;
+      let a=1,b=0,e=0,f=0;
+      if(transform&&transform!=='none'){
+        try{const matrix=new DOMMatrixReadOnly(transform);a=matrix.a;b=matrix.b;e=matrix.e;f=matrix.f}catch(error){/* keep identity */}
+      }
+      const scale=Math.max(.01,Math.hypot(a,b));
+      const angle=Math.atan2(b,a);
+      const photoW=coverW*scale,photoH=coverH*scale;
+      const cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
+      const boundW=photoW*cos+photoH*sin;
+      const boundH=photoW*sin+photoH*cos;
+      const cx=viewportRect.left-stageRect.left+viewportRect.width/2+e;
+      const cy=viewportRect.top-stageRect.top+viewportRect.height/2+f;
+      box.style.left=`${cx}px`;
+      box.style.top=`${cy}px`;
+      box.style.width=`${boundW}px`;
+      box.style.height=`${boundH}px`;
       box.style.transform='translate(-50%,-50%)';
       box.hidden=false;
     };
