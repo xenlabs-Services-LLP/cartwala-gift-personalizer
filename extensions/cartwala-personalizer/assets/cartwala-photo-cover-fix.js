@@ -3,16 +3,29 @@
   const initRoot=root=>{
     const stage=root.querySelector('[data-cw-stage]'),save=root.querySelector('[data-cw-save]');
     if(!stage||!save)return;
+    const isRoundMirror=()=>/round-magic-mirror-with-light-copy/i.test(location.pathname);
+    const expandRoundViewport=viewport=>{
+      if(!viewport||!isRoundMirror())return;
+      /* This product's configured photo field is too narrow. Expand the actual viewport
+         to the inner circular printable area so no white strips remain at the sides. */
+      viewport.style.left='25%';
+      viewport.style.top='25%';
+      viewport.style.width='50%';
+      viewport.style.height='50%';
+      viewport.style.borderRadius='50%';
+      viewport.style.overflow='hidden';
+      viewport.style.clipPath='circle(50% at 50% 50%)';
+      viewport.style.webkitClipPath='circle(50% at 50% 50%)';
+    };
     const getParts=viewport=>{const index=viewport?.dataset.index,card=index==null?null:root.querySelector(`[data-photo-index="${index}"]`),zoom=card?.querySelector('input[type="range"]'),img=viewport?.querySelector('.cw-personalizer__photo');return{zoom,img}};
     const forceFill=viewport=>{
       const {zoom,img}=getParts(viewport);if(!viewport||!img?.src)return;
+      expandRoundViewport(viewport);
       const run=()=>{
         if(!img.naturalWidth||!img.naturalHeight||!viewport.clientWidth||!viewport.clientHeight)return;
-        /* CSS object-fit:cover already fills the mask. Scale 1 is therefore the true minimum. */
-        img.style.objectFit='cover';
+        img.style.objectFit='cover';img.style.width='100%';img.style.height='100%';
         if(zoom){zoom.min='100';zoom.value='100';zoom.dispatchEvent(new Event('input',{bubbles:true}))}
-        /* Re-assert cover after the core input handler so it cannot fall back to contain. */
-        requestAnimationFrame(()=>{img.style.objectFit='cover';if(getComputedStyle(img).display==='none')img.style.display='block';save.disabled=false});
+        requestAnimationFrame(()=>{expandRoundViewport(viewport);img.style.objectFit='cover';img.style.width='100%';img.style.height='100%';if(getComputedStyle(img).display==='none')img.style.display='block';save.disabled=false});
       };
       if(img.complete&&img.naturalWidth)run();else img.addEventListener('load',run,{once:true});
     };
@@ -22,6 +35,7 @@
     root.querySelector('[data-cw-change-photo]')?.addEventListener('click',()=>{const v=stage.querySelector('.cw-personalizer__photo-viewport.is-active');if(v)setTimeout(()=>forceFill(v),250)});
     root.querySelector('[data-cw-reset-all]')?.addEventListener('click',()=>setTimeout(()=>stage.querySelectorAll('.cw-personalizer__photo-viewport').forEach(v=>{if(v.querySelector('.cw-personalizer__photo')?.src)forceFill(v)}),0));
     new MutationObserver(muts=>{for(const m of muts){const img=m.target;if(img.matches?.('.cw-personalizer__photo')&&img.src)requestAnimationFrame(()=>forceFill(img.closest('.cw-personalizer__photo-viewport')))}}).observe(stage,{subtree:true,attributes:true,attributeFilter:['src']});
+    if(isRoundMirror())setTimeout(()=>stage.querySelectorAll('.cw-personalizer__photo-viewport').forEach(expandRoundViewport),0);
   };
   const init=()=>document.querySelectorAll('[data-cw-personalizer]').forEach(initRoot);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();document.addEventListener('shopify:section:load',init);
