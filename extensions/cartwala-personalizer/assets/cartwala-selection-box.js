@@ -7,12 +7,26 @@
     const result=root.querySelector('[data-cw-result]');
     if(!stage)return;
 
+    const forceCover=viewport=>{
+      const image=viewport?.querySelector('.cw-personalizer__photo');
+      if(!image)return;
+      image.style.position='absolute';
+      image.style.inset='0';
+      image.style.width='100%';
+      image.style.height='100%';
+      image.style.maxWidth='none';
+      image.style.maxHeight='none';
+      image.style.objectFit='cover';
+      image.style.objectPosition='50% 50%';
+      image.style.transformOrigin='50% 50%';
+    };
+    const forceAllCovers=()=>stage.querySelectorAll('.cw-personalizer__photo-viewport').forEach(forceCover);
+    forceAllCovers();
+
     const box=document.createElement('div');
     box.className='cw-personalizer__photo-selection';
     box.hidden=true;
     box.setAttribute('aria-hidden','true');
-    // Photoshop-style transform outline: the mask/crop stays fixed while the
-    // uploaded photo can still be dragged through to the native editor below.
     box.style.pointerEvents='none';
     for(let i=0;i<4;i++){
       const handle=document.createElement('span');
@@ -23,7 +37,7 @@
     stage.appendChild(box);
 
     let selected=null;let resize=null;
-    const choose=viewport=>{if(viewport){selected=viewport;requestAnimationFrame(update)}};
+    const choose=viewport=>{if(viewport){selected=viewport;forceCover(viewport);requestAnimationFrame(update)}};
     const zoomInput=viewport=>{
       const index=viewport?.dataset.index;
       if(index==null)return null;
@@ -41,7 +55,7 @@
       const viewport=selected||stage.querySelector('.cw-personalizer__photo-viewport.is-active');
       const image=imageOf(viewport);
       if(!viewport||!image||!image.src||getComputedStyle(image).display==='none'||!dialog?.open||result?.hidden===false){box.hidden=true;return}
-      selected=viewport;
+      selected=viewport;forceCover(viewport);
       const stageRect=stage.getBoundingClientRect();
       const viewportRect=viewport.getBoundingClientRect();
       const vw=viewport.clientWidth,vh=viewport.clientHeight;
@@ -61,8 +75,6 @@
       box.hidden=false;
     };
 
-    // Corner handles resize the linked photo by driving the editor's own zoom
-    // input. This keeps the real photo state and the saved preview in sync.
     box.addEventListener('pointerdown',event=>{
       const handle=event.target.closest('[data-cw-resize-handle]');if(!handle||!selected)return;
       const input=zoomInput(selected);if(!input)return;
@@ -81,11 +93,12 @@
     const finish=event=>{if(resize?.pointerId===event.pointerId){resize=null;requestAnimationFrame(update)}};
     box.addEventListener('pointerup',finish);box.addEventListener('pointercancel',finish);
 
+    stage.addEventListener('load',event=>{if(event.target?.classList?.contains('cw-personalizer__photo')){forceCover(event.target.closest('.cw-personalizer__photo-viewport'));requestAnimationFrame(update)}},true);
     stage.addEventListener('pointerdown',event=>{const viewport=event.target.closest('.cw-personalizer__photo-viewport');if(viewport)choose(viewport)},true);
-    const observer=new MutationObserver(()=>requestAnimationFrame(update));observer.observe(stage,{subtree:true,attributes:true,attributeFilter:['class','style','src','hidden']});
+    const observer=new MutationObserver(()=>{forceAllCovers();requestAnimationFrame(update)});observer.observe(stage,{subtree:true,attributes:true,childList:true,attributeFilter:['class','style','src','hidden']});
     stage.addEventListener('pointermove',()=>requestAnimationFrame(update),{passive:true});stage.addEventListener('pointerup',()=>requestAnimationFrame(update),{passive:true});stage.addEventListener('wheel',()=>requestAnimationFrame(update),{passive:true});
-    root.addEventListener('input',()=>requestAnimationFrame(update),true);root.addEventListener('change',()=>requestAnimationFrame(update),true);
-    root.querySelector('[data-cw-open]')?.addEventListener('click',()=>setTimeout(()=>choose(stage.querySelector('.cw-personalizer__photo-viewport.is-active')||stage.querySelector('.cw-personalizer__photo-viewport')),0));
+    root.addEventListener('input',()=>requestAnimationFrame(update),true);root.addEventListener('change',()=>{forceAllCovers();requestAnimationFrame(update)},true);
+    root.querySelector('[data-cw-open]')?.addEventListener('click',()=>setTimeout(()=>{forceAllCovers();choose(stage.querySelector('.cw-personalizer__photo-viewport.is-active')||stage.querySelector('.cw-personalizer__photo-viewport'))},0));
     root.querySelector('[data-cw-save]')?.addEventListener('click',()=>{box.hidden=true});root.querySelector('[data-cw-close]')?.addEventListener('click',()=>{box.hidden=true});dialog?.addEventListener('close',()=>{box.hidden=true});
     new ResizeObserver(()=>requestAnimationFrame(update)).observe(stage);
   };
