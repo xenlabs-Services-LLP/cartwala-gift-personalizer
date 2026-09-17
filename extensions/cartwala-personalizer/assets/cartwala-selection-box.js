@@ -6,29 +6,72 @@
     const dialog=root.querySelector('[data-cw-dialog]');
     const result=root.querySelector('[data-cw-result]');
     if(!stage)return;
-    const box=document.createElement('div');box.className='cw-personalizer__photo-selection';box.hidden=true;box.setAttribute('aria-hidden','true');
-    for(let i=0;i<4;i++){const h=document.createElement('span');h.className=`cw-personalizer__photo-selection-handle cw-personalizer__photo-selection-handle--${i+1}`;h.dataset.cwResizeHandle='true';box.appendChild(h)}stage.appendChild(box);
-    let selected=null,resize=null;
-    const choose=v=>{if(v){selected=v;requestAnimationFrame(update)}};
-    const zoomInput=v=>{const i=v?.dataset.index;return i==null?null:root.querySelector(`[data-photo-index="${i}"] input[type="range"]`)};
-    const update=()=>{
-      const v=selected||stage.querySelector('.cw-personalizer__photo-viewport.is-active'),img=v?.querySelector('.cw-personalizer__photo');
-      if(!v||!img||!img.src||getComputedStyle(img).display==='none'||!dialog?.open||result?.hidden===false){box.hidden=true;return}
-      const sr=stage.getBoundingClientRect(),vr=v.getBoundingClientRect(),vw=v.clientWidth,vh=v.clientHeight,nw=img.naturalWidth||vw,nh=img.naturalHeight||vh;
-      if(!vr.width||!vr.height||!vw||!vh||!nw||!nh){box.hidden=true;return}
-      const fit=Math.min(vw/nw,vh/nh),baseW=nw*fit,baseH=nh*fit;
-      let tx=0,ty=0,scale=1,angle=0;const tr=getComputedStyle(img).transform;
-      if(tr&&tr!=='none')try{const m=new DOMMatrixReadOnly(tr);scale=Math.hypot(m.a,m.b)||1;angle=Math.atan2(m.b,m.a)*180/Math.PI;tx=m.m41;ty=m.m42}catch(e){}
-      /* The blue line represents only the actual uploaded photo bounds. */
-      box.style.left=`${vr.left-sr.left+vr.width/2+tx}px`;box.style.top=`${vr.top-sr.top+vr.height/2+ty}px`;box.style.width=`${baseW}px`;box.style.height=`${baseH}px`;box.style.transform=`translate(-50%,-50%) scale(${scale}) rotate(${angle}deg)`;box.hidden=false;
+
+    const box=document.createElement('div');
+    box.className='cw-personalizer__photo-selection';
+    box.hidden=true;
+    box.setAttribute('aria-hidden','true');
+    for(let i=0;i<4;i++){
+      const handle=document.createElement('span');
+      handle.className=`cw-personalizer__photo-selection-handle cw-personalizer__photo-selection-handle--${i+1}`;
+      handle.dataset.cwResizeHandle='true';
+      box.appendChild(handle);
+    }
+    stage.appendChild(box);
+
+    let selected=null;let resize=null;
+    const choose=viewport=>{if(viewport){selected=viewport;requestAnimationFrame(update)}};
+    const zoomInput=viewport=>{
+      const index=viewport?.dataset.index;
+      if(index==null)return null;
+      return root.querySelector(`[data-photo-index="${index}"] input[type="range"]`);
     };
-    box.addEventListener('pointerdown',e=>{const h=e.target.closest('[data-cw-resize-handle]');if(!h||!selected)return;const input=zoomInput(selected);if(!input)return;e.preventDefault();e.stopPropagation();h.setPointerCapture(e.pointerId);const r=box.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;resize={pointerId:e.pointerId,input,startDistance:Math.max(1,Math.hypot(e.clientX-cx,e.clientY-cy)),startZoom:Number(input.value)||100}});
-    box.addEventListener('pointermove',e=>{if(!resize||resize.pointerId!==e.pointerId)return;e.preventDefault();e.stopPropagation();const r=box.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,d=Math.max(1,Math.hypot(e.clientX-cx,e.clientY-cy)),value=Math.max(Number(resize.input.min)||100,Math.min(Number(resize.input.max)||500,resize.startZoom*d/resize.startDistance));resize.input.value=String(Math.round(value));resize.input.dispatchEvent(new Event('input',{bubbles:true}));requestAnimationFrame(update)});
-    const finish=e=>{if(resize&&resize.pointerId===e.pointerId){e.preventDefault();e.stopPropagation();resize=null}};box.addEventListener('pointerup',finish);box.addEventListener('pointercancel',finish);
-    stage.addEventListener('pointerdown',e=>{const v=e.target.closest('.cw-personalizer__photo-viewport');if(v)choose(v)},true);
-    new MutationObserver(()=>requestAnimationFrame(update)).observe(stage,{subtree:true,attributes:true,attributeFilter:['class','style','src','hidden']});
-    ['pointermove','pointerup','wheel'].forEach(n=>stage.addEventListener(n,()=>requestAnimationFrame(update),{passive:true}));root.addEventListener('input',()=>requestAnimationFrame(update),true);root.addEventListener('change',()=>requestAnimationFrame(update),true);
-    root.querySelector('[data-cw-open]')?.addEventListener('click',()=>setTimeout(()=>choose(stage.querySelector('.cw-personalizer__photo-viewport.is-active')||stage.querySelector('.cw-personalizer__photo-viewport')),0));root.querySelector('[data-cw-save]')?.addEventListener('click',()=>box.hidden=true);root.querySelector('[data-cw-close]')?.addEventListener('click',()=>box.hidden=true);dialog?.addEventListener('close',()=>box.hidden=true);new ResizeObserver(()=>requestAnimationFrame(update)).observe(stage);
+    const update=()=>{
+      const viewport=selected||stage.querySelector('.cw-personalizer__photo-viewport.is-active');
+      const image=viewport?.querySelector('.cw-personalizer__photo');
+      if(!viewport||!image||!image.src||getComputedStyle(image).display==='none'||!dialog?.open||result?.hidden===false){box.hidden=true;return}
+      const stageRect=stage.getBoundingClientRect();
+      const viewportRect=viewport.getBoundingClientRect();
+      if(!viewportRect.width||!viewportRect.height){box.hidden=true;return}
+
+      // The blue selection frame represents the fixed mask/slot, not the scaled
+      // source photo. Photo drag/zoom is already rendered inside the clipped
+      // viewport by cartwala-personalizer.js. Reading the image DOMMatrix here
+      // made the frame grow and jump after the first drag even though the final
+      // Preview & Save canvas was correct.
+      box.style.left=`${viewportRect.left-stageRect.left+viewportRect.width/2}px`;
+      box.style.top=`${viewportRect.top-stageRect.top+viewportRect.height/2}px`;
+      box.style.width=`${viewportRect.width}px`;
+      box.style.height=`${viewportRect.height}px`;
+      box.style.transform='translate(-50%,-50%)';
+      box.hidden=false;
+    };
+
+    box.addEventListener('pointerdown',event=>{
+      const handle=event.target.closest('[data-cw-resize-handle]');if(!handle||!selected)return;
+      const input=zoomInput(selected);if(!input)return;
+      event.preventDefault();event.stopPropagation();handle.setPointerCapture(event.pointerId);
+      const rect=box.getBoundingClientRect();const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+      resize={pointerId:event.pointerId,input,startDistance:Math.max(1,Math.hypot(event.clientX-cx,event.clientY-cy)),startZoom:Number(input.value)||100};
+    });
+    box.addEventListener('pointermove',event=>{
+      if(!resize||resize.pointerId!==event.pointerId)return;event.preventDefault();event.stopPropagation();
+      const rect=box.getBoundingClientRect();const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+      const distance=Math.max(1,Math.hypot(event.clientX-cx,event.clientY-cy));
+      const value=Math.max(Number(resize.input.min)||100,Math.min(Number(resize.input.max)||500,resize.startZoom*distance/resize.startDistance));
+      resize.input.value=String(Math.round(value));resize.input.dispatchEvent(new Event('input',{bubbles:true}));requestAnimationFrame(update);
+    });
+    const finishResize=event=>{if(resize&&resize.pointerId===event.pointerId){event.preventDefault();event.stopPropagation();resize=null}};
+    box.addEventListener('pointerup',finishResize);box.addEventListener('pointercancel',finishResize);
+
+    stage.addEventListener('pointerdown',event=>{const viewport=event.target.closest('.cw-personalizer__photo-viewport');if(viewport)choose(viewport)},true);
+    const observer=new MutationObserver(()=>requestAnimationFrame(update));observer.observe(stage,{subtree:true,attributes:true,attributeFilter:['class','style','src','hidden']});
+    stage.addEventListener('pointermove',()=>requestAnimationFrame(update),{passive:true});stage.addEventListener('pointerup',()=>requestAnimationFrame(update),{passive:true});stage.addEventListener('wheel',()=>requestAnimationFrame(update),{passive:true});
+    root.addEventListener('input',()=>requestAnimationFrame(update),true);root.addEventListener('change',()=>requestAnimationFrame(update),true);
+    root.querySelector('[data-cw-open]')?.addEventListener('click',()=>setTimeout(()=>choose(stage.querySelector('.cw-personalizer__photo-viewport.is-active')||stage.querySelector('.cw-personalizer__photo-viewport')),0));
+    root.querySelector('[data-cw-save]')?.addEventListener('click',()=>{box.hidden=true});root.querySelector('[data-cw-close]')?.addEventListener('click',()=>{box.hidden=true});dialog?.addEventListener('close',()=>{box.hidden=true});
+    new ResizeObserver(()=>requestAnimationFrame(update)).observe(stage);
   };
-  const init=()=>document.querySelectorAll('[data-cw-personalizer]').forEach(initRoot);if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();document.addEventListener('shopify:section:load',init);
+  const init=()=>document.querySelectorAll('[data-cw-personalizer]').forEach(initRoot);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();document.addEventListener('shopify:section:load',init);
 })();
