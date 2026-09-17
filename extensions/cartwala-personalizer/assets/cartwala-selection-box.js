@@ -11,6 +11,9 @@
     box.className='cw-personalizer__photo-selection';
     box.hidden=true;
     box.setAttribute('aria-hidden','true');
+    box.style.pointerEvents='auto';
+    box.style.cursor='move';
+    box.style.touchAction='none';
     for(let i=0;i<4;i++){
       const handle=document.createElement('span');
       handle.className=`cw-personalizer__photo-selection-handle cw-personalizer__photo-selection-handle--${i+1}`;
@@ -19,67 +22,76 @@
     }
     stage.appendChild(box);
 
-    let selected=null;let resize=null;
+    let selected=null;let resize=null;let drag=null;
     const choose=viewport=>{if(viewport){selected=viewport;requestAnimationFrame(update)}};
     const zoomInput=viewport=>{
       const index=viewport?.dataset.index;
       if(index==null)return null;
       return root.querySelector(`[data-photo-index="${index}"] input[type="range"]`);
     };
+    const imageOf=viewport=>viewport?.querySelector('.cw-personalizer__photo');
+    const currentTransform=image=>{
+      const value=image?.style.transform||'';
+      const tx=value.match(/translate\(\s*(-?[\d.]+)px\s*,\s*(-?[\d.]+)px\s*\)/i);
+      const sc=value.match(/scale\(\s*([\d.]+)\s*\)/i);
+      const ro=value.match(/rotate\(\s*(-?[\d.]+)deg\s*\)/i);
+      return {x:tx?Number(tx[1]):0,y:tx?Number(tx[2]):0,scale:sc?Number(sc[1]):1,angle:ro?Number(ro[1]):0};
+    };
+    const setTransform=(image,state)=>{image.style.transform=`translate(${state.x}px,${state.y}px) scale(${state.scale}) rotate(${state.angle}deg)`};
+    const dispatchTransform=image=>{image.dispatchEvent(new CustomEvent('cw:photo-transform',{bubbles:true}));requestAnimationFrame(update)};
     const update=()=>{
       const viewport=selected||stage.querySelector('.cw-personalizer__photo-viewport.is-active');
-      const image=viewport?.querySelector('.cw-personalizer__photo');
+      const image=imageOf(viewport);
       if(!viewport||!image||!image.src||getComputedStyle(image).display==='none'||!dialog?.open||result?.hidden===false){box.hidden=true;return}
+      selected=viewport;
       const stageRect=stage.getBoundingClientRect();
       const viewportRect=viewport.getBoundingClientRect();
       const vw=viewport.clientWidth,vh=viewport.clientHeight;
       const nw=image.naturalWidth||vw,nh=image.naturalHeight||vh;
       if(!vw||!vh||!nw||!nh){box.hidden=true;return}
-
-      // The image element itself is always 100% of the slot, so its DOM rect
-      // cannot describe the visible object-fit:cover photo. Rebuild the real
-      // photo rectangle from its natural aspect ratio and the transform used by
-      // cartwala-personalizer.js (translate + scale + rotate).
+      const state=currentTransform(image);
       const imageRatio=nw/nh,viewportRatio=vw/vh;
       const coverW=imageRatio>viewportRatio?vh*imageRatio:vw;
       const coverH=imageRatio>viewportRatio?vh:vw/imageRatio;
-      const transform=getComputedStyle(image).transform;
-      let a=1,b=0,e=0,f=0;
-      if(transform&&transform!=='none'){
-        try{const matrix=new DOMMatrixReadOnly(transform);a=matrix.a;b=matrix.b;e=matrix.e;f=matrix.f}catch(error){/* keep identity */}
-      }
-      const scale=Math.max(.01,Math.hypot(a,b));
-      const angle=Math.atan2(b,a);
-      const photoW=coverW*scale,photoH=coverH*scale;
-      const cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
-      const boundW=photoW*cos+photoH*sin;
-      const boundH=photoW*sin+photoH*cos;
-      const cx=viewportRect.left-stageRect.left+viewportRect.width/2+e;
-      const cy=viewportRect.top-stageRect.top+viewportRect.height/2+f;
-      box.style.left=`${cx}px`;
-      box.style.top=`${cy}px`;
-      box.style.width=`${boundW}px`;
-      box.style.height=`${boundH}px`;
+      const photoW=coverW*state.scale,photoH=coverH*state.scale;
+      const angle=state.angle*Math.PI/180,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
+      box.style.left=`${viewportRect.left-stageRect.left+viewportRect.width/2+state.x}px`;
+      box.style.top=`${viewportRect.top-stageRect.top+viewportRect.height/2+state.y}px`;
+      box.style.width=`${photoW*cos+photoH*sin}px`;
+      box.style.height=`${photoW*sin+photoH*cos}px`;
       box.style.transform='translate(-50%,-50%)';
       box.hidden=false;
     };
 
     box.addEventListener('pointerdown',event=>{
-      const handle=event.target.closest('[data-cw-resize-handle]');if(!handle||!selected)return;
-      const input=zoomInput(selected);if(!input)return;
-      event.preventDefault();event.stopPropagation();handle.setPointerCapture(event.pointerId);
-      const rect=box.getBoundingClientRect();const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
-      resize={pointerId:event.pointerId,input,startDistance:Math.max(1,Math.hypot(event.clientX-cx,event.clientY-cy)),startZoom:Number(input.value)||100};
+      if(!selected)return;
+      const image=imageOf(selected);if(!image)return;
+      const handle=event.target.closest('[data-cw-resize-handle]');
+      event.preventDefault();event.stopPropagation();box.setPointerCapture(event.pointerId);
+      if(handle){
+        const input=zoomInput(selected);if(!input)return;
+        const rect=box.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+        resize={pointerId:event.pointerId,input,startDistance:Math.max(1,Math.hypot(event.clientX-cx,event.clientY-cy)),startZoom:Number(input.value)||100};
+      }else{
+        const state=currentTransform(image);
+        drag={pointerId:event.pointerId,image,startClientX:event.clientX,startClientY:event.clientY,startX:state.x,startY:state.y,scale:state.scale,angle:state.angle};
+      }
     });
     box.addEventListener('pointermove',event=>{
-      if(!resize||resize.pointerId!==event.pointerId)return;event.preventDefault();event.stopPropagation();
-      const rect=box.getBoundingClientRect();const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
-      const distance=Math.max(1,Math.hypot(event.clientX-cx,event.clientY-cy));
-      const value=Math.max(Number(resize.input.min)||100,Math.min(Number(resize.input.max)||500,resize.startZoom*distance/resize.startDistance));
-      resize.input.value=String(Math.round(value));resize.input.dispatchEvent(new Event('input',{bubbles:true}));requestAnimationFrame(update);
+      if(resize&&resize.pointerId===event.pointerId){
+        event.preventDefault();event.stopPropagation();const rect=box.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+        const distance=Math.max(1,Math.hypot(event.clientX-cx,event.clientY-cy));
+        const value=Math.max(Number(resize.input.min)||100,Math.min(Number(resize.input.max)||500,resize.startZoom*distance/resize.startDistance));
+        resize.input.value=String(Math.round(value));resize.input.dispatchEvent(new Event('input',{bubbles:true}));requestAnimationFrame(update);return;
+      }
+      if(drag&&drag.pointerId===event.pointerId){
+        event.preventDefault();event.stopPropagation();
+        const next={x:drag.startX+event.clientX-drag.startClientX,y:drag.startY+event.clientY-drag.startClientY,scale:drag.scale,angle:drag.angle};
+        setTransform(drag.image,next);dispatchTransform(drag.image);
+      }
     });
-    const finishResize=event=>{if(resize&&resize.pointerId===event.pointerId){event.preventDefault();event.stopPropagation();resize=null}};
-    box.addEventListener('pointerup',finishResize);box.addEventListener('pointercancel',finishResize);
+    const finish=event=>{if(resize?.pointerId===event.pointerId)resize=null;if(drag?.pointerId===event.pointerId)drag=null;requestAnimationFrame(update)};
+    box.addEventListener('pointerup',finish);box.addEventListener('pointercancel',finish);
 
     stage.addEventListener('pointerdown',event=>{const viewport=event.target.closest('.cw-personalizer__photo-viewport');if(viewport)choose(viewport)},true);
     const observer=new MutationObserver(()=>requestAnimationFrame(update));observer.observe(stage,{subtree:true,attributes:true,attributeFilter:['class','style','src','hidden']});
