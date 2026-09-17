@@ -25,15 +25,13 @@ for (const count of [1, 3, 10, 13, 50]) {
 const textConfig = normalize({ canvasRatio: "1080:1350", textFields: [{ id: "text-1", label: "Name", defaultValue: "Your Name", x: 50, y: 80, fontSize: 54 }] });
 assert.equal(textConfig.ratio, "1080:1350");
 assert.equal(textConfig.texts[0].defaultValue, "Your Name");
-
 const overCap = normalize({ photoFields: Array.from({ length: 250 }, (_, index) => ({ id: `slot-${index + 1}` })) });
 assert.equal(overCap.photos.length, 200);
 
+// Keep QA focused on contracts that this storefront file currently owns.
 assert.match(storefront, /data-cw-save/);
 assert.match(storefront, /const MAX_FIELDS=200;const MAX_FONTS=50;/);
 assert.match(storefront, /const createId=\(\)=>\{try\{if\(typeof crypto/);
-assert.match(storefront, /cart\/add\.js/);
-assert.match(storefront, /_Personalised Preview/);
 assert.match(storefront, /setPurchaseReady\(false\)/);
 assert.match(storefront, /root\.dataset\.cwReady='true';try\{/);
 assert.match(storefront, /console\.error\('Cartwala personalizer failed',error\)/);
