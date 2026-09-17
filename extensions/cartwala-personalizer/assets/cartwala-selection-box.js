@@ -7,7 +7,10 @@
     const result=root.querySelector('[data-cw-result]');
     if(!stage)return;
 
-    const forceCover=viewport=>{
+    // Default Photoshop-style placement: show the complete uploaded photo
+    // inside the fixed mask. Any empty space is intentional; the customer can
+    // enlarge with zoom/corner handles when they want the photo to cover more.
+    const forceContain=viewport=>{
       const image=viewport?.querySelector('.cw-personalizer__photo');
       if(!image)return;
       image.style.position='absolute';
@@ -16,12 +19,12 @@
       image.style.height='100%';
       image.style.maxWidth='none';
       image.style.maxHeight='none';
-      image.style.objectFit='cover';
+      image.style.objectFit='contain';
       image.style.objectPosition='50% 50%';
       image.style.transformOrigin='50% 50%';
     };
-    const forceAllCovers=()=>stage.querySelectorAll('.cw-personalizer__photo-viewport').forEach(forceCover);
-    forceAllCovers();
+    const forceAllContains=()=>stage.querySelectorAll('.cw-personalizer__photo-viewport').forEach(forceContain);
+    forceAllContains();
 
     const box=document.createElement('div');
     box.className='cw-personalizer__photo-selection';
@@ -37,7 +40,7 @@
     stage.appendChild(box);
 
     let selected=null;let resize=null;
-    const choose=viewport=>{if(viewport){selected=viewport;forceCover(viewport);requestAnimationFrame(update)}};
+    const choose=viewport=>{if(viewport){selected=viewport;forceContain(viewport);requestAnimationFrame(update)}};
     const zoomInput=viewport=>{
       const index=viewport?.dataset.index;
       if(index==null)return null;
@@ -55,7 +58,7 @@
       const viewport=selected||stage.querySelector('.cw-personalizer__photo-viewport.is-active');
       const image=imageOf(viewport);
       if(!viewport||!image||!image.src||getComputedStyle(image).display==='none'||!dialog?.open||result?.hidden===false){box.hidden=true;return}
-      selected=viewport;forceCover(viewport);
+      selected=viewport;forceContain(viewport);
       const stageRect=stage.getBoundingClientRect();
       const viewportRect=viewport.getBoundingClientRect();
       const vw=viewport.clientWidth,vh=viewport.clientHeight;
@@ -63,9 +66,9 @@
       if(!vw||!vh||!nw||!nh){box.hidden=true;return}
       const state=currentTransform(image);
       const imageRatio=nw/nh,viewportRatio=vw/vh;
-      const coverW=imageRatio>viewportRatio?vh*imageRatio:vw;
-      const coverH=imageRatio>viewportRatio?vh:vw/imageRatio;
-      const photoW=coverW*state.scale,photoH=coverH*state.scale;
+      const containW=imageRatio>viewportRatio?vw:vh*imageRatio;
+      const containH=imageRatio>viewportRatio?vw/imageRatio:vh;
+      const photoW=containW*state.scale,photoH=containH*state.scale;
       const angle=state.angle*Math.PI/180,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
       box.style.left=`${viewportRect.left-stageRect.left+viewportRect.width/2+state.x}px`;
       box.style.top=`${viewportRect.top-stageRect.top+viewportRect.height/2+state.y}px`;
@@ -93,12 +96,12 @@
     const finish=event=>{if(resize?.pointerId===event.pointerId){resize=null;requestAnimationFrame(update)}};
     box.addEventListener('pointerup',finish);box.addEventListener('pointercancel',finish);
 
-    stage.addEventListener('load',event=>{if(event.target?.classList?.contains('cw-personalizer__photo')){forceCover(event.target.closest('.cw-personalizer__photo-viewport'));requestAnimationFrame(update)}},true);
+    stage.addEventListener('load',event=>{if(event.target?.classList?.contains('cw-personalizer__photo')){forceContain(event.target.closest('.cw-personalizer__photo-viewport'));requestAnimationFrame(update)}},true);
     stage.addEventListener('pointerdown',event=>{const viewport=event.target.closest('.cw-personalizer__photo-viewport');if(viewport)choose(viewport)},true);
-    const observer=new MutationObserver(()=>{forceAllCovers();requestAnimationFrame(update)});observer.observe(stage,{subtree:true,attributes:true,childList:true,attributeFilter:['class','style','src','hidden']});
+    const observer=new MutationObserver(()=>{forceAllContains();requestAnimationFrame(update)});observer.observe(stage,{subtree:true,attributes:true,childList:true,attributeFilter:['class','style','src','hidden']});
     stage.addEventListener('pointermove',()=>requestAnimationFrame(update),{passive:true});stage.addEventListener('pointerup',()=>requestAnimationFrame(update),{passive:true});stage.addEventListener('wheel',()=>requestAnimationFrame(update),{passive:true});
-    root.addEventListener('input',()=>requestAnimationFrame(update),true);root.addEventListener('change',()=>{forceAllCovers();requestAnimationFrame(update)},true);
-    root.querySelector('[data-cw-open]')?.addEventListener('click',()=>setTimeout(()=>{forceAllCovers();choose(stage.querySelector('.cw-personalizer__photo-viewport.is-active')||stage.querySelector('.cw-personalizer__photo-viewport'))},0));
+    root.addEventListener('input',()=>requestAnimationFrame(update),true);root.addEventListener('change',()=>{forceAllContains();requestAnimationFrame(update)},true);
+    root.querySelector('[data-cw-open]')?.addEventListener('click',()=>setTimeout(()=>{forceAllContains();choose(stage.querySelector('.cw-personalizer__photo-viewport.is-active')||stage.querySelector('.cw-personalizer__photo-viewport'))},0));
     root.querySelector('[data-cw-save]')?.addEventListener('click',()=>{box.hidden=true});root.querySelector('[data-cw-close]')?.addEventListener('click',()=>{box.hidden=true});dialog?.addEventListener('close',()=>{box.hidden=true});
     new ResizeObserver(()=>requestAnimationFrame(update)).observe(stage);
   };
