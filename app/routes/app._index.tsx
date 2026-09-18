@@ -113,6 +113,24 @@ async function handlePsdImport(admin: Awaited<ReturnType<typeof authenticate.adm
       overlayUrl,
       photoFields: imported.photoFields.map((field, index) => ({ ...field, maskUrl: maskUrls[index] })),
     });
+
+    // A PSD import is a product template import, so persist it immediately.
+    // Previously the generated overlay/masks were uploaded but the product
+    // metafield stayed empty until a separate Save click, leaving the
+    // storefront Customize Now button with no configuration to open.
+    const productId = String(data.get("productId") || "");
+    if (!productId.startsWith("gid://shopify/Product/")) throw new Error("Choose a valid product before importing a PSD.");
+    const saveResponse = await admin.graphql(
+      `#graphql
+      mutation SaveImportedPsdPersonalizer($metafields: [MetafieldsSetInput!]!) {
+        metafieldsSet(metafields: $metafields) { userErrors { field message code } }
+      }`,
+      { variables: { metafields: [{ ownerId: productId, key: "personalizer_config", type: "json", value: JSON.stringify(config) }] } },
+    );
+    const saveJson = await saveResponse.json();
+    const saveError = firstMetafieldsSetError(saveJson);
+    if (saveError) throw new Error(saveError);
+
     return { ok: true, psdImport: { config, photos: config.photoFields.length, texts: config.textFields.length } };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "PSD import failed." };
@@ -530,6 +548,8 @@ export default function PersonalizerHome() {
       const imported: Config = { ...config, enabled: true, overlayUrl: "", canvasRatio: `${psd.width}:${psd.height}`, photoFields, textFields };
       const form = new FormData();
       form.append("intent", "psdImport");
+      if (!selected) throw new Error("Choose a product before importing a PSD.");
+      form.append("productId", selected.id);
       form.append("config", JSON.stringify(imported));
       form.append("overlayFile", new File([await canvasBlob(overlayCanvas)], `${file.name.replace(/\.psd$/i, "")}-overlay.png`, { type: "image/png" }));
       maskFiles.forEach((mask) => form.append("maskFiles", mask));
