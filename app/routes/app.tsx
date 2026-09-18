@@ -36,7 +36,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           id
           title
           handle
-          personalizer: metafield(namespace: "$app", key: "personalizer_config") { jsonValue }
+          personalizer: metafield(namespace: "app--340764327937", key: "personalizer_config") { jsonValue }
         }
         pageInfo { hasNextPage endCursor }
       }
