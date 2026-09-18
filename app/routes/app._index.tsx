@@ -35,7 +35,7 @@ import {
 
 type Product = { id: string; title: string; handle: string; personalizer?: { jsonValue?: unknown } | null };
 
-const PERSONALIZER_METAFIELD_NAMESPACE = "app--340764327937";
+const PERSONALIZER_METAFIELD_NAMESPACE = "$app";
 
 // Every action intent returns this same shape (with only the fields relevant
 // to that intent populated) so `typeof action` gives useFetcher<typeof action>
