@@ -11,7 +11,9 @@
     assign personalizer_enabled = true
     assign round_magic_mirror_fallback = true
   endif
-  if request.design_mode
+  if product.id == 8708184867001
+    assign personalizer_enabled = false
+  elsif request.design_mode
     assign personalizer_enabled = true
   endif
 %}
