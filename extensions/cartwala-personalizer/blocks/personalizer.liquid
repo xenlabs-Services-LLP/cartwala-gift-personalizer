@@ -3,6 +3,7 @@
   assign personalizer_enabled = personalizer_config.enabled
   assign heart_magic_mirror_fallback = false
   assign round_magic_mirror_fallback = false
+  assign bottle_test_fallback = false
   if product.id == 8677823381689
     assign personalizer_enabled = true
     assign heart_magic_mirror_fallback = true
@@ -11,6 +12,10 @@
     assign personalizer_enabled = true
     assign round_magic_mirror_fallback = true
   endif
+  if product.id == 8708184867001
+    assign personalizer_enabled = true
+    assign bottle_test_fallback = true
+  endif
   if request.design_mode
     assign personalizer_enabled = true
   endif
@@ -18,11 +23,13 @@
 
 {% if personalizer_enabled %}
   {{ 'cartwala-loading.css' | asset_url | stylesheet_tag }}
-  <div class="cw-personalizer" data-cw-personalizer data-label-edit="{{ 'personalizer.edit_again' | t | escape }}" data-label-saved="{{ 'personalizer.saved_preview' | t | escape }}" data-product-id="{{ product.id }}" data-overlay="{% if heart_magic_mirror_fallback %}https://cdn.shopify.com/s/files/1/0803/7931/4361/files/love_shape-overlay_019e41fb-91c2-47b6-8017-ffcfa79af20c.png?v=1789700102{% elsif round_magic_mirror_fallback %}https://cdn.shopify.com/s/files/1/0803/7931/4361/files/round_mirror-overlay_c9c40d22-6f4f-474b-b1a2-fea41fd5e5a9.png?v=1789642979{% else %}{{ personalizer_config.overlayUrl | escape }}{% endif %}" data-accent="#ff6200" data-label-upload="{{ 'personalizer.upload' | t | escape }}" data-label-reset="{{ 'personalizer.reset' | t | escape }}" data-label-zoom="{{ 'personalizer.zoom' | t | escape }}" data-label-rotation="{{ 'personalizer.rotation' | t | escape }}" data-label-change="{{ 'personalizer.change_photo' | t | escape }}" data-label-font="{{ 'personalizer.font' | t | escape }}" data-label-required="{{ 'personalizer.required' | t | escape }}" data-label-file="{{ 'personalizer.choose_file' | t | escape }}" {{ block.shopify_attributes }}>
+  <div class="cw-personalizer" data-cw-personalizer data-label-edit="{{ 'personalizer.edit_again' | t | escape }}" data-label-saved="{{ 'personalizer.saved_preview' | t | escape }}" data-product-id="{{ product.id }}" data-overlay="{% if heart_magic_mirror_fallback %}https://cdn.shopify.com/s/files/1/0803/7931/4361/files/love_shape-overlay_019e41fb-91c2-47b6-8017-ffcfa79af20c.png?v=1789700102{% elsif round_magic_mirror_fallback %}https://cdn.shopify.com/s/files/1/0803/7931/4361/files/round_mirror-overlay_c9c40d22-6f4f-474b-b1a2-fea41fd5e5a9.png?v=1789642979{% elsif bottle_test_fallback %}https://cdn.shopify.com/s/files/1/0803/7931/4361/files/Cartwala-Bottle-3-Photos-1-Text-overlay.png?v=1789320379{% else %}{{ personalizer_config.overlayUrl | escape }}{% endif %}" data-accent="#ff6200" data-label-upload="{{ 'personalizer.upload' | t | escape }}" data-label-reset="{{ 'personalizer.reset' | t | escape }}" data-label-zoom="{{ 'personalizer.zoom' | t | escape }}" data-label-rotation="{{ 'personalizer.rotation' | t | escape }}" data-label-change="{{ 'personalizer.change_photo' | t | escape }}" data-label-font="{{ 'personalizer.font' | t | escape }}" data-label-required="{{ 'personalizer.required' | t | escape }}" data-label-file="{{ 'personalizer.choose_file' | t | escape }}" {{ block.shopify_attributes }}>
     {% if heart_magic_mirror_fallback %}
       <div data-cw-config='{"enabled":true,"overlayUrl":"https://cdn.shopify.com/s/files/1/0803/7931/4361/files/love_shape-overlay_019e41fb-91c2-47b6-8017-ffcfa79af20c.png?v=1789700102","canvasRatio":"1254:1254","photoFields":[{"id":"photo-1","label":"1 MASK","maskUrl":"https://cdn.shopify.com/s/files/1/0803/7931/4361/files/psd-photo-mask-1_0cf43e8b-95f1-477d-ba79-84c22c4314bb.png?v=1789700105","x":49.68102073365231,"y":40.82934609250399,"width":63.31738437001595,"height":55.18341307814992,"rotationEnabled":false,"required":true}],"textFields":[],"fileFields":[],"linkFields":[],"customFonts":[]}' hidden></div>
     {% elsif round_magic_mirror_fallback %}
       <div data-cw-config='{"enabled":true,"overlayUrl":"https://cdn.shopify.com/s/files/1/0803/7931/4361/files/round_mirror-overlay_c9c40d22-6f4f-474b-b1a2-fea41fd5e5a9.png?v=1789642979","canvasRatio":"1500:1500","photoFields":[{"id":"photo-1","label":"Photo","maskUrl":"https://cdn.shopify.com/s/files/1/0803/7931/4361/files/psd-photo-mask-1_8fcfb05f-16d4-40fd-a888-58eca941ee50.png?v=1789642981","x":50,"y":50,"width":100,"height":100,"rotationEnabled":false,"required":true}],"textFields":[{"id":"text-1","label":"Add Text","placeholder":"Enter text","required":false}],"fileFields":[],"linkFields":[],"customFonts":[]}' hidden></div>
+    {% elsif bottle_test_fallback %}
+      <div data-cw-config='{"enabled":true,"overlayUrl":"https://cdn.shopify.com/s/files/1/0803/7931/4361/files/Cartwala-Bottle-3-Photos-1-Text-overlay.png?v=1789320379","canvasRatio":"800:800","photoFields":[{"id":"photo-1","label":"Photo 1","maskUrl":"https://cdn.shopify.com/s/files/1/0803/7931/4361/files/psd-photo-mask-1_8f2ee02a-ae7c-4622-b49c-c1d664442819.png?v=1789320382","x":50,"y":50,"width":100,"height":100,"rotationEnabled":false,"required":true},{"id":"photo-2","label":"Photo 2","maskUrl":"https://cdn.shopify.com/s/files/1/0803/7931/4361/files/psd-photo-mask-2_0eaca773-91ee-49ca-9f6a-5c3931168755.png?v=1789320385","x":50,"y":50,"width":100,"height":100,"rotationEnabled":false,"required":true},{"id":"photo-3","label":"Photo 3","maskUrl":"https://cdn.shopify.com/s/files/1/0803/7931/4361/files/psd-photo-mask-3_8f518ce2-c874-4c85-9db9-3d58ea66fcba.png?v=1789320387","x":50,"y":50,"width":100,"height":100,"rotationEnabled":false,"required":true}],"textFields":[{"id":"text-1","label":"Text","placeholder":"Enter text","required":false}],"fileFields":[],"linkFields":[],"customFonts":[]}' hidden></div>
     {% else %}
       <div data-cw-config="{{ personalizer_config | json | escape }}" hidden></div>
     {% endif %}
