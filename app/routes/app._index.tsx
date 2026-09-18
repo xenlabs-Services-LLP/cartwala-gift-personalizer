@@ -129,7 +129,7 @@ async function handleBulkImport(admin: Awaited<ReturnType<typeof authenticate.ad
     for (let offset = 0; offset < entries.length; offset += 25) {
       const metafields = entries.slice(offset, offset + 25).map((entry) => {
         if (!entry.productId.startsWith("gid://shopify/Product/")) throw new Error("The CSV contains an invalid product.");
-        return { ownerId: entry.productId, namespace: "app--340764327937", key: "personalizer_config", type: "json", value: JSON.stringify(normalizeConfig(entry.config)) };
+        return { ownerId: entry.productId, key: "personalizer_config", type: "json", value: JSON.stringify(normalizeConfig(entry.config)) };
       });
       const response = await admin.graphql(
         `#graphql
@@ -167,7 +167,7 @@ async function handleSave(admin: Awaited<ReturnType<typeof authenticate.admin>>[
     mutation SaveCartwalaPersonalizer($metafields: [MetafieldsSetInput!]!) {
       metafieldsSet(metafields: $metafields) { metafields { id key jsonValue } userErrors { field message code } }
     }`,
-    { variables: { metafields: [{ ownerId: productId, namespace: "app--340764327937", key: "personalizer_config", type: "json", value: JSON.stringify(config) }] } },
+    { variables: { metafields: [{ ownerId: productId, key: "personalizer_config", type: "json", value: JSON.stringify(config) }] } },
   );
   const json = await response.json();
   const error = firstMetafieldsSetError(json);
