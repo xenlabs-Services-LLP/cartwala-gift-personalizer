@@ -448,7 +448,13 @@ export default function PersonalizerHome() {
       if (!psd.width || !psd.height || !psd.children?.length) throw new Error("The PSD does not contain readable layers.");
       const layers = psdDrawableLayers(psd.children);
       const photos = layers.filter((layer) => /^(PHOTO|UPLOAD)(?:[\s_-]|\d|$)/i.test(String(layer.name || "")) && psdLayerBounds(layer).right > psdLayerBounds(layer).left);
-      const texts = layers.filter((layer) => layer.text && !/^(STATIC|LOCKED)(?:[\s_-]|$)/i.test(String(layer.name || "")));
+      const texts = layers.filter((layer) => {
+        const name = String(layer.name || "");
+        const isLocked = /^(STATIC|LOCKED)(?:[\s_-]|$)/i.test(name);
+        const isNamedText = /^(TEXT|NAME|CUSTOMTEXT|CUSTOM_TEXT)(?:[\s_-]|\d|$)/i.test(name);
+        const hasPhotoshopText = Boolean(layer.text);
+        return !isLocked && (hasPhotoshopText || isNamedText);
+      });
       if (!photos.length && !texts.length) throw new Error("No PHOTO/UPLOAD layers or editable Photoshop text layers were found.");
       if (photos.length + texts.length > MAX_FIELDS) throw new Error(`The PSD contains more than ${MAX_FIELDS} editable fields.`);
 
