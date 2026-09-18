@@ -36,6 +36,15 @@ import {
 type Product = { id: string; title: string; handle: string; personalizer?: { jsonValue?: unknown } | null };
 
 const PERSONALIZER_METAFIELD_NAMESPACE = "$app";
+const STOREFRONT_METAFIELD_NAMESPACE = "cartwala_personalizer";
+
+function personalizerMetafields(ownerId: string, config: Config) {
+  const value = JSON.stringify(config);
+  return [
+    { ownerId, namespace: PERSONALIZER_METAFIELD_NAMESPACE, key: "personalizer_config", type: "json", value },
+    { ownerId, namespace: STOREFRONT_METAFIELD_NAMESPACE, key: "personalizer_config", type: "json", value },
+  ];
+}
 
 // Every action intent returns this same shape (with only the fields relevant
 // to that intent populated) so `typeof action` gives useFetcher<typeof action>
@@ -127,7 +136,7 @@ async function handlePsdImport(admin: Awaited<ReturnType<typeof authenticate.adm
       mutation SaveImportedPsdPersonalizer($metafields: [MetafieldsSetInput!]!) {
         metafieldsSet(metafields: $metafields) { userErrors { field message code } }
       }`,
-      { variables: { metafields: [{ ownerId: productId, namespace: PERSONALIZER_METAFIELD_NAMESPACE, key: "personalizer_config", type: "json", value: JSON.stringify(config) }] } },
+      { variables: { metafields: personalizerMetafields(productId, config) } },
     );
     const saveJson = await saveResponse.json();
     const saveError = firstMetafieldsSetError(saveJson);
@@ -146,10 +155,10 @@ async function handleBulkImport(admin: Awaited<ReturnType<typeof authenticate.ad
       throw new Error("The CSV contains no valid products or is too large.");
     }
     let saved = 0;
-    for (let offset = 0; offset < entries.length; offset += 25) {
-      const metafields = entries.slice(offset, offset + 25).map((entry) => {
+    for (let offset = 0; offset < entries.length; offset += 12) {
+      const metafields = entries.slice(offset, offset + 12).flatMap((entry) => {
         if (!entry.productId.startsWith("gid://shopify/Product/")) throw new Error("The CSV contains an invalid product.");
-        return { ownerId: entry.productId, namespace: PERSONALIZER_METAFIELD_NAMESPACE, key: "personalizer_config", type: "json", value: JSON.stringify(normalizeConfig(entry.config)) };
+        return personalizerMetafields(entry.productId, normalizeConfig(entry.config));
       });
       const response = await admin.graphql(
         `#graphql
@@ -161,7 +170,7 @@ async function handleBulkImport(admin: Awaited<ReturnType<typeof authenticate.ad
       const json = await response.json();
       const error = firstMetafieldsSetError(json);
       if (error) throw new Error(error);
-      saved += metafields.length;
+      saved += metafields.length / 2;
     }
     return { ok: true, bulkSaved: saved };
   } catch (error) {
@@ -187,7 +196,7 @@ async function handleSave(admin: Awaited<ReturnType<typeof authenticate.admin>>[
     mutation SaveCartwalaPersonalizer($metafields: [MetafieldsSetInput!]!) {
       metafieldsSet(metafields: $metafields) { metafields { id key jsonValue } userErrors { field message code } }
     }`,
-    { variables: { metafields: [{ ownerId: productId, namespace: PERSONALIZER_METAFIELD_NAMESPACE, key: "personalizer_config", type: "json", value: JSON.stringify(config) }] } },
+    { variables: { metafields: personalizerMetafields(productId, config) } },
   );
   const json = await response.json();
   const error = firstMetafieldsSetError(json);

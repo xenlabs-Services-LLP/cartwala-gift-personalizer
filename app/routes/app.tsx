@@ -36,7 +36,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           id
           title
           handle
-          personalizer: metafield(namespace: "app--340764327937", key: "personalizer_config") { jsonValue }
+          storefrontPersonalizer: metafield(namespace: "cartwala_personalizer", key: "personalizer_config") { jsonValue }
+          personalizer: metafield(key: "personalizer_config") { jsonValue }
         }
         pageInfo { hasNextPage endCursor }
       }
@@ -47,7 +48,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     errors?: unknown[];
   };
     if (json.errors?.length) throw new Response("Shopify returned an error while loading products.", { status: 502 });
-    products.push(...(json.data?.products?.nodes ?? []));
+    products.push(...(json.data?.products?.nodes ?? []).map((product: Product & { storefrontPersonalizer?: { jsonValue?: Config | null } | null }) => ({
+      ...product,
+      personalizer: product.storefrontPersonalizer ?? product.personalizer,
+    })));
     hasNextPage = json.data?.products?.pageInfo?.hasNextPage === true;
     cursor = json.data?.products?.pageInfo?.endCursor ?? null;
     if (hasNextPage && !cursor) hasNextPage = false;
