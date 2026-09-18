@@ -28,3 +28,12 @@ redirect_urls = [ "https://cartwala-gift-personalizer.fly.dev/auth/callback" ]
 
 [pos]
 embedded = false
+
+[product.metafields.app.personalizer_config]
+type = "json"
+name = "Cartwala Personalizer Configuration"
+description = "Controls the Cartwala photo personalizer for this product"
+
+  [product.metafields.app.personalizer_config.access]
+  admin = "merchant_read_write"
+  storefront = "public_read"
