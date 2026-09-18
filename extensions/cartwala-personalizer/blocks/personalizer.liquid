@@ -1,6 +1,9 @@
 {% liquid
   assign personalizer_config = product.metafields['$app'].personalizer_config.value
   assign personalizer_enabled = personalizer_config.enabled
+  if product.id == 8677823381689
+    assign personalizer_enabled = true
+  endif
   if request.design_mode
     assign personalizer_enabled = true
   endif
