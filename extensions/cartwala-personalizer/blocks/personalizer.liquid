@@ -1,5 +1,5 @@
 {% liquid
-  assign personalizer_config = product.metafields['app--340764327937'].personalizer_config.value
+  assign personalizer_config = product.metafields['$app'].personalizer_config.value
   assign personalizer_enabled = personalizer_config.enabled
   assign heart_magic_mirror_fallback = false
   assign round_magic_mirror_fallback = false
