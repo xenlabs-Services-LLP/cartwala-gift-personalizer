@@ -54,6 +54,35 @@ export const psdLayerBounds = (layer: PsdCanvasLayer): PsdBounds => {
     return own;
   }
 
+  // ag-psd can expose a PHOTO/UPLOAD smart-object layer as a document-sized
+  // rendered canvas while omitting its explicit layer bounds. Recover the
+  // actual visible slot from the alpha channel instead of falling back to the
+  // full PSD canvas (which made every imported slot 50/50/100/100).
+  if (layer.canvas?.width && layer.canvas?.height) {
+    try {
+      const context = layer.canvas.getContext("2d");
+      const pixels = context?.getImageData(0, 0, layer.canvas.width, layer.canvas.height).data;
+      if (pixels) {
+        let minX = layer.canvas.width, minY = layer.canvas.height, maxX = -1, maxY = -1;
+        for (let y = 0; y < layer.canvas.height; y += 1) {
+          for (let x = 0; x < layer.canvas.width; x += 1) {
+            if (pixels[(y * layer.canvas.width + x) * 4 + 3] > 2) {
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+        if (maxX >= minX && maxY >= minY) {
+          return { left: minX, top: minY, right: maxX + 1, bottom: maxY + 1 };
+        }
+      }
+    } catch {
+      // Continue to text/group fallbacks when canvas pixel access is unavailable.
+    }
+  }
+
   const transform = layer.text?.transform;
   const textLeft = Number(layer.text?.left);
   const textTop = Number(layer.text?.top);
