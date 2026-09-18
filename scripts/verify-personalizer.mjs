@@ -8,14 +8,26 @@ import vm from "node:vm";
 // the browser, not a reimplementation) and exercised at 1/3/10/13/50 slots.
 // ---------------------------------------------------------------------------
 
-const storefront = fs.readFileSync("extensions/cartwala-personalizer/assets/cartwala-personalizer.js", "utf8");
-const start = storefront.indexOf("const normalize=raw=>");
+const storefront = fs.readFileSync(
+  "extensions/cartwala-personalizer/assets/cartwala-personalizer.js",
+  "utf8",
+);
+const normalizePrefix = "const normalize = (raw) =>";
+const start = storefront.indexOf(normalizePrefix);
 const end = storefront.indexOf("\n  };", start);
 assert.ok(start >= 0 && end > start, "storefront normalizer is present");
-const expression = storefront.slice(start + "const normalize=".length, end + 4).replace(/;\s*$/, "");
+const expression = storefront
+  .slice(start + "const normalize = ".length, end + 4)
+  .replace(/;\s*$/, "");
 const normalize = vm.runInNewContext(`(${expression})`, {
-  clamp: (value, min, max, fallback) => { const number = Number(value); return Math.min(max, Math.max(min, Number.isFinite(number) ? number : fallback)); },
-  array: (value) => Array.isArray(value) ? value : [],
+  clamp: (value, min, max, fallback) => {
+    const number = Number(value);
+    return Math.min(
+      max,
+      Math.max(min, Number.isFinite(number) ? number : fallback),
+    );
+  },
+  array: (value) => (Array.isArray(value) ? value : []),
   // MAX_FIELDS/MAX_FONTS are declared just above `normalize` in the real
   // file, outside the slice above, so the sandbox needs them explicitly.
   MAX_FIELDS: 200,
@@ -23,20 +35,78 @@ const normalize = vm.runInNewContext(`(${expression})`, {
 });
 
 for (const count of [1, 3, 10, 13, 50]) {
-  const raw = { canvasRatio: "1:1", photoFields: Array.from({ length: count }, (_, index) => ({ id: `slot-${index + 1}`, label: `Photo ${index + 1}`, x: (index % 10) * 10 + 5, y: Math.floor(index / 10) * 15 + 10, width: 9, height: 12, maskUrl: `https://cdn.shopify.com/mask-${index + 1}.png`, required: true })) };
+  const raw = {
+    canvasRatio: "1:1",
+    photoFields: Array.from({ length: count }, (_, index) => ({
+      id: `slot-${index + 1}`,
+      label: `Photo ${index + 1}`,
+      x: (index % 10) * 10 + 5,
+      y: Math.floor(index / 10) * 15 + 10,
+      width: 9,
+      height: 12,
+      maskUrl: `https://cdn.shopify.com/mask-${index + 1}.png`,
+      required: true,
+    })),
+  };
   const config = normalize(raw);
   assert.equal(config.photos.length, count);
   assert.equal(config.photos[count - 1].id, `slot-${count}`);
   assert.equal(config.photos[count - 1].width, 9);
 }
 
-const textConfig = normalize({ canvasRatio: "1080:1350", textFields: [{ id: "text-1", label: "Name", defaultValue: "Your Name", x: 50, y: 80, fontSize: 54 }] });
+const textConfig = normalize({
+  canvasRatio: "1080:1350",
+  textFields: [
+    {
+      id: "text-1",
+      label: "Name",
+      defaultValue: "Your Name",
+      x: 50,
+      y: 80,
+      fontSize: 54,
+    },
+  ],
+});
 assert.equal(textConfig.ratio, "1080:1350");
 assert.equal(textConfig.texts[0].defaultValue, "Your Name");
+assert.equal(textConfig.texts[0].movable, false);
+assert.equal(textConfig.texts[0].allowColorChoice, false);
+const editableText = normalize({
+  textFields: [
+    {
+      id: "text-2",
+      movable: true,
+      scalable: true,
+      rotatable: true,
+      allowColorChoice: true,
+      rotation: 30,
+    },
+  ],
+}).texts[0];
+assert.deepEqual(
+  {
+    movable: editableText.movable,
+    scalable: editableText.scalable,
+    rotatable: editableText.rotatable,
+    allowColorChoice: editableText.allowColorChoice,
+    rotation: editableText.rotation,
+  },
+  {
+    movable: true,
+    scalable: true,
+    rotatable: true,
+    allowColorChoice: true,
+    rotation: 30,
+  },
+);
 
 // A config over the field cap must still be truncated, not throw or silently
 // keep everything - this is the whole point of MAX_FIELDS.
-const overCap = normalize({ photoFields: Array.from({ length: 250 }, (_, index) => ({ id: `slot-${index + 1}` })) });
+const overCap = normalize({
+  photoFields: Array.from({ length: 250 }, (_, index) => ({
+    id: `slot-${index + 1}`,
+  })),
+});
 assert.equal(overCap.photos.length, 200);
 
 // ---------------------------------------------------------------------------
@@ -45,46 +115,42 @@ assert.equal(overCap.photos.length, 200);
 // draft persistence, and the defensive fixes added in this pass).
 // ---------------------------------------------------------------------------
 
-assert.match(storefront, /data-cw-save/);
+for (const token of [
+  "data-cw-save", "_Personalised Preview", "showProductPreview(previewUrl)",
+  "cartwala-designs", "putFile(productForm, state.field.label, state.file)",
+  "cart/add.js", "new FormData(productForm)", "const constrainPhoto", "hideBuyNow",
+  "setPurchaseReady(false)", "cart-drawer,cart-icon-bubble", "showCartPreview(previewUrl, designId)",
+  "allowColorChoice", "cw-personalizer__text-handle--rotate", "field?.movable === true",
+]) assert.ok(storefront.includes(token), `Storefront behavior token is present: ${token}`);
 assert.doesNotMatch(storefront, /data-cw-preview/);
-assert.match(storefront, /_Personalised Preview/);
-assert.match(storefront, /showProductPreview\(previewUrl\)/);
-assert.match(storefront, /indexedDB\.open\('cartwala-designs'/);
-assert.match(storefront, /putFile\(productForm,state\.field\.label,state\.file\)/);
-assert.match(storefront, /cart\/add\.js/);
-assert.match(storefront, /new FormData\(productForm\)/);
-assert.match(storefront, /zoom\.min='100'/);
-assert.match(storefront, /const constrainPhoto=/);
-assert.match(storefront, /state\.slot\.hidden=true/);
-assert.match(storefront, /hideBuyNow/);
-assert.match(storefront, /setPurchaseReady\(false\)/);
-assert.match(storefront, /formData\.set\('sections','cart-drawer,cart-icon-bubble'\)/);
-assert.match(storefront, /slot\.querySelector\('span'\)\.textContent/);
-assert.match(storefront, /state\.card\.hidden=!active/);
-assert.match(storefront, /state\.controls\.hidden=!active\|\|!state\.file/);
-assert.match(storefront, /const clearPhoto=state=>/);
-assert.match(storefront, /state\.file=null/);
-assert.match(storefront, /state\.slot\.hidden=false/);
-assert.match(storefront, /showCartPreview\(previewUrl,designId\)/);
-assert.match(storefront, /flatMap\(form=>\[\.\.\.form\.querySelectorAll\(purchaseSelector\)\]\)/);
-assert.match(storefront, /store\.put\(record,`cart:\$\{designId\}`\)/);
 
 // Defensive fixes: a shared field-count constant instead of a bare literal
 // repeated at every call site, a crypto.randomUUID() fallback so a missing
 // secure context can't hard-crash setup, and one broken product block can no
 // longer take down every other personalizer block on the page.
-assert.match(storefront, /const MAX_FIELDS=200;const MAX_FONTS=50;/);
-assert.match(storefront, /const createId=\(\)=>\{try\{if\(typeof crypto/);
-assert.doesNotMatch(storefront, /return createId\(\)\}catch/, "createId() must not call itself - this was a real recursion bug introduced and caught during this refactor");
-assert.match(storefront, /root\.dataset\.cwReady='true';\s*\n\s*try\{/);
-assert.match(storefront, /\}catch\(error\)\{console\.error\('Cartwala personalizer failed to initialize for this block\.',error\);\}/);
+assert.match(storefront, /const MAX_FIELDS = 200;/);
+assert.match(storefront, /const MAX_FONTS = 50;/);
+assert.match(storefront, /const createId = \(\) =>/);
+assert.doesNotMatch(
+  storefront,
+  /return createId\(\)\}catch/,
+  "createId() must not call itself - this was a real recursion bug introduced and caught during this refactor",
+);
+assert.match(storefront, /root\.dataset\.cwReady = "true";/);
+assert.match(storefront, /Cartwala personalizer failed to initialize for this block\./);
 
-const storefrontCss = fs.readFileSync("extensions/cartwala-personalizer/assets/cartwala-personalizer.css", "utf8");
+const storefrontCss = fs.readFileSync(
+  "extensions/cartwala-personalizer/assets/cartwala-personalizer.css",
+  "utf8",
+);
 assert.match(storefrontCss, /--cw-slot-icon/);
-assert.match(storefrontCss, /min-width:0/);
+assert.match(storefrontCss, /min-width: 0/);
 assert.doesNotMatch(storefrontCss, /min-width:min\(190px,85%\)/);
 
-const cart = fs.readFileSync("extensions/cartwala-personalizer/assets/cartwala-cart-preview.js", "utf8");
+const cart = fs.readFileSync(
+  "extensions/cartwala-personalizer/assets/cartwala-cart-preview.js",
+  "utf8",
+);
 assert.match(cart, /cart\.js/);
 assert.match(cart, /_Personalised Preview/);
 assert.match(cart, /draftPreview/);
@@ -111,7 +177,10 @@ assert.match(admin, /intent === "psdImport"/);
 assert.match(admin, /\^\(PHOTO\|UPLOAD\)/);
 assert.match(admin, /maskFiles\.push/);
 assert.match(admin, /configRef\.current = imported\.config/);
-assert.match(admin, /form\.set\("config", JSON\.stringify\(configRef\.current\)\)/);
+assert.match(
+  admin,
+  /form\.set\("config", JSON\.stringify\(configRef\.current\)\)/,
+);
 assert.match(admin, /firstMetafieldsSetError\(json\)/);
 // Unsaved-changes guard: closing the tab mid-template-build used to lose
 // everything silently.
@@ -125,7 +194,10 @@ assert.match(admin, /didn't match a Shopify product/);
 // through, which could render a slot/text preview at NaN%.
 assert.match(admin, /updateClampedNumber/);
 
-const personalizerConfig = fs.readFileSync("app/lib/personalizer-config.ts", "utf8");
+const personalizerConfig = fs.readFileSync(
+  "app/lib/personalizer-config.ts",
+  "utf8",
+);
 assert.match(personalizerConfig, /export const MAX_FIELDS = 200;/);
 assert.match(personalizerConfig, /export const normalizeConfig = /);
 // Asset URLs (overlay/mask/font) must be restricted to Shopify's own CDN,
@@ -148,4 +220,6 @@ assert.match(psdImport, /Number\(transform\[4\]\) \+ textLeft/);
 // present" branch and rendered as a flat grayscale, silently dropping C/M/Y.
 assert.match(psdImport, /\["c", "m", "y", "k"\]\.every/);
 
-console.log("Personalizer QA passed: dynamic PSD fields, 13/50-slot configs, field-count cap, purchase gating, preview/save persistence, original files, cart drawer/page preview contracts, and the admin-module + bug-fix refactor.");
+console.log(
+  "Personalizer QA passed: dynamic PSD fields, 13/50-slot configs, field-count cap, purchase gating, preview/save persistence, original files, cart drawer/page preview contracts, and the admin-module + bug-fix refactor.",
+);

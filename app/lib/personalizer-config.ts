@@ -37,6 +37,11 @@ export type TextField = {
   fontSize: number;
   fontFamily: string;
   allowFontChoice: boolean;
+  movable: boolean;
+  scalable: boolean;
+  rotatable: boolean;
+  allowColorChoice: boolean;
+  rotation: number;
   required: boolean;
 };
 
@@ -94,6 +99,11 @@ export const blankText = (index: number): TextField => ({
   fontSize: 60,
   fontFamily: "Arial",
   allowFontChoice: false,
+  movable: false,
+  scalable: false,
+  rotatable: false,
+  allowColorChoice: false,
+  rotation: 0,
   required: true,
 });
 
@@ -130,7 +140,10 @@ export const clamp = (
   fallback: number,
 ): number => {
   const number = Number(value);
-  return Math.min(max, Math.max(min, Number.isFinite(number) ? number : fallback));
+  return Math.min(
+    max,
+    Math.max(min, Number.isFinite(number) ? number : fallback),
+  );
 };
 
 export const safeId = (value: unknown): string =>
@@ -176,15 +189,23 @@ export const cleanAssetUrl = (value: unknown): string => {
  * arrays of fields, so metafields saved by older installs keep rendering.
  */
 export const normalizeConfig = (value: unknown): Config => {
-  const input = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const input =
+    value && typeof value === "object"
+      ? (value as Record<string, unknown>)
+      : {};
 
   let photoFields: PhotoField[];
   if (Array.isArray(input.photoFields)) {
     photoFields = input.photoFields.slice(0, MAX_FIELDS).map((field, index) => {
-      const item = field && typeof field === "object" ? (field as Partial<PhotoField>) : {};
+      const item =
+        field && typeof field === "object"
+          ? (field as Partial<PhotoField>)
+          : {};
       return {
         id: safeId(item.id),
-        label: String(item.label || `Photo ${index + 1}`).trim().slice(0, 80),
+        label: String(item.label || `Photo ${index + 1}`)
+          .trim()
+          .slice(0, 80),
         maskUrl: cleanAssetUrl(item.maskUrl),
         x: clamp(item.x, 0, 100, 50),
         y: clamp(item.y, 0, 100, 50),
@@ -196,7 +217,8 @@ export const normalizeConfig = (value: unknown): Config => {
     });
   } else {
     const legacyType = String(input.customizationType || "photo");
-    const count = legacyType === "text" ? 0 : clamp(input.photoFields, 0, MAX_FIELDS, 1);
+    const count =
+      legacyType === "text" ? 0 : clamp(input.photoFields, 0, MAX_FIELDS, 1);
     photoFields = Array.from({ length: count }, (_, index) => ({
       ...blankPhoto(index),
       maskUrl: index === 0 ? cleanAssetUrl(input.maskUrl) : "",
@@ -207,18 +229,30 @@ export const normalizeConfig = (value: unknown): Config => {
   let textFields: TextField[];
   if (Array.isArray(input.textFields)) {
     textFields = input.textFields.slice(0, MAX_FIELDS).map((field, index) => {
-      const item = field && typeof field === "object" ? (field as Partial<TextField>) : {};
+      const item =
+        field && typeof field === "object" ? (field as Partial<TextField>) : {};
       return {
         id: safeId(item.id),
-        label: String(item.label || `Text ${index + 1}`).trim().slice(0, 80),
+        label: String(item.label || `Text ${index + 1}`)
+          .trim()
+          .slice(0, 80),
         defaultValue: String(item.defaultValue || "").slice(0, 500),
         maxLength: clamp(item.maxLength, 1, 500, 100),
-        color: /^#[0-9a-f]{6}$/i.test(String(item.color)) ? String(item.color) : "#111111",
+        color: /^#[0-9a-f]{6}$/i.test(String(item.color))
+          ? String(item.color)
+          : "#111111",
         x: clamp(item.x, 0, 100, 50),
         y: clamp(item.y, 0, 100, 50),
         fontSize: clamp(item.fontSize, 8, 300, 60),
-        fontFamily: String(item.fontFamily || "Arial").trim().slice(0, 100),
+        fontFamily: String(item.fontFamily || "Arial")
+          .trim()
+          .slice(0, 100),
         allowFontChoice: item.allowFontChoice === true,
+        movable: item.movable === true,
+        scalable: item.scalable === true,
+        rotatable: item.rotatable === true,
+        allowColorChoice: item.allowColorChoice === true,
+        rotation: clamp(item.rotation, -180, 180, 0),
         required: item.required !== false,
       };
     });
@@ -230,7 +264,9 @@ export const normalizeConfig = (value: unknown): Config => {
             ...blankText(0),
             label: String(input.textLabel || "Text 1"),
             maxLength: clamp(input.textMaxLength, 1, 500, 100),
-            color: /^#[0-9a-f]{6}$/i.test(String(input.textColor)) ? String(input.textColor) : "#111111",
+            color: /^#[0-9a-f]{6}$/i.test(String(input.textColor))
+              ? String(input.textColor)
+              : "#111111",
           },
         ]
       : [];
@@ -238,11 +274,18 @@ export const normalizeConfig = (value: unknown): Config => {
 
   const fileFields: FileField[] = Array.isArray(input.fileFields)
     ? input.fileFields.slice(0, MAX_FIELDS).map((field, index) => {
-        const item = field && typeof field === "object" ? (field as Partial<FileField>) : {};
+        const item =
+          field && typeof field === "object"
+            ? (field as Partial<FileField>)
+            : {};
         return {
           id: safeId(item.id),
-          label: String(item.label || `Design file ${index + 1}`).trim().slice(0, 80),
-          accept: String(item.accept || ".psd,.pdf,.ai,.eps,.cdr,.zip").trim().slice(0, 200),
+          label: String(item.label || `Design file ${index + 1}`)
+            .trim()
+            .slice(0, 80),
+          accept: String(item.accept || ".psd,.pdf,.ai,.eps,.cdr,.zip")
+            .trim()
+            .slice(0, 200),
           maxSizeMb: clamp(item.maxSizeMb, 1, 200, 50),
           required: item.required !== false,
         };
@@ -251,11 +294,18 @@ export const normalizeConfig = (value: unknown): Config => {
 
   const linkFields: LinkField[] = Array.isArray(input.linkFields)
     ? input.linkFields.slice(0, MAX_FIELDS).map((field, index) => {
-        const item = field && typeof field === "object" ? (field as Partial<LinkField>) : {};
+        const item =
+          field && typeof field === "object"
+            ? (field as Partial<LinkField>)
+            : {};
         return {
           id: safeId(item.id),
-          label: String(item.label || `Canva link ${index + 1}`).trim().slice(0, 80),
-          placeholder: String(item.placeholder || "Paste the Canva design link").trim().slice(0, 150),
+          label: String(item.label || `Canva link ${index + 1}`)
+            .trim()
+            .slice(0, 80),
+          placeholder: String(item.placeholder || "Paste the Canva design link")
+            .trim()
+            .slice(0, 150),
           required: item.required !== false,
         };
       })
@@ -265,10 +315,15 @@ export const normalizeConfig = (value: unknown): Config => {
     ? input.customFonts
         .slice(0, MAX_FONTS)
         .map((font, index) => {
-          const item = font && typeof font === "object" ? (font as Partial<CustomFont>) : {};
+          const item =
+            font && typeof font === "object"
+              ? (font as Partial<CustomFont>)
+              : {};
           return {
             id: safeId(item.id),
-            name: String(item.name || `Custom font ${index + 1}`).trim().slice(0, 80),
+            name: String(item.name || `Custom font ${index + 1}`)
+              .trim()
+              .slice(0, 80),
             url: cleanAssetUrl(item.url),
           };
         })

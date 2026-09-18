@@ -9,10 +9,47 @@ type Config = {
   enabled: boolean;
   overlayUrl: string;
   canvasRatio: string;
-  photoFields: Array<{ id: string; label: string; maskUrl: string; x: number; y: number; width: number; height: number; rotationEnabled: boolean; required: boolean }>;
-  textFields: Array<{ id: string; label: string; maxLength: number; color: string; x: number; y: number; fontSize: number; fontFamily: string; allowFontChoice: boolean; required: boolean }>;
-  fileFields: Array<{ id: string; label: string; accept: string; maxSizeMb: number; required: boolean }>;
-  linkFields: Array<{ id: string; label: string; placeholder: string; required: boolean }>;
+  photoFields: Array<{
+    id: string;
+    label: string;
+    maskUrl: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotationEnabled: boolean;
+    required: boolean;
+  }>;
+  textFields: Array<{
+    id: string;
+    label: string;
+    maxLength: number;
+    color: string;
+    x: number;
+    y: number;
+    fontSize: number;
+    fontFamily: string;
+    allowFontChoice: boolean;
+    movable: boolean;
+    scalable: boolean;
+    rotatable: boolean;
+    allowColorChoice: boolean;
+    rotation: number;
+    required: boolean;
+  }>;
+  fileFields: Array<{
+    id: string;
+    label: string;
+    accept: string;
+    maxSizeMb: number;
+    required: boolean;
+  }>;
+  linkFields: Array<{
+    id: string;
+    label: string;
+    placeholder: string;
+    required: boolean;
+  }>;
   customFonts: Array<{ id: string; name: string; url: string }>;
 };
 
@@ -29,7 +66,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   let cursor: string | null = null;
   let hasNextPage = true;
   while (hasNextPage) {
-    const response = await admin.graphql(`#graphql
+    const response = await admin.graphql(
+      `#graphql
     query CartwalaProducts($after: String) {
       products(first: 250, after: $after, sortKey: UPDATED_AT, reverse: true) {
         nodes {
@@ -42,16 +80,34 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         pageInfo { hasNextPage endCursor }
       }
     }
-  `, { variables: { after: cursor } });
-    const json = await response.json() as {
-    data?: { products?: { nodes?: Product[]; pageInfo?: { hasNextPage: boolean; endCursor?: string | null } } };
-    errors?: unknown[];
-  };
-    if (json.errors?.length) throw new Response("Shopify returned an error while loading products.", { status: 502 });
-    products.push(...(json.data?.products?.nodes ?? []).map((product: Product & { storefrontPersonalizer?: { jsonValue?: Config | null } | null }) => ({
-      ...product,
-      personalizer: product.storefrontPersonalizer ?? product.personalizer,
-    })));
+  `,
+      { variables: { after: cursor } },
+    );
+    const json = (await response.json()) as {
+      data?: {
+        products?: {
+          nodes?: Product[];
+          pageInfo?: { hasNextPage: boolean; endCursor?: string | null };
+        };
+      };
+      errors?: unknown[];
+    };
+    if (json.errors?.length)
+      throw new Response("Shopify returned an error while loading products.", {
+        status: 502,
+      });
+    products.push(
+      ...(json.data?.products?.nodes ?? []).map(
+        (
+          product: Product & {
+            storefrontPersonalizer?: { jsonValue?: Config | null } | null;
+          },
+        ) => ({
+          ...product,
+          personalizer: product.storefrontPersonalizer ?? product.personalizer,
+        }),
+      ),
+    );
     hasNextPage = json.data?.products?.pageInfo?.hasNextPage === true;
     cursor = json.data?.products?.pageInfo?.endCursor ?? null;
     if (hasNextPage && !cursor) hasNextPage = false;

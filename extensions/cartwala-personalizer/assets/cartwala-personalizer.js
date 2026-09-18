@@ -1,136 +1,1501 @@
-(()=>{
-  const clamp=(value,min,max,fallback)=>{const number=Number(value);return Math.min(max,Math.max(min,Number.isFinite(number)?number:fallback))};
-  const array=value=>Array.isArray(value)?value:[];
-  const MAX_FIELDS=200;const MAX_FONTS=50;
-  const createId=()=>{try{if(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function')return crypto.randomUUID()}catch(error){/* fall through to the manual id below */}return 'cw-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10)};
-  const normalize=raw=>{
-    const input=raw&&typeof raw==='object'?raw:{};
-    let photos=[];let texts=[];
-    if(Array.isArray(input.photoFields))photos=input.photoFields.slice(0,MAX_FIELDS).map((field,index)=>({id:String(field?.id||index),label:String(field?.label||`Photo ${index+1}`),maskUrl:String(field?.maskUrl||''),x:clamp(field?.x,0,100,50),y:clamp(field?.y,0,100,50),width:clamp(field?.width,2,100,24),height:clamp(field?.height,2,100,24),rotationEnabled:field?.rotationEnabled===true,required:field?.required!==false}));
-    else{const legacyType=String(input.customizationType||'photo');const count=legacyType==='text'?0:clamp(input.photoFields,0,MAX_FIELDS,1);photos=Array.from({length:count},(_,index)=>({id:String(index),label:`Photo ${index+1}`,maskUrl:index===0?String(input.maskUrl||''):'',x:(index+1)/(count+1)*100,y:50,width:24,height:24,rotationEnabled:input.rotationEnabled===true,required:true}))}
-    if(Array.isArray(input.textFields))texts=input.textFields.slice(0,MAX_FIELDS).map((field,index)=>({id:String(field?.id||index),label:String(field?.label||`Text ${index+1}`),defaultValue:String(field?.defaultValue||'').slice(0,500),maxLength:clamp(field?.maxLength,1,500,100),color:/^#[0-9a-f]{6}$/i.test(String(field?.color))?String(field.color):'#111111',x:clamp(field?.x,0,100,50),y:clamp(field?.y,0,100,50),fontSize:clamp(field?.fontSize,8,300,60),fontFamily:String(field?.fontFamily||'Arial'),allowFontChoice:field?.allowFontChoice===true,required:field?.required!==false}));
-    else if(String(input.customizationType||'').includes('text'))texts=[{id:'0',label:String(input.textLabel||'Text 1'),maxLength:clamp(input.textMaxLength,1,500,100),color:String(input.textColor||'#111111'),x:50,y:50,fontSize:60,fontFamily:'Arial',allowFontChoice:false,required:true}];
-    const files=array(input.fileFields).slice(0,MAX_FIELDS).map((field,index)=>({id:String(field?.id||index),label:String(field?.label||`Design file ${index+1}`),accept:String(field?.accept||'.psd,.pdf,.ai,.eps,.cdr,.zip'),maxSizeMb:clamp(field?.maxSizeMb,1,200,50),required:field?.required!==false}));
-    const links=array(input.linkFields).slice(0,MAX_FIELDS).map((field,index)=>({id:String(field?.id||index),label:String(field?.label||`Canva link ${index+1}`),placeholder:String(field?.placeholder||'Paste the Canva design link'),required:field?.required!==false}));
-    const fonts=array(input.customFonts).slice(0,MAX_FONTS).map((font,index)=>({id:String(font?.id||index),name:String(font?.name||`Custom font ${index+1}`),url:String(font?.url||'')})).filter(font=>font.url);
-    const ratio=/^\d{1,5}:\d{1,5}$/.test(String(input.canvasRatio))?String(input.canvasRatio):'1:1';
-    return {photos,texts,files,links,fonts,ratio};
+(() => {
+  const clamp = (value, min, max, fallback) => {
+    const number = Number(value);
+    return Math.min(
+      max,
+      Math.max(min, Number.isFinite(number) ? number : fallback),
+    );
+  };
+  const array = (value) => (Array.isArray(value) ? value : []);
+  const MAX_FIELDS = 200;
+  const MAX_FONTS = 50;
+  const createId = () => {
+    try {
+      if (
+        typeof crypto !== "undefined" &&
+        typeof crypto.randomUUID === "function"
+      )
+        return crypto.randomUUID();
+    } catch (error) {
+      /* fall through to the manual id below */
+    }
+    return (
+      "cw-" +
+      Date.now().toString(36) +
+      "-" +
+      Math.random().toString(36).slice(2, 10)
+    );
+  };
+  const normalize = (raw) => {
+    const input = raw && typeof raw === "object" ? raw : {};
+    let photos = [];
+    let texts = [];
+    if (Array.isArray(input.photoFields))
+      photos = input.photoFields
+        .slice(0, MAX_FIELDS)
+        .map((field, index) => ({
+          id: String(field?.id || index),
+          label: String(field?.label || `Photo ${index + 1}`),
+          maskUrl: String(field?.maskUrl || ""),
+          x: clamp(field?.x, 0, 100, 50),
+          y: clamp(field?.y, 0, 100, 50),
+          width: clamp(field?.width, 2, 100, 24),
+          height: clamp(field?.height, 2, 100, 24),
+          rotationEnabled: field?.rotationEnabled === true,
+          required: field?.required !== false,
+        }));
+    else {
+      const legacyType = String(input.customizationType || "photo");
+      const count =
+        legacyType === "text" ? 0 : clamp(input.photoFields, 0, MAX_FIELDS, 1);
+      photos = Array.from({ length: count }, (_, index) => ({
+        id: String(index),
+        label: `Photo ${index + 1}`,
+        maskUrl: index === 0 ? String(input.maskUrl || "") : "",
+        x: ((index + 1) / (count + 1)) * 100,
+        y: 50,
+        width: 24,
+        height: 24,
+        rotationEnabled: input.rotationEnabled === true,
+        required: true,
+      }));
+    }
+    if (Array.isArray(input.textFields))
+      texts = input.textFields
+        .slice(0, MAX_FIELDS)
+        .map((field, index) => ({
+          id: String(field?.id || index),
+          label: String(field?.label || `Text ${index + 1}`),
+          defaultValue: String(field?.defaultValue || "").slice(0, 500),
+          maxLength: clamp(field?.maxLength, 1, 500, 100),
+          color: /^#[0-9a-f]{6}$/i.test(String(field?.color))
+            ? String(field.color)
+            : "#111111",
+          x: clamp(field?.x, 0, 100, 50),
+          y: clamp(field?.y, 0, 100, 50),
+          fontSize: clamp(field?.fontSize, 8, 300, 60),
+          fontFamily: String(field?.fontFamily || "Arial"),
+          allowFontChoice: field?.allowFontChoice === true,
+          movable: field?.movable === true,
+          scalable: field?.scalable === true,
+          rotatable: field?.rotatable === true,
+          allowColorChoice: field?.allowColorChoice === true,
+          rotation: clamp(field?.rotation, -180, 180, 0),
+          required: field?.required !== false,
+        }));
+    else if (String(input.customizationType || "").includes("text"))
+      texts = [
+        {
+          id: "0",
+          label: String(input.textLabel || "Text 1"),
+          maxLength: clamp(input.textMaxLength, 1, 500, 100),
+          color: String(input.textColor || "#111111"),
+          x: 50,
+          y: 50,
+          fontSize: 60,
+          fontFamily: "Arial",
+          allowFontChoice: false,
+          movable: false,
+          scalable: false,
+          rotatable: false,
+          allowColorChoice: false,
+          rotation: 0,
+          required: true,
+        },
+      ];
+    const files = array(input.fileFields)
+      .slice(0, MAX_FIELDS)
+      .map((field, index) => ({
+        id: String(field?.id || index),
+        label: String(field?.label || `Design file ${index + 1}`),
+        accept: String(field?.accept || ".psd,.pdf,.ai,.eps,.cdr,.zip"),
+        maxSizeMb: clamp(field?.maxSizeMb, 1, 200, 50),
+        required: field?.required !== false,
+      }));
+    const links = array(input.linkFields)
+      .slice(0, MAX_FIELDS)
+      .map((field, index) => ({
+        id: String(field?.id || index),
+        label: String(field?.label || `Canva link ${index + 1}`),
+        placeholder: String(
+          field?.placeholder || "Paste the Canva design link",
+        ),
+        required: field?.required !== false,
+      }));
+    const fonts = array(input.customFonts)
+      .slice(0, MAX_FONTS)
+      .map((font, index) => ({
+        id: String(font?.id || index),
+        name: String(font?.name || `Custom font ${index + 1}`),
+        url: String(font?.url || ""),
+      }))
+      .filter((font) => font.url);
+    const ratio = /^\d{1,5}:\d{1,5}$/.test(String(input.canvasRatio))
+      ? String(input.canvasRatio)
+      : "1:1";
+    return { photos, texts, files, links, fonts, ratio };
   };
 
-  const initialize=()=>document.querySelectorAll('[data-cw-personalizer]').forEach(root=>{
-    if(root.dataset.cwReady==='true')return;root.dataset.cwReady='true';
-    try{
-    const dialog=root.querySelector('[data-cw-dialog]');const stage=root.querySelector('[data-cw-stage]');const photoLayers=root.querySelector('[data-cw-photo-layers]');const textLayers=root.querySelector('[data-cw-text-layers]');const fields=root.querySelector('[data-cw-editor-fields]');const overlay=root.querySelector('[data-cw-overlay]');const save=root.querySelector('[data-cw-save]');const saveLabel=save.textContent; const result=root.querySelector('[data-cw-result]'); const resultImage=root.querySelector('[data-cw-result-image]'); let saved=false; let busy=false; let previewUrl=null; let revision=0; let designId=createId();
-    let raw={};try{raw=JSON.parse(root.querySelector('[data-cw-config]').dataset.cwConfig||'{}')}catch(error){console.error('Cartwala configuration is invalid',error)}
-    const config=normalize(raw);root.style.setProperty('--cw-accent',root.dataset.accent||'#ff6200');root.style.setProperty('--cw-ratio',config.ratio.replace(':','/'));
-    config.fonts.forEach(font=>{const style=document.createElement('style');style.textContent=`@font-face{font-family:"${font.name.replace(/["\\]/g,'')}";src:url("${font.url.replace(/["\\]/g,'')}")}`;document.head.appendChild(style)});
-    if(root.dataset.overlay)overlay.src=root.dataset.overlay;else overlay.hidden=true;
-    if(!config.photos.length&&!config.texts.length)stage.hidden=true;
+  const initialize = () =>
+    document.querySelectorAll("[data-cw-personalizer]").forEach((root) => {
+      if (root.dataset.cwReady === "true") return;
+      root.dataset.cwReady = "true";
+      try {
+        const dialog = root.querySelector("[data-cw-dialog]");
+        const stage = root.querySelector("[data-cw-stage]");
+        const photoLayers = root.querySelector("[data-cw-photo-layers]");
+        const textLayers = root.querySelector("[data-cw-text-layers]");
+        const fields = root.querySelector("[data-cw-editor-fields]");
+        const overlay = root.querySelector("[data-cw-overlay]");
+        const save = root.querySelector("[data-cw-save]");
+        const saveLabel = save.textContent;
+        const result = root.querySelector("[data-cw-result]");
+        const resultImage = root.querySelector("[data-cw-result-image]");
+        let saved = false;
+        let busy = false;
+        let previewUrl = null;
+        let revision = 0;
+        let designId = createId();
+        let raw = {};
+        try {
+          raw = JSON.parse(
+            root.querySelector("[data-cw-config]").dataset.cwConfig || "{}",
+          );
+        } catch (error) {
+          console.error("Cartwala configuration is invalid", error);
+        }
+        const config = normalize(raw);
+        root.style.setProperty("--cw-accent", root.dataset.accent || "#ff6200");
+        root.style.setProperty("--cw-ratio", config.ratio.replace(":", "/"));
+        config.fonts.forEach((font) => {
+          const style = document.createElement("style");
+          style.textContent = `@font-face{font-family:"${font.name.replace(/["\\]/g, "")}";src:url("${font.url.replace(/["\\]/g, "")}")}`;
+          document.head.appendChild(style);
+        });
+        if (root.dataset.overlay) overlay.src = root.dataset.overlay;
+        else overlay.hidden = true;
+        if (!config.photos.length && !config.texts.length) stage.hidden = true;
 
-    const productArea=root.closest('.product__info-container,.product-info,.product__info-wrapper,.shopify-section')||root.closest('section')||document;
-    const productForm=productArea.querySelector('form[action*="/cart/add"]')||document.querySelector('form[action*="/cart/add"]');
-    if(productForm)productForm.enctype='multipart/form-data';
-    const productScope=root.closest('.shopify-section')||document;const hideBuyNow=()=>productScope.querySelectorAll('.shopify-payment-button,[data-shopify="payment-button"],shopify-buy-it-now-button').forEach(element=>{element.hidden=true;element.style.display='none'});hideBuyNow();new MutationObserver(hideBuyNow).observe(productScope,{childList:true,subtree:true});
-    const purchaseSelector='button[name="add"],input[name="add"],button[type="submit"]';
-    const purchaseButtons=()=>[...productArea.querySelectorAll('form[action*="/cart/add"]')].flatMap(form=>[...form.querySelectorAll(purchaseSelector)]).filter(button=>!button.closest('.shopify-payment-button')&&!button.closest('[data-cw-personalizer]'));
-    const setPurchaseReady=ready=>purchaseButtons().forEach(button=>{if(button.dataset.cwDisplay===undefined)button.dataset.cwDisplay=button.style.display||'';button.hidden=!ready;button.style.display=ready?button.dataset.cwDisplay:'none';button.disabled=!ready;button.setAttribute('aria-hidden',ready?'false':'true')});
-    const lockButtons=()=>{if(!saved)setPurchaseReady(false)};
-    lockButtons();const observer=productForm?new MutationObserver(lockButtons):null;if(observer)observer.observe(productForm,{childList:true,subtree:true});
-    const renderCartSections=sections=>{if(!sections||typeof sections!=='object')return;Object.entries(sections).forEach(([id,html])=>{if(typeof html!=='string'||!html)return;const parsed=new DOMParser().parseFromString(html,'text/html');const replacement=parsed.getElementById(`shopify-section-${id}`)||parsed.body.firstElementChild;const current=document.getElementById(`shopify-section-${id}`);if(current&&replacement)current.replaceWith(replacement)})};
-    const replaceCartRowImage=(row,url)=>{const image=row?.querySelector('.cart-item__image,img');if(!image)return false;image.removeAttribute('srcset');image.removeAttribute('sizes');image.closest('picture')?.querySelectorAll('source').forEach(source=>{source.removeAttribute('srcset');source.removeAttribute('sizes')});image.src=url;image.dataset.cwPreview=url;image.style.objectFit='contain';image.style.background='transparent';return true};
-    const showCartPreview=async(url,id)=>{try{const response=await fetch((window.Shopify?.routes?.root||'/')+'cart.js',{headers:{Accept:'application/json'},cache:'no-store'});if(!response.ok)return false;const cart=await response.json();const index=cart.items.findIndex(item=>item?.properties?.['_Cartwala Design ID']===id);if(index<0)return false;const item=cart.items[index];const drawer=document.querySelector('cart-drawer,#CartDrawer,[data-cart-drawer],.cart-drawer');if(!drawer)return false;const rows=[...drawer.querySelectorAll('[data-cart-line-key],[data-line-key],[data-cart-item],cart-drawer-item,.cart-item,.drawer__cart-item')].filter((row,rowIndex,all)=>all.findIndex(candidate=>candidate===row||candidate.contains(row))===rowIndex);const row=rows.find(candidate=>candidate.dataset.cartLineKey===item.key||candidate.dataset.lineKey===item.key)||drawer.querySelector(`#CartDrawer-Item-${index+1},[data-index="${index+1}"]`)||rows[index];return replaceCartRowImage(row,url)}catch(error){console.warn('Cartwala immediate cart preview unavailable',error);return false}};
-    const openCart=()=>{const drawer=document.querySelector('cart-drawer,[data-cart-drawer],.cart-drawer');if(!drawer){location.assign((window.Shopify?.routes?.root||'/')+'cart');return}if(typeof drawer.open==='function')drawer.open();drawer.classList.add('active','is-open');drawer.setAttribute('open','');drawer.setAttribute('aria-hidden','false');document.body.classList.add('overflow-hidden');document.dispatchEvent(new CustomEvent('cart:updated',{bubbles:true}))};
-    const invalidate=()=>{revision++;saved=false;setPurchaseReady(false);result.hidden=true;};let cartSubmitting=false;productForm?.addEventListener('submit',async event=>{event.preventDefault();event.stopImmediatePropagation();if(!saved||busy){dialog.showModal();return}if(cartSubmitting)return;cartSubmitting=true;purchaseButtons().forEach(button=>button.disabled=true);try{const formData=new FormData(productForm);stagedFiles.forEach((file,name)=>{const propertyName=name.startsWith('_')?name:`_${name}`;formData.set(`properties[${propertyName}]`,file,file.name||'upload')});formData.set('sections','cart-drawer,cart-icon-bubble');formData.set('sections_url',location.pathname);const response=await fetch((window.Shopify?.routes?.root||'/')+'cart/add.js',{method:'POST',body:formData,headers:{Accept:'application/json'}});if(!response.ok){const failure=await response.json().catch(()=>({}));throw new Error(failure.description||failure.message||'The personalised item could not be added to cart.')}const added=await response.json();renderCartSections(added.sections);sessionStorage.setItem('cartwala-last-design',designId);setTimeout(()=>{openCart();showCartPreview(previewUrl,designId)},50);setTimeout(()=>showCartPreview(previewUrl,designId),300);cartSubmitting=false}catch(error){cartSubmitting=false;setPurchaseReady(true);window.alert(error instanceof Error?error.message:'The personalised item could not be added to cart.')}},true); let activePhoto=0;const pointers=new Map();let gesture=null;
+        const productArea =
+          root.closest(
+            ".product__info-container,.product-info,.product__info-wrapper,.shopify-section",
+          ) ||
+          root.closest("section") ||
+          document;
+        const productForm =
+          productArea.querySelector('form[action*="/cart/add"]') ||
+          document.querySelector('form[action*="/cart/add"]');
+        if (productForm) productForm.enctype = "multipart/form-data";
+        const productScope = root.closest(".shopify-section") || document;
+        const hideBuyNow = () =>
+          productScope
+            .querySelectorAll(
+              '.shopify-payment-button,[data-shopify="payment-button"],shopify-buy-it-now-button',
+            )
+            .forEach((element) => {
+              element.hidden = true;
+              element.style.display = "none";
+            });
+        hideBuyNow();
+        new MutationObserver(hideBuyNow).observe(productScope, {
+          childList: true,
+          subtree: true,
+        });
+        const purchaseSelector =
+          'button[name="add"],input[name="add"],button[type="submit"]';
+        const purchaseButtons = () =>
+          [...productArea.querySelectorAll('form[action*="/cart/add"]')]
+            .flatMap((form) => [...form.querySelectorAll(purchaseSelector)])
+            .filter(
+              (button) =>
+                !button.closest(".shopify-payment-button") &&
+                !button.closest("[data-cw-personalizer]"),
+            );
+        const setPurchaseReady = (ready) =>
+          purchaseButtons().forEach((button) => {
+            if (button.dataset.cwDisplay === undefined)
+              button.dataset.cwDisplay = button.style.display || "";
+            button.hidden = !ready;
+            button.style.display = ready ? button.dataset.cwDisplay : "none";
+            button.disabled = !ready;
+            button.setAttribute("aria-hidden", ready ? "false" : "true");
+          });
+        const lockButtons = () => {
+          if (!saved) setPurchaseReady(false);
+        };
+        lockButtons();
+        const observer = productForm ? new MutationObserver(lockButtons) : null;
+        if (observer)
+          observer.observe(productForm, { childList: true, subtree: true });
+        const renderCartSections = (sections) => {
+          if (!sections || typeof sections !== "object") return;
+          Object.entries(sections).forEach(([id, html]) => {
+            if (typeof html !== "string" || !html) return;
+            const parsed = new DOMParser().parseFromString(html, "text/html");
+            const replacement =
+              parsed.getElementById(`shopify-section-${id}`) ||
+              parsed.body.firstElementChild;
+            const current = document.getElementById(`shopify-section-${id}`);
+            if (current && replacement) current.replaceWith(replacement);
+          });
+        };
+        const replaceCartRowImage = (row, url) => {
+          const image = row?.querySelector(".cart-item__image,img");
+          if (!image) return false;
+          image.removeAttribute("srcset");
+          image.removeAttribute("sizes");
+          image
+            .closest("picture")
+            ?.querySelectorAll("source")
+            .forEach((source) => {
+              source.removeAttribute("srcset");
+              source.removeAttribute("sizes");
+            });
+          image.src = url;
+          image.dataset.cwPreview = url;
+          image.style.objectFit = "contain";
+          image.style.background = "transparent";
+          return true;
+        };
+        const showCartPreview = async (url, id) => {
+          try {
+            const response = await fetch(
+              (window.Shopify?.routes?.root || "/") + "cart.js",
+              { headers: { Accept: "application/json" }, cache: "no-store" },
+            );
+            if (!response.ok) return false;
+            const cart = await response.json();
+            const index = cart.items.findIndex(
+              (item) => item?.properties?.["_Cartwala Design ID"] === id,
+            );
+            if (index < 0) return false;
+            const item = cart.items[index];
+            const drawer = document.querySelector(
+              "cart-drawer,#CartDrawer,[data-cart-drawer],.cart-drawer",
+            );
+            if (!drawer) return false;
+            const rows = [
+              ...drawer.querySelectorAll(
+                "[data-cart-line-key],[data-line-key],[data-cart-item],cart-drawer-item,.cart-item,.drawer__cart-item",
+              ),
+            ].filter(
+              (row, rowIndex, all) =>
+                all.findIndex(
+                  (candidate) => candidate === row || candidate.contains(row),
+                ) === rowIndex,
+            );
+            const row =
+              rows.find(
+                (candidate) =>
+                  candidate.dataset.cartLineKey === item.key ||
+                  candidate.dataset.lineKey === item.key,
+              ) ||
+              drawer.querySelector(
+                `#CartDrawer-Item-${index + 1},[data-index="${index + 1}"]`,
+              ) ||
+              rows[index];
+            return replaceCartRowImage(row, url);
+          } catch (error) {
+            console.warn("Cartwala immediate cart preview unavailable", error);
+            return false;
+          }
+        };
+        const openCart = () => {
+          const drawer = document.querySelector(
+            "cart-drawer,[data-cart-drawer],.cart-drawer",
+          );
+          if (!drawer) {
+            location.assign((window.Shopify?.routes?.root || "/") + "cart");
+            return;
+          }
+          if (typeof drawer.open === "function") drawer.open();
+          drawer.classList.add("active", "is-open");
+          drawer.setAttribute("open", "");
+          drawer.setAttribute("aria-hidden", "false");
+          document.body.classList.add("overflow-hidden");
+          document.dispatchEvent(
+            new CustomEvent("cart:updated", { bubbles: true }),
+          );
+        };
+        const invalidate = () => {
+          revision++;
+          saved = false;
+          setPurchaseReady(false);
+          result.hidden = true;
+        };
+        let cartSubmitting = false;
+        productForm?.addEventListener(
+          "submit",
+          async (event) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (!saved || busy) {
+              dialog.showModal();
+              return;
+            }
+            if (cartSubmitting) return;
+            cartSubmitting = true;
+            purchaseButtons().forEach((button) => (button.disabled = true));
+            try {
+              const formData = new FormData(productForm);
+              stagedFiles.forEach((file, name) => {
+                const propertyName = name.startsWith("_") ? name : `_${name}`;
+                formData.set(
+                  `properties[${propertyName}]`,
+                  file,
+                  file.name || "upload",
+                );
+              });
+              formData.set("sections", "cart-drawer,cart-icon-bubble");
+              formData.set("sections_url", location.pathname);
+              const response = await fetch(
+                (window.Shopify?.routes?.root || "/") + "cart/add.js",
+                {
+                  method: "POST",
+                  body: formData,
+                  headers: { Accept: "application/json" },
+                },
+              );
+              if (!response.ok) {
+                const failure = await response.json().catch(() => ({}));
+                throw new Error(
+                  failure.description ||
+                    failure.message ||
+                    "The personalised item could not be added to cart.",
+                );
+              }
+              const added = await response.json();
+              renderCartSections(added.sections);
+              sessionStorage.setItem("cartwala-last-design", designId);
+              setTimeout(() => {
+                openCart();
+                showCartPreview(previewUrl, designId);
+              }, 50);
+              setTimeout(() => showCartPreview(previewUrl, designId), 300);
+              cartSubmitting = false;
+            } catch (error) {
+              cartSubmitting = false;
+              setPurchaseReady(true);
+              window.alert(
+                error instanceof Error
+                  ? error.message
+                  : "The personalised item could not be added to cart.",
+              );
+            }
+          },
+          true,
+        );
+        let activePhoto = 0;
+        const pointers = new Map();
+        let gesture = null;
 
-    const photoStates=config.photos.map((field,index)=>{
-      const viewport=document.createElement('div');viewport.className='cw-personalizer__photo-viewport';viewport.dataset.index=String(index);viewport.style.left=`${field.x-field.width/2}%`;viewport.style.top=`${field.y-field.height/2}%`;viewport.style.width=`${field.width}%`;viewport.style.height=`${field.height}%`;viewport.style.right='auto';viewport.style.bottom='auto';
-      if(field.maskUrl){viewport.style.maskImage=`url("${field.maskUrl}")`;viewport.style.webkitMaskImage=`url("${field.maskUrl}")`;viewport.style.maskSize='100% 100%';viewport.style.webkitMaskSize='100% 100%';viewport.style.maskPosition='center';viewport.style.webkitMaskPosition='center';viewport.style.maskRepeat='no-repeat';viewport.style.webkitMaskRepeat='no-repeat'}
-      const image=document.createElement('img');image.className='cw-personalizer__photo';image.alt=field.label;viewport.appendChild(image);photoLayers.appendChild(viewport);
-      const card=document.createElement('section');card.className='cw-personalizer__field';card.dataset.photoIndex=String(index);
-      const title=document.createElement('div');title.className='cw-personalizer__field-title';title.textContent=field.label+(field.required?` (${root.dataset.labelRequired||'Required'})`:'');
-      const slot=document.createElement('button');slot.type='button';slot.className='cw-personalizer__slot';slot.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><span></span>';slot.querySelector('span').textContent=config.photos.length>1?String(index+1):(root.dataset.labelUpload||'Upload photo');slot.title=`${field.label} — ${root.dataset.labelUpload||'Upload photo'}`;slot.setAttribute('aria-label',field.label+' — '+(root.dataset.labelUpload||'Upload photo'));slot.style.left=`${field.x}%`;slot.style.top=`${field.y}%`;slot.style.width=`${field.width}%`;slot.style.height=`${field.height}%`;slot.style.transform='translate(-50%,-50%)';slot.style.position='absolute';slot.style.zIndex='6';slot.dataset.cwPhotoSlot=String(index);stage.appendChild(slot); const fileLabel=document.createElement('label');fileLabel.className='cw-personalizer__file';fileLabel.textContent=root.dataset.labelUpload||'Upload photo';const fileInput=document.createElement('input');fileInput.type='file';fileInput.accept='image/jpeg,image/png,image/webp';fileLabel.appendChild(fileInput);
-      const controls=document.createElement('div');controls.className='cw-personalizer__photo-controls';controls.hidden=true;
-      const resetButton=document.createElement('button');resetButton.type='button';resetButton.textContent=root.dataset.labelReset||'Reset';
-      const zoomLabel=document.createElement('label');zoomLabel.append(root.dataset.labelZoom||'Zoom');const zoom=document.createElement('input');zoom.type='range';zoom.min='100';zoom.max='500';zoom.value='100';zoomLabel.appendChild(zoom);
-      const rotationLabel=document.createElement('label');rotationLabel.append(root.dataset.labelRotation||'Rotation');const rotation=document.createElement('input');rotation.type='range';rotation.min='-180';rotation.max='180';rotation.value='0';rotationLabel.appendChild(rotation);if(!field.rotationEnabled)rotationLabel.hidden=true;
-      const changeLabel=document.createElement('label');changeLabel.className='cw-personalizer__file';changeLabel.textContent=root.dataset.labelChange||'Change photo';const changeInput=document.createElement('input');changeInput.type='file';changeInput.accept='image/jpeg,image/png,image/webp';changeLabel.appendChild(changeInput);
-      controls.append(resetButton,zoomLabel,rotationLabel,changeLabel);card.append(title,controls);fileLabel.hidden=true;card.append(fileLabel);slot.addEventListener('click',()=>{selectPhoto(index);if(!photoStates[index]?.file)fileInput.click()});fields.appendChild(card);card.addEventListener('pointerdown',()=>{selectPhoto(index)});viewport.addEventListener('pointerdown',()=>selectPhoto(index));
-      return {slot,field,index,viewport,image,card,fileLabel,fileInput,changeInput,controls,zoom,rotation,resetButton,x:0,y:0,scale:1,angle:0,file:null,objectUrl:null};
-    });
-    const selectPhoto=index=>{activePhoto=index;photoStates.forEach((state,stateIndex)=>{const active=stateIndex===index;state.card.hidden=!active;state.card.classList.toggle('is-active',active);state.viewport.classList.toggle('is-active',active&&Boolean(state.file));state.controls.hidden=!active||!state.file;state.slot.hidden=Boolean(state.file);state.slot.classList.toggle('is-active',active)});positionSlots?.()};
+        const photoStates = config.photos.map((field, index) => {
+          const viewport = document.createElement("div");
+          viewport.className = "cw-personalizer__photo-viewport";
+          viewport.dataset.index = String(index);
+          viewport.style.left = `${field.x - field.width / 2}%`;
+          viewport.style.top = `${field.y - field.height / 2}%`;
+          viewport.style.width = `${field.width}%`;
+          viewport.style.height = `${field.height}%`;
+          viewport.style.right = "auto";
+          viewport.style.bottom = "auto";
+          if (field.maskUrl) {
+            viewport.style.maskImage = `url("${field.maskUrl}")`;
+            viewport.style.webkitMaskImage = `url("${field.maskUrl}")`;
+            viewport.style.maskSize = "100% 100%";
+            viewport.style.webkitMaskSize = "100% 100%";
+            viewport.style.maskPosition = "center";
+            viewport.style.webkitMaskPosition = "center";
+            viewport.style.maskRepeat = "no-repeat";
+            viewport.style.webkitMaskRepeat = "no-repeat";
+          }
+          const image = document.createElement("img");
+          image.className = "cw-personalizer__photo";
+          image.alt = field.label;
+          viewport.appendChild(image);
+          photoLayers.appendChild(viewport);
+          const card = document.createElement("section");
+          card.className = "cw-personalizer__field";
+          card.dataset.photoIndex = String(index);
+          const title = document.createElement("div");
+          title.className = "cw-personalizer__field-title";
+          title.textContent =
+            field.label +
+            (field.required
+              ? ` (${root.dataset.labelRequired || "Required"})`
+              : "");
+          const slot = document.createElement("button");
+          slot.type = "button";
+          slot.className = "cw-personalizer__slot";
+          slot.innerHTML =
+            '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><span></span>';
+          slot.querySelector("span").textContent =
+            config.photos.length > 1
+              ? String(index + 1)
+              : root.dataset.labelUpload || "Upload photo";
+          slot.title = `${field.label} — ${root.dataset.labelUpload || "Upload photo"}`;
+          slot.setAttribute(
+            "aria-label",
+            field.label + " — " + (root.dataset.labelUpload || "Upload photo"),
+          );
+          slot.style.left = `${field.x}%`;
+          slot.style.top = `${field.y}%`;
+          slot.style.width = `${field.width}%`;
+          slot.style.height = `${field.height}%`;
+          slot.style.transform = "translate(-50%,-50%)";
+          slot.style.position = "absolute";
+          slot.style.zIndex = "6";
+          slot.dataset.cwPhotoSlot = String(index);
+          stage.appendChild(slot);
+          const fileLabel = document.createElement("label");
+          fileLabel.className = "cw-personalizer__file";
+          fileLabel.textContent = root.dataset.labelUpload || "Upload photo";
+          const fileInput = document.createElement("input");
+          fileInput.type = "file";
+          fileInput.accept = "image/jpeg,image/png,image/webp";
+          fileLabel.appendChild(fileInput);
+          const controls = document.createElement("div");
+          controls.className = "cw-personalizer__photo-controls";
+          controls.hidden = true;
+          const resetButton = document.createElement("button");
+          resetButton.type = "button";
+          resetButton.textContent = root.dataset.labelReset || "Reset";
+          const zoomLabel = document.createElement("label");
+          zoomLabel.append(root.dataset.labelZoom || "Zoom");
+          const zoom = document.createElement("input");
+          zoom.type = "range";
+          zoom.min = "100";
+          zoom.max = "500";
+          zoom.value = "100";
+          zoomLabel.appendChild(zoom);
+          const rotationLabel = document.createElement("label");
+          rotationLabel.append(root.dataset.labelRotation || "Rotation");
+          const rotation = document.createElement("input");
+          rotation.type = "range";
+          rotation.min = "-180";
+          rotation.max = "180";
+          rotation.value = "0";
+          rotationLabel.appendChild(rotation);
+          if (!field.rotationEnabled) rotationLabel.hidden = true;
+          const changeLabel = document.createElement("label");
+          changeLabel.className = "cw-personalizer__file";
+          changeLabel.textContent = root.dataset.labelChange || "Change photo";
+          const changeInput = document.createElement("input");
+          changeInput.type = "file";
+          changeInput.accept = "image/jpeg,image/png,image/webp";
+          changeLabel.appendChild(changeInput);
+          controls.append(resetButton, zoomLabel, rotationLabel, changeLabel);
+          card.append(title, controls);
+          fileLabel.hidden = true;
+          card.append(fileLabel);
+          slot.addEventListener("click", () => {
+            selectPhoto(index);
+            if (!photoStates[index]?.file) fileInput.click();
+          });
+          fields.appendChild(card);
+          card.addEventListener("pointerdown", () => {
+            selectPhoto(index);
+          });
+          viewport.addEventListener("pointerdown", () => selectPhoto(index));
+          return {
+            slot,
+            field,
+            index,
+            viewport,
+            image,
+            card,
+            fileLabel,
+            fileInput,
+            changeInput,
+            controls,
+            zoom,
+            rotation,
+            resetButton,
+            x: 0,
+            y: 0,
+            scale: 1,
+            angle: 0,
+            file: null,
+            objectUrl: null,
+          };
+        });
+        const selectPhoto = (index) => {
+          activePhoto = index;
+          photoStates.forEach((state, stateIndex) => {
+            const active = stateIndex === index;
+            state.card.hidden = !active;
+            state.card.classList.toggle("is-active", active);
+            state.viewport.classList.toggle(
+              "is-active",
+              active && Boolean(state.file),
+            );
+            state.controls.hidden = !active || !state.file;
+            state.slot.hidden = Boolean(state.file);
+            state.slot.classList.toggle("is-active", active);
+          });
+          positionSlots?.();
+        };
 
-    const fontNames=['Arial','Georgia','Times New Roman','Verdana','Trebuchet MS','Courier New',...config.fonts.map(font=>font.name)];
-    const textStates=config.texts.map(field=>{
-      const previewText=document.createElement('div');previewText.className='cw-personalizer__text-preview';previewText.style.left=`${field.x}%`;previewText.style.top=`${field.y}%`;previewText.style.color=field.color;previewText.style.fontFamily=field.fontFamily;previewText.hidden=true;textLayers.appendChild(previewText);
-      const card=document.createElement('label');card.className='cw-personalizer__field';const title=document.createElement('span');title.className='cw-personalizer__field-title';title.textContent=field.label+(field.required?` (${root.dataset.labelRequired||'Required'})`:'');const input=document.createElement('input');input.type='text';input.maxLength=field.maxLength;input.value=field.defaultValue||'';input.className='cw-personalizer__text-input';card.append(title,input);
-      let fontSelect=null;if(field.allowFontChoice){const fontLabel=document.createElement('span');fontLabel.textContent=root.dataset.labelFont||'Font';fontSelect=document.createElement('select');fontSelect.className='cw-personalizer__font-select';fontNames.forEach(name=>{const option=document.createElement('option');option.value=name;option.textContent=name;option.selected=name===field.fontFamily;fontSelect.appendChild(option)});card.append(fontLabel,fontSelect)}
-      fields.appendChild(card);return {field,input,fontSelect,previewText};
-    });
-    const fileStates=config.files.map(field=>{const card=document.createElement('label');card.className='cw-personalizer__field';const title=document.createElement('span');title.className='cw-personalizer__field-title';title.textContent=field.label+(field.required?` (${root.dataset.labelRequired||'Required'})`:'');const input=document.createElement('input');input.type='file';input.accept=field.accept;card.append(title,input);fields.appendChild(card);return {field,input,file:null}});
-    const linkStates=config.links.map(field=>{const card=document.createElement('label');card.className='cw-personalizer__field';const title=document.createElement('span');title.className='cw-personalizer__field-title';title.textContent=field.label+(field.required?` (${root.dataset.labelRequired||'Required'})`:'');const input=document.createElement('input');input.type='url';input.placeholder=field.placeholder;input.className='cw-personalizer__text-input';card.append(title,input);fields.appendChild(card);return {field,input}});
+        const fontNames = [
+          "Arial",
+          "Georgia",
+          "Times New Roman",
+          "Verdana",
+          "Trebuchet MS",
+          "Courier New",
+          ...config.fonts.map((font) => font.name),
+        ];
+        const textStates = config.texts.map((field) => {
+          const previewText = document.createElement("div");
+          previewText.className = "cw-personalizer__text-preview";
+          previewText.dataset.cwTextId = field.id;
+          const textContent = document.createElement("span");
+          textContent.className = "cw-personalizer__text-content";
+          previewText.appendChild(textContent);
+          let scaleHandle = null;
+          let rotateHandle = null;
+          if (field.scalable) {
+            scaleHandle = document.createElement("button");
+            scaleHandle.type = "button";
+            scaleHandle.className =
+              "cw-personalizer__text-handle cw-personalizer__text-handle--scale";
+            scaleHandle.textContent = "↘";
+            scaleHandle.setAttribute("aria-label", "Resize text");
+            previewText.appendChild(scaleHandle);
+          }
+          if (field.rotatable) {
+            rotateHandle = document.createElement("button");
+            rotateHandle.type = "button";
+            rotateHandle.className =
+              "cw-personalizer__text-handle cw-personalizer__text-handle--rotate";
+            rotateHandle.textContent = "↻";
+            rotateHandle.setAttribute("aria-label", "Rotate text");
+            previewText.appendChild(rotateHandle);
+          }
+          if (field.movable || field.scalable || field.rotatable)
+            previewText.classList.add("is-transformable");
+          previewText.hidden = true;
+          textLayers.appendChild(previewText);
+          const card = document.createElement("label");
+          card.className = "cw-personalizer__field";
+          const title = document.createElement("span");
+          title.className = "cw-personalizer__field-title";
+          title.textContent =
+            field.label +
+            (field.required
+              ? ` (${root.dataset.labelRequired || "Required"})`
+              : "");
+          const input = document.createElement("input");
+          input.type = "text";
+          input.maxLength = field.maxLength;
+          input.value = field.defaultValue || "";
+          input.className = "cw-personalizer__text-input";
+          card.append(title, input);
+          let fontSelect = null;
+          if (field.allowFontChoice) {
+            const fontLabel = document.createElement("span");
+            fontLabel.textContent = root.dataset.labelFont || "Font";
+            fontSelect = document.createElement("select");
+            fontSelect.className = "cw-personalizer__font-select";
+            fontNames.forEach((name) => {
+              const option = document.createElement("option");
+              option.value = name;
+              option.textContent = name;
+              option.selected = name === field.fontFamily;
+              fontSelect.appendChild(option);
+            });
+            card.append(fontLabel, fontSelect);
+          }
+          let colorInput = null;
+          if (field.allowColorChoice) {
+            const colorLabel = document.createElement("label");
+            colorLabel.className = "cw-personalizer__color-control";
+            const colorText = document.createElement("span");
+            colorText.textContent = "Text color";
+            colorInput = document.createElement("input");
+            colorInput.type = "color";
+            colorInput.value = field.color;
+            colorInput.setAttribute("aria-label", "Text color");
+            colorLabel.append(colorText, colorInput);
+            card.appendChild(colorLabel);
+          }
+          fields.appendChild(card);
+          return {
+            field,
+            input,
+            fontSelect,
+            colorInput,
+            previewText,
+            textContent,
+            scaleHandle,
+            rotateHandle,
+            x: field.x,
+            y: field.y,
+            fontSize: field.fontSize,
+            angle: field.rotation,
+            color: field.color,
+          };
+        });
+        const fileStates = config.files.map((field) => {
+          const card = document.createElement("label");
+          card.className = "cw-personalizer__field";
+          const title = document.createElement("span");
+          title.className = "cw-personalizer__field-title";
+          title.textContent =
+            field.label +
+            (field.required
+              ? ` (${root.dataset.labelRequired || "Required"})`
+              : "");
+          const input = document.createElement("input");
+          input.type = "file";
+          input.accept = field.accept;
+          card.append(title, input);
+          fields.appendChild(card);
+          return { field, input, file: null };
+        });
+        const linkStates = config.links.map((field) => {
+          const card = document.createElement("label");
+          card.className = "cw-personalizer__field";
+          const title = document.createElement("span");
+          title.className = "cw-personalizer__field-title";
+          title.textContent =
+            field.label +
+            (field.required
+              ? ` (${root.dataset.labelRequired || "Required"})`
+              : "");
+          const input = document.createElement("input");
+          input.type = "url";
+          input.placeholder = field.placeholder;
+          input.className = "cw-personalizer__text-input";
+          card.append(title, input);
+          fields.appendChild(card);
+          return { field, input };
+        });
 
-    const refreshTextSizes=()=>textStates.forEach(state=>{state.previewText.style.fontSize=`${state.field.fontSize*stage.clientWidth/1200}px`});refreshTextSizes();window.addEventListener('resize',refreshTextSizes);
-    const constrainPhoto=state=>{state.x=Number.isFinite(Number(state.x))?Number(state.x):0;state.y=Number.isFinite(Number(state.y))?Number(state.y):0};
-    const apply=state=>{invalidate();state.scale=clamp(state.scale,1,5,1);constrainPhoto(state);state.image.style.transform=`translate(${state.x}px,${state.y}px) scale(${state.scale}) rotate(${state.angle}deg)`;state.zoom.value=String(Math.round(state.scale*100));state.rotation.value=String(Math.round(state.angle))};
-    const reset=state=>{state.x=0;state.y=0;state.scale=1;state.angle=0;apply(state)};
-    const isReady=()=>!photoStates.some(state=>state.field.required&&!state.file)&&!textStates.some(state=>state.field.required&&!state.input.value.trim())&&!fileStates.some(state=>state.field.required&&!state.file)&&!linkStates.some(state=>state.field.required&&!state.input.value.trim())&&(photoStates.length+textStates.length+fileStates.length+linkStates.length>0);
-    const updateReady=()=>{save.disabled=busy||!isReady()};
-    const loadPhoto=(state,file)=>{if(!file)return;if(!/^image\/(jpeg|png|webp)$/.test(file.type)){window.alert('Please upload a JPG, PNG, or WebP image.');return}if(file.size>25*1024*1024){window.alert('Please upload an image smaller than 25 MB.');return}if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);state.file=file;state.objectUrl=URL.createObjectURL(file);state.image.src=state.objectUrl;state.image.style.display='block';state.image.style.objectFit='contain';state.fileLabel.hidden=true;state.slot.hidden=true;selectPhoto(state.index);reset(state);updateReady()};
-    const clearPhoto=state=>{if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);state.file=null;state.objectUrl=null;state.fileInput.value='';state.changeInput.value='';state.image.removeAttribute('src');state.image.style.display='none';state.image.style.transform='';state.x=0;state.y=0;state.scale=1;state.angle=0;state.zoom.value='100';state.rotation.value='0';state.slot.hidden=false;invalidate();selectPhoto(state.index);positionSlots();updateReady()};
-    photoStates.forEach(state=>{state.fileInput.addEventListener('change',event=>{loadPhoto(state,event.target.files[0]);event.target.value=''});state.changeInput.addEventListener('change',event=>{loadPhoto(state,event.target.files[0]);event.target.value=''});state.zoom.addEventListener('input',()=>{selectPhoto(state.index);state.scale=Number(state.zoom.value)/100;apply(state)});state.rotation.addEventListener('input',()=>{selectPhoto(state.index);if(state.field.rotationEnabled){state.angle=Number(state.rotation.value);apply(state)}});state.resetButton.addEventListener('click',()=>clearPhoto(state))});
-    textStates.forEach(state=>{const refresh=()=>{invalidate();state.previewText.textContent=state.input.value;state.previewText.hidden=!state.input.value;const font=state.fontSelect?.value||state.field.fontFamily;state.previewText.style.fontFamily=font;updateReady()};state.input.addEventListener('input',refresh);state.fontSelect?.addEventListener('change',refresh);refresh()});
-    fileStates.forEach(state=>state.input.addEventListener('change',event=>{invalidate();const file=event.target.files[0];if(file&&file.size>state.field.maxSizeMb*1024*1024){event.target.value='';state.file=null;window.alert(`Please upload a file smaller than ${state.field.maxSizeMb} MB.`)}else state.file=file||null;updateReady()}));
-    linkStates.forEach(state=>state.input.addEventListener('input',()=>{invalidate();updateReady()}));
+        const renderTextState = (state) => {
+          state.x = clamp(state.x, 0, 100, state.field.x);
+          state.y = clamp(state.y, 0, 100, state.field.y);
+          state.fontSize = clamp(state.fontSize, 8, 300, state.field.fontSize);
+          state.angle = clamp(state.angle, -180, 180, state.field.rotation);
+          state.previewText.style.left = `${state.x}%`;
+          state.previewText.style.top = `${state.y}%`;
+          state.previewText.style.fontSize = `${(state.fontSize * stage.clientWidth) / 1200}px`;
+          state.previewText.style.transform = `translate(-50%,-50%) rotate(${state.angle}deg)`;
+          state.previewText.style.color = state.color;
+          state.previewText.dataset.cwX = String(state.x);
+          state.previewText.dataset.cwY = String(state.y);
+          state.previewText.dataset.cwFontSize = String(state.fontSize);
+          state.previewText.dataset.cwRotation = String(state.angle);
+          state.previewText.dataset.cwColor = state.color;
+        };
+        const refreshTextSizes = () => textStates.forEach(renderTextState);
+        refreshTextSizes();
+        window.addEventListener("resize", refreshTextSizes);
+        const constrainPhoto = (state) => {
+          state.x = Number.isFinite(Number(state.x)) ? Number(state.x) : 0;
+          state.y = Number.isFinite(Number(state.y)) ? Number(state.y) : 0;
+        };
+        const apply = (state) => {
+          invalidate();
+          state.scale = clamp(state.scale, 1, 5, 1);
+          constrainPhoto(state);
+          state.image.style.transform = `translate(${state.x}px,${state.y}px) scale(${state.scale}) rotate(${state.angle}deg)`;
+          state.zoom.value = String(Math.round(state.scale * 100));
+          state.rotation.value = String(Math.round(state.angle));
+        };
+        const reset = (state) => {
+          state.x = 0;
+          state.y = 0;
+          state.scale = 1;
+          state.angle = 0;
+          apply(state);
+        };
+        const isReady = () =>
+          !photoStates.some((state) => state.field.required && !state.file) &&
+          !textStates.some(
+            (state) => state.field.required && !state.input.value.trim(),
+          ) &&
+          !fileStates.some((state) => state.field.required && !state.file) &&
+          !linkStates.some(
+            (state) => state.field.required && !state.input.value.trim(),
+          ) &&
+          photoStates.length +
+            textStates.length +
+            fileStates.length +
+            linkStates.length >
+            0;
+        const updateReady = () => {
+          save.disabled = busy || !isReady();
+        };
+        const loadPhoto = (state, file) => {
+          if (!file) return;
+          if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+            window.alert("Please upload a JPG, PNG, or WebP image.");
+            return;
+          }
+          if (file.size > 25 * 1024 * 1024) {
+            window.alert("Please upload an image smaller than 25 MB.");
+            return;
+          }
+          if (state.objectUrl) URL.revokeObjectURL(state.objectUrl);
+          state.file = file;
+          state.objectUrl = URL.createObjectURL(file);
+          state.image.src = state.objectUrl;
+          state.image.style.display = "block";
+          state.image.style.objectFit = "contain";
+          state.fileLabel.hidden = true;
+          state.slot.hidden = true;
+          selectPhoto(state.index);
+          reset(state);
+          updateReady();
+        };
+        const clearPhoto = (state) => {
+          if (state.objectUrl) URL.revokeObjectURL(state.objectUrl);
+          state.file = null;
+          state.objectUrl = null;
+          state.fileInput.value = "";
+          state.changeInput.value = "";
+          state.image.removeAttribute("src");
+          state.image.style.display = "none";
+          state.image.style.transform = "";
+          state.x = 0;
+          state.y = 0;
+          state.scale = 1;
+          state.angle = 0;
+          state.zoom.value = "100";
+          state.rotation.value = "0";
+          state.slot.hidden = false;
+          invalidate();
+          selectPhoto(state.index);
+          positionSlots();
+          updateReady();
+        };
+        photoStates.forEach((state) => {
+          state.fileInput.addEventListener("change", (event) => {
+            loadPhoto(state, event.target.files[0]);
+            event.target.value = "";
+          });
+          state.changeInput.addEventListener("change", (event) => {
+            loadPhoto(state, event.target.files[0]);
+            event.target.value = "";
+          });
+          state.zoom.addEventListener("input", () => {
+            selectPhoto(state.index);
+            state.scale = Number(state.zoom.value) / 100;
+            apply(state);
+          });
+          state.rotation.addEventListener("input", () => {
+            selectPhoto(state.index);
+            if (state.field.rotationEnabled) {
+              state.angle = Number(state.rotation.value);
+              apply(state);
+            }
+          });
+          state.resetButton.addEventListener("click", () => clearPhoto(state));
+        });
+        textStates.forEach((state) => {
+          const refresh = () => {
+            invalidate();
+            state.textContent.textContent = state.input.value;
+            state.previewText.hidden = !state.input.value;
+            const font = state.fontSelect?.value || state.field.fontFamily;
+            state.previewText.style.fontFamily = font;
+            if (state.colorInput) state.color = state.colorInput.value;
+            renderTextState(state);
+            updateReady();
+          };
+          state.input.addEventListener("input", refresh);
+          state.fontSelect?.addEventListener("change", refresh);
+          state.colorInput?.addEventListener("input", refresh);
+          refresh();
+        });
+        let textGesture = null;
+        const beginTextGesture = (event, state, mode) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const rect = state.previewText.getBoundingClientRect();
+          textGesture = {
+            state,
+            mode,
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            x: state.x,
+            y: state.y,
+            fontSize: state.fontSize,
+            angle: state.angle,
+            centerX: rect.left + rect.width / 2,
+            centerY: rect.top + rect.height / 2,
+            startAngle: Math.atan2(
+              event.clientY - (rect.top + rect.height / 2),
+              event.clientX - (rect.left + rect.width / 2),
+            ),
+          };
+          state.previewText.setPointerCapture?.(event.pointerId);
+        };
+        textStates.forEach((state) => {
+          if (state.field.movable)
+            state.previewText.addEventListener("pointerdown", (event) => {
+              if (event.target.closest("button")) return;
+              beginTextGesture(event, state, "move");
+            });
+          state.scaleHandle?.addEventListener("pointerdown", (event) =>
+            beginTextGesture(event, state, "scale"),
+          );
+          state.rotateHandle?.addEventListener("pointerdown", (event) =>
+            beginTextGesture(event, state, "rotate"),
+          );
+        });
+        window.addEventListener(
+          "pointermove",
+          (event) => {
+            if (!textGesture || event.pointerId !== textGesture.pointerId)
+              return;
+            event.preventDefault();
+            const { state, mode } = textGesture;
+            if (mode === "move") {
+              state.x =
+                textGesture.x +
+                ((event.clientX - textGesture.startX) * 100) /
+                  stage.clientWidth;
+              state.y =
+                textGesture.y +
+                ((event.clientY - textGesture.startY) * 100) /
+                  stage.clientHeight;
+            } else if (mode === "scale") {
+              state.fontSize =
+                textGesture.fontSize +
+                ((event.clientX - textGesture.startX) * 1200) /
+                  stage.clientWidth;
+            } else if (mode === "rotate") {
+              const angle = Math.atan2(
+                event.clientY - textGesture.centerY,
+                event.clientX - textGesture.centerX,
+              );
+              state.angle =
+                textGesture.angle +
+                ((angle - textGesture.startAngle) * 180) / Math.PI;
+            }
+            renderTextState(state);
+            invalidate();
+            updateReady();
+          },
+          { passive: false },
+        );
+        const endTextGesture = (event) => {
+          if (textGesture && event.pointerId === textGesture.pointerId)
+            textGesture = null;
+        };
+        window.addEventListener("pointerup", endTextGesture);
+        window.addEventListener("pointercancel", endTextGesture);
+        fileStates.forEach((state) =>
+          state.input.addEventListener("change", (event) => {
+            invalidate();
+            const file = event.target.files[0];
+            if (file && file.size > state.field.maxSizeMb * 1024 * 1024) {
+              event.target.value = "";
+              state.file = null;
+              window.alert(
+                `Please upload a file smaller than ${state.field.maxSizeMb} MB.`,
+              );
+            } else state.file = file || null;
+            updateReady();
+          }),
+        );
+        linkStates.forEach((state) =>
+          state.input.addEventListener("input", () => {
+            invalidate();
+            updateReady();
+          }),
+        );
 
-    root.querySelector('[data-cw-open]').addEventListener('click',()=>{dialog.showModal();refreshTextSizes();positionSlots()});root.querySelector('[data-cw-close]').addEventListener('click',()=>dialog.close());
-    stage.addEventListener('wheel',event=>{const state=photoStates[activePhoto];if(!state?.file)return;event.preventDefault();state.scale=clamp(state.scale+(event.deltaY<0?.08:-.08),1,5,1);apply(state)},{passive:false});
-    const gestureStart=()=>{const state=photoStates[activePhoto];if(!state?.file)return;const points=[...pointers.values()];if(points.length===1)gesture={type:'drag',index:activePhoto,startX:points[0].x,startY:points[0].y,x:state.x,y:state.y};if(points.length>=2)gesture={type:'pinch',index:activePhoto,distance:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y),scale:state.scale}};
-    stage.addEventListener('pointerdown',event=>{if(event.target.closest('button'))return;const viewport=event.target.closest('.cw-personalizer__photo-viewport');if(viewport)selectPhoto(Number(viewport.dataset.index));const state=photoStates[activePhoto];if(!state?.file)return;event.preventDefault();stage.setPointerCapture(event.pointerId);pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});gestureStart()});
-    stage.addEventListener('pointermove',event=>{if(!pointers.has(event.pointerId)||!gesture)return;event.preventDefault();pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});const state=photoStates[gesture.index];const points=[...pointers.values()];if(gesture.type==='drag'&&points.length===1){state.x=gesture.x+points[0].x-gesture.startX;state.y=gesture.y+points[0].y-gesture.startY;apply(state)}else if(points.length>=2){if(gesture.type!=='pinch')gestureStart();const current=[...pointers.values()];const distance=Math.hypot(current[0].x-current[1].x,current[0].y-current[1].y);state.scale=clamp(gesture.scale*distance/Math.max(gesture.distance,1),1,5,1);apply(state)}});
-    const endPointer=event=>{pointers.delete(event.pointerId);gesture=null;if(pointers.size)gestureStart()};stage.addEventListener('pointerup',endPointer);stage.addEventListener('pointercancel',endPointer);stage.addEventListener('lostpointercapture',endPointer);
+        root.querySelector("[data-cw-open]").addEventListener("click", () => {
+          dialog.showModal();
+          refreshTextSizes();
+          positionSlots();
+        });
+        root
+          .querySelector("[data-cw-close]")
+          .addEventListener("click", () => dialog.close());
+        stage.addEventListener(
+          "wheel",
+          (event) => {
+            const state = photoStates[activePhoto];
+            if (!state?.file) return;
+            event.preventDefault();
+            state.scale = clamp(
+              state.scale + (event.deltaY < 0 ? 0.08 : -0.08),
+              1,
+              5,
+              1,
+            );
+            apply(state);
+          },
+          { passive: false },
+        );
+        const gestureStart = () => {
+          const state = photoStates[activePhoto];
+          if (!state?.file) return;
+          const points = [...pointers.values()];
+          if (points.length === 1)
+            gesture = {
+              type: "drag",
+              index: activePhoto,
+              startX: points[0].x,
+              startY: points[0].y,
+              x: state.x,
+              y: state.y,
+            };
+          if (points.length >= 2)
+            gesture = {
+              type: "pinch",
+              index: activePhoto,
+              distance: Math.hypot(
+                points[0].x - points[1].x,
+                points[0].y - points[1].y,
+              ),
+              scale: state.scale,
+            };
+        };
+        stage.addEventListener("pointerdown", (event) => {
+          if (event.target.closest("button")) return;
+          const viewport = event.target.closest(
+            ".cw-personalizer__photo-viewport",
+          );
+          if (viewport) selectPhoto(Number(viewport.dataset.index));
+          const state = photoStates[activePhoto];
+          if (!state?.file) return;
+          event.preventDefault();
+          stage.setPointerCapture(event.pointerId);
+          pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          gestureStart();
+        });
+        stage.addEventListener("pointermove", (event) => {
+          if (!pointers.has(event.pointerId) || !gesture) return;
+          event.preventDefault();
+          pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          const state = photoStates[gesture.index];
+          const points = [...pointers.values()];
+          if (gesture.type === "drag" && points.length === 1) {
+            state.x = gesture.x + points[0].x - gesture.startX;
+            state.y = gesture.y + points[0].y - gesture.startY;
+            apply(state);
+          } else if (points.length >= 2) {
+            if (gesture.type !== "pinch") gestureStart();
+            const current = [...pointers.values()];
+            const distance = Math.hypot(
+              current[0].x - current[1].x,
+              current[0].y - current[1].y,
+            );
+            state.scale = clamp(
+              (gesture.scale * distance) / Math.max(gesture.distance, 1),
+              1,
+              5,
+              1,
+            );
+            apply(state);
+          }
+        });
+        const endPointer = (event) => {
+          pointers.delete(event.pointerId);
+          gesture = null;
+          if (pointers.size) gestureStart();
+        };
+        stage.addEventListener("pointerup", endPointer);
+        stage.addEventListener("pointercancel", endPointer);
+        stage.addEventListener("lostpointercapture", endPointer);
 
-    const stagedFiles=new Map();
-    const putFile=(form,name,file)=>{if(file)stagedFiles.set(name,file);else stagedFiles.delete(name)};
-    const putText=(form,name,value)=>{let input=form.querySelector(`input[data-cw-text-property="${CSS.escape(name)}"]`);if(!input){input=document.createElement('input');input.type='hidden';input.name=`properties[${name}]`;input.dataset.cwTextProperty=name;form.appendChild(input)}input.value=value};
-    const loadRemote=async url=>{const image=new Image();image.crossOrigin='anonymous';image.src=url;if(typeof image.decode==='function'){try{await image.decode()}catch(error){await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject})}}else await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject});return image};
-    const canvasDimensions=()=>{const [width,height]=config.ratio.split(':').map(Number);const longest=window.matchMedia?.('(max-width:900px)').matches?1200:1600;return width>=height?{width:longest,height:Math.round(longest*height/width)}:{width:Math.round(longest*width/height),height:longest}};
-    const attach=async()=>{if(!productForm||!isReady()||busy)return;busy=true;saved=false;lockButtons();const startRevision=revision;updateReady();save.textContent='Preparing preview…';try{
-      productForm.querySelectorAll('[data-cw-property],[data-cw-text-property]').forEach(input=>input.remove());stagedFiles.clear();const dimensions=canvasDimensions();const canvas=document.createElement('canvas');canvas.width=dimensions.width;canvas.height=dimensions.height;const context=canvas.getContext('2d');if(!context)throw new Error('Canvas is unavailable');
-      for(const state of photoStates){if(!state.file)continue;putFile(productForm,state.field.label,state.file);const layer=document.createElement('canvas');layer.width=dimensions.width;layer.height=dimensions.height;const layerContext=layer.getContext('2d');const base=new Image();base.src=state.image.src;if(typeof base.decode==='function'){try{await base.decode()}catch(error){await new Promise((resolve,reject)=>{base.onload=resolve;base.onerror=reject})}}const slotW=dimensions.width*state.field.width/100;const slotH=dimensions.height*state.field.height/100;const slotX=dimensions.width*state.field.x/100;const slotY=dimensions.height*state.field.y/100;layerContext.save();layerContext.beginPath();layerContext.rect(slotX-slotW/2,slotY-slotH/2,slotW,slotH);layerContext.clip();layerContext.translate(slotX+state.x*dimensions.width/stage.clientWidth,slotY+state.y*dimensions.height/stage.clientHeight);layerContext.rotate(state.angle*Math.PI/180);layerContext.scale(state.scale,state.scale);const fit=Math.max(slotW/base.width,slotH/base.height);layerContext.drawImage(base,-base.width*fit/2,-base.height*fit/2,base.width*fit,base.height*fit);layerContext.restore();if(state.field.maskUrl){const mask=await loadRemote(state.field.maskUrl);layerContext.globalCompositeOperation='destination-in';layerContext.drawImage(mask,slotX-slotW/2,slotY-slotH/2,slotW,slotH);layerContext.globalCompositeOperation='source-over'}context.drawImage(layer,0,0);putText(productForm,`_${state.field.label} Position`,`Slot ${state.field.x}%,${state.field.y}% ${state.field.width}%×${state.field.height}% · photo offset ${Math.round(state.x)},${Math.round(state.y)} · zoom ${Math.round(state.scale*100)}% · rotation ${Math.round(state.angle)}°`)}
-      if(root.dataset.overlay){const frame=await loadRemote(root.dataset.overlay);context.drawImage(frame,0,0,dimensions.width,dimensions.height)}
-      for(const state of textStates){const value=state.input.value.trim();if(!value)continue;const font=state.fontSelect?.value||state.field.fontFamily;putText(productForm,state.field.label,value);putText(productForm,`_${state.field.label} Font`,font);try{await document.fonts?.load(`${state.field.fontSize}px "${font}"`)}catch(error){console.warn('Cartwala font preload skipped',error)}context.save();context.fillStyle=state.field.color;context.textAlign='center';context.textBaseline='middle';context.font=`700 ${state.field.fontSize*dimensions.width/1200}px "${font}", sans-serif`;context.fillText(value,dimensions.width*state.field.x/100,dimensions.height*state.field.y/100,dimensions.width*.9);context.restore()}
-      fileStates.forEach(state=>putFile(productForm,state.field.label,state.file));linkStates.forEach(state=>{if(state.input.value.trim())putText(productForm,state.field.label,state.input.value.trim())});
-      if(startRevision!==revision)throw new Error('Design changed while rendering. Please preview again.');
-      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('Preview could not be generated');
-      if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=URL.createObjectURL(blob);resultImage.src=previewUrl;result.hidden=false;
-      designId=createId();
-      putFile(productForm,'_Personalised Preview',new File([blob],`cartwala-preview-${designId}.png`,{type:'image/png'}));putText(productForm,'_Cartwala Design ID',designId);
-      persist(blob).catch(error=>console.warn('Cartwala local draft save skipped',error));showProductPreview(previewUrl);
-      saved=true;setPurchaseReady(true);putText(productForm,'_Cartwala Personalization','Completed');root.querySelector('[data-cw-open]').textContent=root.dataset.labelEdit||'Edit Again';dialog.close();
-    }catch(error){console.error('Cartwala personalizer preview failed',error);window.alert(error?.message||'Preview could not be prepared. Please try again.')}finally{busy=false;save.textContent=saveLabel;updateReady()}};
-    
-    const showProductPreview=url=>{
-      const scope=root.closest('.shopify-section')||document;
-      const main=scope.querySelector('[data-gallery-main] img,.product__media img,[data-product-media] img,.product-gallery img')||document.querySelector('[data-gallery-main] img,.product__media img');
-      if(main){main.removeAttribute('srcset');main.closest('picture')?.querySelectorAll('source').forEach(source=>source.removeAttribute('srcset'));main.src=url;main.alt=root.dataset.labelSaved||'Your personalized design';}
-    };
-    const draftKey=location.pathname+':'+root.dataset.productId+':'+JSON.stringify(raw);
-    const database=new Promise((resolve,reject)=>{try{const request=indexedDB.open('cartwala-designs',1);request.onupgradeneeded=()=>request.result.createObjectStore('drafts');request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)}catch(error){reject(error)}});
-    database.catch(()=>{});
-    const persist=async blob=>{const db=await database;const record={designId,updated:Date.now(),blob,photos:photoStates.map(s=>({file:s.file,x:s.x/stage.clientWidth,y:s.y/stage.clientHeight,scale:s.scale,angle:s.angle})),texts:textStates.map(s=>({value:s.input.value,font:s.fontSelect?.value})),files:fileStates.map(s=>s.file),links:linkStates.map(s=>s.input.value)};await new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readwrite');const store=tx.objectStore('drafts');store.put(record,draftKey);store.put(record,`cart:${designId}`);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});};
-    const positionSlots=()=>photoStates.forEach(state=>{const slotWidth=Math.max(1,stage.clientWidth*state.field.width/100);const slotHeight=Math.max(1,stage.clientHeight*state.field.height/100);state.slot.style.left=state.field.x+'%';state.slot.style.top=state.field.y+'%';const compact=photoStates.length>1;state.slot.style.width=(compact?Math.max(28,Math.min(92,slotWidth*.9)):Math.max(34,Math.min(190,slotWidth*.78)))+'px';state.slot.style.height=(compact?Math.max(26,Math.min(54,slotHeight*.55)):Math.max(28,Math.min(64,slotHeight*.36)))+'px';state.slot.style.fontSize=(compact?Math.max(6,Math.min(10,Math.min(slotWidth,slotHeight)*.11)):Math.max(7,Math.min(14,Math.min(slotWidth,slotHeight)*.105)))+'px';state.slot.style.setProperty('--cw-slot-icon',Math.max(9,Math.min(compact?16:22,Math.min(slotWidth,slotHeight)*.18))+'px');const label=state.slot.querySelector('span');if(label)label.textContent=compact?state.field.label:(root.dataset.labelUpload||'Upload photo')});if(photoStates.length)selectPhoto(0);positionSlots();window.addEventListener('resize',positionSlots);
-    database.then(db=>new Promise((resolve,reject)=>{const request=db.transaction('drafts').objectStore('drafts').get(draftKey);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)})).then(record=>{if(!record||Date.now()-record.updated>7*86400000)return;designId=record.designId;photoStates.forEach((s,i)=>{const stored=record.photos[i];if(!stored?.file)return;loadPhoto(s,stored.file);s.scale=stored.scale;s.angle=stored.angle;s.relativeX=stored.x;s.relativeY=stored.y;});textStates.forEach((s,i)=>{s.input.value=record.texts[i]?.value||'';if(s.fontSelect&&record.texts[i]?.font)s.fontSelect.value=record.texts[i].font;s.input.dispatchEvent(new Event('input'));});fileStates.forEach((s,i)=>{s.file=record.files[i]||null;});linkStates.forEach((s,i)=>{s.input.value=record.links[i]||'';});previewUrl=URL.createObjectURL(record.blob);showProductPreview(previewUrl);
-      if(productForm&&isReady()){
-        stagedFiles.clear();photoStates.forEach((s,i)=>{putFile(productForm,s.field.label,s.file);putText(productForm,`_${s.field.label} Position`,JSON.stringify(record.photos[i]&&{x:record.photos[i].x,y:record.photos[i].y,scale:s.scale,angle:s.angle}));});
-        textStates.forEach(s=>{putText(productForm,s.field.label,s.input.value);putText(productForm,`_${s.field.label} Font`,s.fontSelect?.value||s.field.fontFamily)});
-        fileStates.forEach(s=>putFile(productForm,s.field.label,s.file));linkStates.forEach(s=>putText(productForm,s.field.label,s.input.value));
-        putFile(productForm,'_Personalised Preview',new File([record.blob],`cartwala-preview-${designId}.png`,{type:'image/png'}));putText(productForm,'_Cartwala Design ID',designId);putText(productForm,'_Cartwala Personalization','Completed');saved=true;setPurchaseReady(true);
+        const stagedFiles = new Map();
+        const putFile = (form, name, file) => {
+          if (file) stagedFiles.set(name, file);
+          else stagedFiles.delete(name);
+        };
+        const putText = (form, name, value) => {
+          let input = form.querySelector(
+            `input[data-cw-text-property="${CSS.escape(name)}"]`,
+          );
+          if (!input) {
+            input = document.createElement("input");
+            input.type = "hidden";
+            input.name = `properties[${name}]`;
+            input.dataset.cwTextProperty = name;
+            form.appendChild(input);
+          }
+          input.value = value;
+        };
+        const loadRemote = async (url) => {
+          const image = new Image();
+          image.crossOrigin = "anonymous";
+          image.src = url;
+          if (typeof image.decode === "function") {
+            try {
+              await image.decode();
+            } catch (error) {
+              await new Promise((resolve, reject) => {
+                image.onload = resolve;
+                image.onerror = reject;
+              });
+            }
+          } else
+            await new Promise((resolve, reject) => {
+              image.onload = resolve;
+              image.onerror = reject;
+            });
+          return image;
+        };
+        const canvasDimensions = () => {
+          const [width, height] = config.ratio.split(":").map(Number);
+          const longest = window.matchMedia?.("(max-width:900px)").matches
+            ? 1200
+            : 1600;
+          return width >= height
+            ? { width: longest, height: Math.round((longest * height) / width) }
+            : {
+                width: Math.round((longest * width) / height),
+                height: longest,
+              };
+        };
+        const attach = async () => {
+          if (!productForm || !isReady() || busy) return;
+          busy = true;
+          saved = false;
+          lockButtons();
+          const startRevision = revision;
+          updateReady();
+          save.textContent = "Preparing preview…";
+          try {
+            productForm
+              .querySelectorAll("[data-cw-property],[data-cw-text-property]")
+              .forEach((input) => input.remove());
+            stagedFiles.clear();
+            const dimensions = canvasDimensions();
+            const canvas = document.createElement("canvas");
+            canvas.width = dimensions.width;
+            canvas.height = dimensions.height;
+            const context = canvas.getContext("2d");
+            if (!context) throw new Error("Canvas is unavailable");
+            for (const state of photoStates) {
+              if (!state.file) continue;
+              putFile(productForm, state.field.label, state.file);
+              const layer = document.createElement("canvas");
+              layer.width = dimensions.width;
+              layer.height = dimensions.height;
+              const layerContext = layer.getContext("2d");
+              const base = new Image();
+              base.src = state.image.src;
+              if (typeof base.decode === "function") {
+                try {
+                  await base.decode();
+                } catch (error) {
+                  await new Promise((resolve, reject) => {
+                    base.onload = resolve;
+                    base.onerror = reject;
+                  });
+                }
+              }
+              const slotW = (dimensions.width * state.field.width) / 100;
+              const slotH = (dimensions.height * state.field.height) / 100;
+              const slotX = (dimensions.width * state.field.x) / 100;
+              const slotY = (dimensions.height * state.field.y) / 100;
+              layerContext.save();
+              layerContext.beginPath();
+              layerContext.rect(
+                slotX - slotW / 2,
+                slotY - slotH / 2,
+                slotW,
+                slotH,
+              );
+              layerContext.clip();
+              layerContext.translate(
+                slotX + (state.x * dimensions.width) / stage.clientWidth,
+                slotY + (state.y * dimensions.height) / stage.clientHeight,
+              );
+              layerContext.rotate((state.angle * Math.PI) / 180);
+              layerContext.scale(state.scale, state.scale);
+              const fit = Math.max(slotW / base.width, slotH / base.height);
+              layerContext.drawImage(
+                base,
+                (-base.width * fit) / 2,
+                (-base.height * fit) / 2,
+                base.width * fit,
+                base.height * fit,
+              );
+              layerContext.restore();
+              if (state.field.maskUrl) {
+                const mask = await loadRemote(state.field.maskUrl);
+                layerContext.globalCompositeOperation = "destination-in";
+                layerContext.drawImage(
+                  mask,
+                  slotX - slotW / 2,
+                  slotY - slotH / 2,
+                  slotW,
+                  slotH,
+                );
+                layerContext.globalCompositeOperation = "source-over";
+              }
+              context.drawImage(layer, 0, 0);
+              putText(
+                productForm,
+                `_${state.field.label} Position`,
+                `Slot ${state.field.x}%,${state.field.y}% ${state.field.width}%×${state.field.height}% · photo offset ${Math.round(state.x)},${Math.round(state.y)} · zoom ${Math.round(state.scale * 100)}% · rotation ${Math.round(state.angle)}°`,
+              );
+            }
+            if (root.dataset.overlay) {
+              const frame = await loadRemote(root.dataset.overlay);
+              context.drawImage(
+                frame,
+                0,
+                0,
+                dimensions.width,
+                dimensions.height,
+              );
+            }
+            for (const state of textStates) {
+              const value = state.input.value.trim();
+              if (!value) continue;
+              const font = state.fontSelect?.value || state.field.fontFamily;
+              putText(productForm, state.field.label, value);
+              putText(productForm, `_${state.field.label} Font`, font);
+              putText(
+                productForm,
+                `_${state.field.label} Style`,
+                JSON.stringify({
+                  x: state.x,
+                  y: state.y,
+                  fontSize: state.fontSize,
+                  rotation: state.angle,
+                  color: state.color,
+                }),
+              );
+              try {
+                await document.fonts?.load(`${state.fontSize}px "${font}"`);
+              } catch (error) {
+                console.warn("Cartwala font preload skipped", error);
+              }
+              context.save();
+              context.translate(
+                (dimensions.width * state.x) / 100,
+                (dimensions.height * state.y) / 100,
+              );
+              context.rotate((state.angle * Math.PI) / 180);
+              context.fillStyle = state.color;
+              context.textAlign = "center";
+              context.textBaseline = "middle";
+              context.font = `700 ${(state.fontSize * dimensions.width) / 1200}px "${font}", sans-serif`;
+              context.fillText(value, 0, 0, dimensions.width * 0.9);
+              context.restore();
+            }
+            fileStates.forEach((state) =>
+              putFile(productForm, state.field.label, state.file),
+            );
+            linkStates.forEach((state) => {
+              if (state.input.value.trim())
+                putText(
+                  productForm,
+                  state.field.label,
+                  state.input.value.trim(),
+                );
+            });
+            if (startRevision !== revision)
+              throw new Error(
+                "Design changed while rendering. Please preview again.",
+              );
+            const blob = await new Promise((resolve) =>
+              canvas.toBlob(resolve, "image/png"),
+            );
+            if (!blob) throw new Error("Preview could not be generated");
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            previewUrl = URL.createObjectURL(blob);
+            resultImage.src = previewUrl;
+            result.hidden = false;
+            designId = createId();
+            putFile(
+              productForm,
+              "_Personalised Preview",
+              new File([blob], `cartwala-preview-${designId}.png`, {
+                type: "image/png",
+              }),
+            );
+            putText(productForm, "_Cartwala Design ID", designId);
+            persist(blob).catch((error) =>
+              console.warn("Cartwala local draft save skipped", error),
+            );
+            showProductPreview(previewUrl);
+            saved = true;
+            setPurchaseReady(true);
+            putText(productForm, "_Cartwala Personalization", "Completed");
+            root.querySelector("[data-cw-open]").textContent =
+              root.dataset.labelEdit || "Edit Again";
+            dialog.close();
+          } catch (error) {
+            console.error("Cartwala personalizer preview failed", error);
+            window.alert(
+              error?.message ||
+                "Preview could not be prepared. Please try again.",
+            );
+          } finally {
+            busy = false;
+            save.textContent = saveLabel;
+            updateReady();
+          }
+        };
+
+        const showProductPreview = (url) => {
+          const scope = root.closest(".shopify-section") || document;
+          const main =
+            scope.querySelector(
+              "[data-gallery-main] img,.product__media img,[data-product-media] img,.product-gallery img",
+            ) ||
+            document.querySelector(
+              "[data-gallery-main] img,.product__media img",
+            );
+          if (main) {
+            main.removeAttribute("srcset");
+            main
+              .closest("picture")
+              ?.querySelectorAll("source")
+              .forEach((source) => source.removeAttribute("srcset"));
+            main.src = url;
+            main.alt = root.dataset.labelSaved || "Your personalized design";
+          }
+        };
+        const draftKey =
+          location.pathname +
+          ":" +
+          root.dataset.productId +
+          ":" +
+          JSON.stringify(raw);
+        const database = new Promise((resolve, reject) => {
+          try {
+            const request = indexedDB.open("cartwala-designs", 1);
+            request.onupgradeneeded = () =>
+              request.result.createObjectStore("drafts");
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+          } catch (error) {
+            reject(error);
+          }
+        });
+        database.catch(() => {});
+        const persist = async (blob) => {
+          const db = await database;
+          const record = {
+            designId,
+            updated: Date.now(),
+            blob,
+            photos: photoStates.map((s) => ({
+              file: s.file,
+              x: s.x / stage.clientWidth,
+              y: s.y / stage.clientHeight,
+              scale: s.scale,
+              angle: s.angle,
+            })),
+            texts: textStates.map((s) => ({
+              value: s.input.value,
+              font: s.fontSelect?.value,
+              color: s.color,
+              x: s.x,
+              y: s.y,
+              fontSize: s.fontSize,
+              angle: s.angle,
+            })),
+            files: fileStates.map((s) => s.file),
+            links: linkStates.map((s) => s.input.value),
+          };
+          await new Promise((resolve, reject) => {
+            const tx = db.transaction("drafts", "readwrite");
+            const store = tx.objectStore("drafts");
+            store.put(record, draftKey);
+            store.put(record, `cart:${designId}`);
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+          });
+        };
+        const positionSlots = () =>
+          photoStates.forEach((state) => {
+            const slotWidth = Math.max(
+              1,
+              (stage.clientWidth * state.field.width) / 100,
+            );
+            const slotHeight = Math.max(
+              1,
+              (stage.clientHeight * state.field.height) / 100,
+            );
+            state.slot.style.left = state.field.x + "%";
+            state.slot.style.top = state.field.y + "%";
+            const compact = photoStates.length > 1;
+            state.slot.style.width =
+              (compact
+                ? Math.max(28, Math.min(92, slotWidth * 0.9))
+                : Math.max(34, Math.min(190, slotWidth * 0.78))) + "px";
+            state.slot.style.height =
+              (compact
+                ? Math.max(26, Math.min(54, slotHeight * 0.55))
+                : Math.max(28, Math.min(64, slotHeight * 0.36))) + "px";
+            state.slot.style.fontSize =
+              (compact
+                ? Math.max(
+                    6,
+                    Math.min(10, Math.min(slotWidth, slotHeight) * 0.11),
+                  )
+                : Math.max(
+                    7,
+                    Math.min(14, Math.min(slotWidth, slotHeight) * 0.105),
+                  )) + "px";
+            state.slot.style.setProperty(
+              "--cw-slot-icon",
+              Math.max(
+                9,
+                Math.min(
+                  compact ? 16 : 22,
+                  Math.min(slotWidth, slotHeight) * 0.18,
+                ),
+              ) + "px",
+            );
+            const label = state.slot.querySelector("span");
+            if (label)
+              label.textContent = compact
+                ? state.field.label
+                : root.dataset.labelUpload || "Upload photo";
+          });
+        if (photoStates.length) selectPhoto(0);
+        positionSlots();
+        window.addEventListener("resize", positionSlots);
+        database
+          .then(
+            (db) =>
+              new Promise((resolve, reject) => {
+                const request = db
+                  .transaction("drafts")
+                  .objectStore("drafts")
+                  .get(draftKey);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+              }),
+          )
+          .then((record) => {
+            if (!record || Date.now() - record.updated > 7 * 86400000) return;
+            designId = record.designId;
+            photoStates.forEach((s, i) => {
+              const stored = record.photos[i];
+              if (!stored?.file) return;
+              loadPhoto(s, stored.file);
+              s.scale = stored.scale;
+              s.angle = stored.angle;
+              s.relativeX = stored.x;
+              s.relativeY = stored.y;
+            });
+            textStates.forEach((s, i) => {
+              const stored = record.texts[i] || {};
+              s.input.value = stored.value || "";
+              if (s.fontSelect && stored.font) s.fontSelect.value = stored.font;
+              if (s.colorInput && stored.color)
+                s.colorInput.value = stored.color;
+              s.color = stored.color || s.field.color;
+              s.x = Number.isFinite(Number(stored.x))
+                ? Number(stored.x)
+                : s.field.x;
+              s.y = Number.isFinite(Number(stored.y))
+                ? Number(stored.y)
+                : s.field.y;
+              s.fontSize = Number.isFinite(Number(stored.fontSize))
+                ? Number(stored.fontSize)
+                : s.field.fontSize;
+              s.angle = Number.isFinite(Number(stored.angle))
+                ? Number(stored.angle)
+                : s.field.rotation;
+              s.input.dispatchEvent(new Event("input"));
+            });
+            fileStates.forEach((s, i) => {
+              s.file = record.files[i] || null;
+            });
+            linkStates.forEach((s, i) => {
+              s.input.value = record.links[i] || "";
+            });
+            previewUrl = URL.createObjectURL(record.blob);
+            showProductPreview(previewUrl);
+            if (productForm && isReady()) {
+              stagedFiles.clear();
+              photoStates.forEach((s, i) => {
+                putFile(productForm, s.field.label, s.file);
+                putText(
+                  productForm,
+                  `_${s.field.label} Position`,
+                  JSON.stringify(
+                    record.photos[i] && {
+                      x: record.photos[i].x,
+                      y: record.photos[i].y,
+                      scale: s.scale,
+                      angle: s.angle,
+                    },
+                  ),
+                );
+              });
+              textStates.forEach((s) => {
+                putText(productForm, s.field.label, s.input.value);
+                putText(
+                  productForm,
+                  `_${s.field.label} Font`,
+                  s.fontSelect?.value || s.field.fontFamily,
+                );
+                putText(
+                  productForm,
+                  `_${s.field.label} Style`,
+                  JSON.stringify({
+                    x: s.x,
+                    y: s.y,
+                    fontSize: s.fontSize,
+                    rotation: s.angle,
+                    color: s.color,
+                  }),
+                );
+              });
+              fileStates.forEach((s) =>
+                putFile(productForm, s.field.label, s.file),
+              );
+              linkStates.forEach((s) =>
+                putText(productForm, s.field.label, s.input.value),
+              );
+              putFile(
+                productForm,
+                "_Personalised Preview",
+                new File([record.blob], `cartwala-preview-${designId}.png`, {
+                  type: "image/png",
+                }),
+              );
+              putText(productForm, "_Cartwala Design ID", designId);
+              putText(productForm, "_Cartwala Personalization", "Completed");
+              saved = true;
+              setPurchaseReady(true);
+            }
+            root.querySelector("[data-cw-open]").textContent =
+              root.dataset.labelEdit || "Edit Again";
+            updateReady();
+          })
+          .catch((error) =>
+            console.warn("Cartwala draft restore unavailable", error),
+          );
+        root.querySelector("[data-cw-open]").addEventListener("click", () => {
+          photoStates.forEach((s) => {
+            if (s.relativeX !== undefined) {
+              s.x = s.relativeX * stage.clientWidth;
+              s.y = s.relativeY * stage.clientHeight;
+              delete s.relativeX;
+              delete s.relativeY;
+              apply(s);
+            }
+          });
+        });
+
+        save.addEventListener("click", attach);
+        updateReady();
+      } catch (error) {
+        console.error(
+          "Cartwala personalizer failed to initialize for this block.",
+          error,
+        );
       }
-      root.querySelector('[data-cw-open]').textContent=root.dataset.labelEdit||'Edit Again';updateReady();}).catch(error=>console.warn('Cartwala draft restore unavailable',error));
-    root.querySelector('[data-cw-open]').addEventListener('click',()=>{photoStates.forEach(s=>{if(s.relativeX!==undefined){s.x=s.relativeX*stage.clientWidth;s.y=s.relativeY*stage.clientHeight;delete s.relativeX;delete s.relativeY;apply(s)}})});
-
-    save.addEventListener('click',attach);updateReady();
-  }catch(error){console.error('Cartwala personalizer failed to initialize for this block.',error);}
-  });
-  initialize();document.addEventListener('shopify:section:load',initialize);
+    });
+  initialize();
+  document.addEventListener("shopify:section:load", initialize);
 })();
