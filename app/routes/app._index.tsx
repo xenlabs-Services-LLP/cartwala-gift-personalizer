@@ -35,6 +35,8 @@ import {
 
 type Product = { id: string; title: string; handle: string; personalizer?: { jsonValue?: unknown } | null };
 
+const PERSONALIZER_METAFIELD_NAMESPACE = "app--340764327937";
+
 // Every action intent returns this same shape (with only the fields relevant
 // to that intent populated) so `typeof action` gives useFetcher<typeof action>
 // one concrete, precise type instead of TypeScript widening/narrowing the
@@ -125,7 +127,7 @@ async function handlePsdImport(admin: Awaited<ReturnType<typeof authenticate.adm
       mutation SaveImportedPsdPersonalizer($metafields: [MetafieldsSetInput!]!) {
         metafieldsSet(metafields: $metafields) { userErrors { field message code } }
       }`,
-      { variables: { metafields: [{ ownerId: productId, key: "personalizer_config", type: "json", value: JSON.stringify(config) }] } },
+      { variables: { metafields: [{ ownerId: productId, namespace: PERSONALIZER_METAFIELD_NAMESPACE, key: "personalizer_config", type: "json", value: JSON.stringify(config) }] } },
     );
     const saveJson = await saveResponse.json();
     const saveError = firstMetafieldsSetError(saveJson);
@@ -147,7 +149,7 @@ async function handleBulkImport(admin: Awaited<ReturnType<typeof authenticate.ad
     for (let offset = 0; offset < entries.length; offset += 25) {
       const metafields = entries.slice(offset, offset + 25).map((entry) => {
         if (!entry.productId.startsWith("gid://shopify/Product/")) throw new Error("The CSV contains an invalid product.");
-        return { ownerId: entry.productId, key: "personalizer_config", type: "json", value: JSON.stringify(normalizeConfig(entry.config)) };
+        return { ownerId: entry.productId, namespace: PERSONALIZER_METAFIELD_NAMESPACE, key: "personalizer_config", type: "json", value: JSON.stringify(normalizeConfig(entry.config)) };
       });
       const response = await admin.graphql(
         `#graphql
@@ -185,7 +187,7 @@ async function handleSave(admin: Awaited<ReturnType<typeof authenticate.admin>>[
     mutation SaveCartwalaPersonalizer($metafields: [MetafieldsSetInput!]!) {
       metafieldsSet(metafields: $metafields) { metafields { id key jsonValue } userErrors { field message code } }
     }`,
-    { variables: { metafields: [{ ownerId: productId, key: "personalizer_config", type: "json", value: JSON.stringify(config) }] } },
+    { variables: { metafields: [{ ownerId: productId, namespace: PERSONALIZER_METAFIELD_NAMESPACE, key: "personalizer_config", type: "json", value: JSON.stringify(config) }] } },
   );
   const json = await response.json();
   const error = firstMetafieldsSetError(json);
@@ -569,7 +571,14 @@ export default function PersonalizerHome() {
         <s-paragraph>Build each product independently. Add as many photo, text, design-file and Canva-link fields as its artwork needs.</s-paragraph>
         <s-button onClick={chooseProduct}>Choose product</s-button>
         {selected && <s-box padding="base" borderWidth="base" borderRadius="base" background="subdued"><s-text type="strong">{selected.title}</s-text></s-box>}
-        <s-switch label="Enable personalization" checked={config.enabled} onChange={(event) => setConfig({ ...config, enabled: event.currentTarget.checked })} />
+        <s-switch
+          label="Enable personalization"
+          checked={config.enabled}
+          onChange={(event) => {
+            const enabled = event.currentTarget.checked;
+            setConfig((current) => ({ ...current, enabled }));
+          }}
+        />
         <s-grid gridTemplateColumns="2fr 1fr" gap="base"><s-url-field label="Transparent product overlay PNG URL" value={config.overlayUrl} placeholder="https://cdn.shopify.com/..." onInput={(event) => setConfig({ ...config, overlayUrl: event.currentTarget.value })} /><s-select label="Artwork ratio" value={config.canvasRatio} onChange={(event) => setConfig({ ...config, canvasRatio: event.currentTarget.value })}>{!["1:1", "2:3", "3:2", "4:5", "5:4"].includes(config.canvasRatio) && <s-option value={config.canvasRatio}>PSD original ({config.canvasRatio})</s-option>}<s-option value="1:1">1:1 square</s-option><s-option value="2:3">2:3 portrait</s-option><s-option value="3:2">3:2 landscape</s-option><s-option value="4:5">4:5 portrait</s-option><s-option value="5:4">5:4 landscape</s-option></s-select></s-grid>
         <imageFetcher.Form method="post" encType="multipart/form-data"><input type="hidden" name="intent" value="uploadImage" /><input type="hidden" name="target" value="overlay" /><input key={`overlay-${imageKey}`} type="file" name="imageFile" accept=".png,.jpg,.jpeg,.webp" required /> <s-button type="submit" loading={imageFetcher.state !== "idle"}>Upload product artwork / overlay</s-button></imageFetcher.Form>
         <s-stack direction="inline" gap="base"><s-number-field label="Number of photo slots" min={1} max={Math.max(1, MAX_FIELDS - config.photoFields.length)} value={String(addCount)} onInput={(event) => setAddCount(clamp(event.currentTarget.value, 1, Math.max(1, MAX_FIELDS - config.photoFields.length), 1))} /><s-button onClick={addPhotos}>Add photo slots</s-button><s-button onClick={() => setConfig({ ...config, textFields: [...config.textFields, blankText(config.textFields.length)] })}>Add text field</s-button><s-button onClick={() => setConfig({ ...config, fileFields: [...config.fileFields, blankFile(config.fileFields.length)] })}>Add design-file field</s-button><s-button onClick={() => setConfig({ ...config, linkFields: [...config.linkFields, blankLink(config.linkFields.length)] })}>Add Canva-link field</s-button></s-stack>
