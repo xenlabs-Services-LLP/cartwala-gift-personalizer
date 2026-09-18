@@ -11,9 +11,7 @@
     assign personalizer_enabled = true
     assign round_magic_mirror_fallback = true
   endif
-  if product.handle == 'bottle-test'
-    assign personalizer_enabled = false
-  elsif request.design_mode
+  if request.design_mode
     assign personalizer_enabled = true
   endif
 %}
