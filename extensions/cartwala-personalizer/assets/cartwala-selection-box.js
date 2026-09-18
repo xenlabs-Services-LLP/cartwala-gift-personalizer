@@ -39,14 +39,16 @@
       if(!vw||!vh||!nw||!nh){box.hidden=true;return}
       const imageRatio=nw/nh;
       const viewportRatio=vw/vh;
-      const coverWidth=imageRatio>viewportRatio?vh*imageRatio:vw;
-      const coverHeight=imageRatio>viewportRatio?vh:vw/imageRatio;
+      // The editor displays uploaded photos with object-fit: contain. The blue
+      // selection frame must follow the visible bitmap, not the mask viewport.
+      const visibleWidth=imageRatio>viewportRatio?vw:vh*imageRatio;
+      const visibleHeight=imageRatio>viewportRatio?vw/imageRatio:vh;
       let matrix;
       try{matrix=new DOMMatrixReadOnly(getComputedStyle(image).transform)}catch(error){matrix=null}
       const scale=matrix?Math.hypot(matrix.a,matrix.b):1;
       const angle=matrix?Math.atan2(matrix.b,matrix.a):0;
       const tx=matrix?matrix.e:0,ty=matrix?matrix.f:0;
-      const scaledWidth=coverWidth*scale,scaledHeight=coverHeight*scale;
+      const scaledWidth=visibleWidth*scale,scaledHeight=visibleHeight*scale;
       const cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
       const frameWidth=scaledWidth*cos+scaledHeight*sin;
       const frameHeight=scaledWidth*sin+scaledHeight*cos;
