@@ -17,6 +17,8 @@
     "preview": "Preview",
     "edit_again": "Edit Again",
     "saved_preview": "Your personalized design",
-    "preview_save": "Preview & Save"
+    "preview_save": "Preview & Save",
+    "ready_to_dispatch": "Ready to dispatch",
+    "estimated_delivery": "Estimated delivery"
   }
 }

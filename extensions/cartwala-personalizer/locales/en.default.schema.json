@@ -1,6 +1,11 @@
 {
   "personalizer": {
     "block_name": "Cartwala Personalizer",
-    "accent_color": "Accent color"
+    "accent_color": "Accent color",
+    "show_delivery_dates": "Show dispatch and delivery dates",
+    "dispatch_start_days": "Dispatch range starts after (days)",
+    "dispatch_end_days": "Dispatch range ends after (days)",
+    "delivery_start_days": "Delivery range starts after (days)",
+    "delivery_end_days": "Delivery range ends after (days)"
   }
 }

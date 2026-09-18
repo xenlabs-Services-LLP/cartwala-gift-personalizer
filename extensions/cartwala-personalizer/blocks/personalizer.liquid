@@ -49,6 +49,31 @@
   <script src="{{ 'cartwala-stability-fix.js' | asset_url }}" defer></script>
 {% endif %}
 
+{% if block.settings.show_delivery_dates %}
+  <div
+    class="cw-delivery-estimate"
+    data-cw-delivery-estimate
+    data-dispatch-start="{{ block.settings.dispatch_start_days }}"
+    data-dispatch-end="{{ block.settings.dispatch_end_days }}"
+    data-delivery-start="{{ block.settings.delivery_start_days }}"
+    data-delivery-end="{{ block.settings.delivery_end_days }}"
+    data-dispatch-label="{{ 'personalizer.ready_to_dispatch' | t | escape }}"
+    data-delivery-label="{{ 'personalizer.estimated_delivery' | t | escape }}"
+    aria-live="polite"
+    {{ block.shopify_attributes }}
+  >
+    <div class="cw-delivery-estimate__row">
+      <span class="cw-delivery-estimate__icon" aria-hidden="true">🛠️</span>
+      <span><strong>{{ 'personalizer.ready_to_dispatch' | t }}:</strong> <span data-cw-dispatch-dates></span></span>
+    </div>
+    <div class="cw-delivery-estimate__row cw-delivery-estimate__row--primary">
+      <span class="cw-delivery-estimate__icon" aria-hidden="true">🚚</span>
+      <span><strong>{{ 'personalizer.estimated_delivery' | t }}:</strong> <span data-cw-delivery-dates></span></span>
+    </div>
+  </div>
+  <script src="{{ 'cartwala-delivery-estimate.js' | asset_url }}" defer></script>
+{% endif %}
+
 {% schema %}
-{"name":"t:personalizer.block_name","target":"section","javascript":"cartwala-personalizer.js","stylesheet":"cartwala-personalizer.css","enabled_on":{"templates":["product"]},"settings":[{"type":"color","id":"accent_color","label":"t:personalizer.accent_color","default":"#ff6200"}]}
+{"name":"t:personalizer.block_name","target":"section","javascript":"cartwala-personalizer.js","stylesheet":"cartwala-personalizer.css","enabled_on":{"templates":["product"]},"settings":[{"type":"color","id":"accent_color","label":"t:personalizer.accent_color","default":"#ff6200"},{"type":"checkbox","id":"show_delivery_dates","label":"t:personalizer.show_delivery_dates","default":true},{"type":"range","id":"dispatch_start_days","label":"t:personalizer.dispatch_start_days","min":0,"max":14,"step":1,"default":1},{"type":"range","id":"dispatch_end_days","label":"t:personalizer.dispatch_end_days","min":0,"max":14,"step":1,"default":2},{"type":"range","id":"delivery_start_days","label":"t:personalizer.delivery_start_days","min":1,"max":30,"step":1,"default":8},{"type":"range","id":"delivery_end_days","label":"t:personalizer.delivery_end_days","min":1,"max":30,"step":1,"default":9}]}
 {% endschema %}

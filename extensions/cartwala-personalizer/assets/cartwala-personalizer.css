@@ -514,6 +514,46 @@ body.cw-personalization-complete
   object-fit: contain;
   margin: 0;
 }
+
+.cw-delivery-estimate {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 14px;
+  padding: 13px 15px;
+  border: 1px solid rgba(255, 98, 0, 0.28);
+  border-radius: 12px;
+  background: #fff8f3;
+  color: #2f2724;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.cw-delivery-estimate__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.cw-delivery-estimate__row + .cw-delivery-estimate__row {
+  margin-top: 7px;
+}
+
+.cw-delivery-estimate__row--primary {
+  color: #d94f00;
+}
+
+.cw-delivery-estimate__icon {
+  flex: 0 0 22px;
+  width: 22px;
+  text-align: center;
+}
+
+@media (max-width: 749px) {
+  .cw-delivery-estimate {
+    padding: 12px 13px;
+    font-size: 13px;
+  }
+}
 .cw-personalizer__photo-selection {
   position: absolute;
   z-index: 8;
