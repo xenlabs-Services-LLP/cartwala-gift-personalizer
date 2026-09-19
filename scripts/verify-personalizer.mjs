@@ -185,6 +185,12 @@ assert.match(mugGallery, /cw-mug-birthday/);
 assert.match(mugGallery, /mug_gallery\.start_design/);
 assert.match(mugGallery, /cartwala-mug-gallery\.css/);
 
+const adminHome = fs.readFileSync("app/routes/app._index.tsx", "utf8");
+assert.match(adminHome, /Mug product setup/);
+assert.match(adminHome, /productVariantsBulkUpdate/);
+assert.match(adminHome, /MUG_CATEGORY_TAGS/);
+assert.match(adminHome, /8\.5 × 3\.5 inches/);
+
 const cart = fs.readFileSync(
   "extensions/cartwala-personalizer/assets/cartwala-cart-preview.js",
   "utf8",

@@ -51,7 +51,46 @@ type Product = {
   id: string;
   title: string;
   handle: string;
+  tags: string[];
+  variants: {
+    nodes: Array<{
+      id: string;
+      price: string;
+      compareAtPrice?: string | null;
+    }>;
+  };
   personalizer?: { jsonValue?: unknown } | null;
+};
+
+const MUG_CATEGORY_TAGS = {
+  birthday: "cw-mug-birthday",
+  anniversary: "cw-mug-anniversary",
+  love: "cw-mug-love",
+  family: "cw-mug-family",
+  friends: "cw-mug-friends",
+  other: "cw-mug-other",
+} as const;
+type MugCategory = keyof typeof MUG_CATEGORY_TAGS;
+type MugSetup = {
+  enabled: boolean;
+  category: MugCategory;
+  price: string;
+  compareAtPrice: string;
+};
+const MUG_TAGS = ["cw-mug", ...Object.values(MUG_CATEGORY_TAGS)];
+const mugSetupForProduct = (product: Product | null): MugSetup => {
+  const tags = product?.tags ?? [];
+  const category =
+    (Object.entries(MUG_CATEGORY_TAGS).find(([, tag]) =>
+      tags.includes(tag),
+    )?.[0] as MugCategory | undefined) ?? "other";
+  const variant = product?.variants.nodes[0];
+  return {
+    enabled: tags.includes("cw-mug"),
+    category,
+    price: variant?.price || "249.00",
+    compareAtPrice: variant?.compareAtPrice || "499.00",
+  };
 };
 
 const PERSONALIZER_METAFIELD_NAMESPACE = "$app";
@@ -105,6 +144,7 @@ type ActionResult = {
   psdImport?: { config: Config; photos: number; texts: number };
   restoredConfig?: Config;
   bulkSaved?: number;
+  mugSetupSaved?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -471,6 +511,24 @@ async function handleSave(
   if (!productId) return { ok: false, error: "Choose a product first." };
   if (!productId.startsWith("gid://shopify/Product/"))
     return { ok: false, error: "The selected product is invalid." };
+  const mugEnabled = String(data.get("mugEnabled")) === "true";
+  const mugCategory = String(data.get("mugCategory")) as MugCategory;
+  const mugPrice = String(data.get("mugPrice") || "249.00").trim();
+  const mugCompareAtPrice = String(
+    data.get("mugCompareAtPrice") || "499.00",
+  ).trim();
+  if (mugEnabled && !(mugCategory in MUG_CATEGORY_TAGS))
+    return { ok: false, error: "Choose a valid mug category." };
+  if (
+    mugEnabled &&
+    (!/^\d{1,6}(\.\d{1,2})?$/.test(mugPrice) ||
+      !/^\d{1,6}(\.\d{1,2})?$/.test(mugCompareAtPrice) ||
+      Number(mugCompareAtPrice) < Number(mugPrice))
+  )
+    return {
+      ok: false,
+      error: "Enter valid mug prices. Compare-at price must not be lower.",
+    };
   if (
     config.enabled &&
     config.photoFields.length +
@@ -490,7 +548,88 @@ async function handleSave(
   );
   const json = await response.json();
   const error = firstMetafieldsSetError(json);
-  return error ? { ok: false, error } : { ok: true };
+  if (error) return { ok: false, error };
+
+  const productResponse = await admin.graphql(
+    `#graphql
+    query MugProductState($id: ID!) {
+      product(id: $id) {
+        id
+        tags
+        variants(first: 100) { nodes { id } }
+      }
+    }`,
+    { variables: { id: productId } },
+  );
+  const productJson = (await productResponse.json()) as {
+    data?: {
+      product?: {
+        id: string;
+        tags: string[];
+        variants: { nodes: Array<{ id: string }> };
+      } | null;
+    };
+    errors?: Array<{ message?: string }>;
+  };
+  if (productJson.errors?.length || !productJson.data?.product)
+    return { ok: false, error: "Settings saved, but mug setup could not load." };
+  const product = productJson.data.product;
+  const tags = product.tags.filter((tag) => !MUG_TAGS.includes(tag));
+  if (mugEnabled) tags.push("cw-mug", MUG_CATEGORY_TAGS[mugCategory]);
+  const tagsResponse = await admin.graphql(
+    `#graphql
+    mutation UpdateMugTags($product: ProductUpdateInput!) {
+      productUpdate(product: $product) {
+        product { id tags }
+        userErrors { field message }
+      }
+    }`,
+    { variables: { product: { id: productId, tags } } },
+  );
+  const tagsJson = (await tagsResponse.json()) as {
+    data?: { productUpdate?: { userErrors?: Array<{ message?: string }> } };
+    errors?: Array<{ message?: string }>;
+  };
+  const tagError =
+    tagsJson.errors?.[0]?.message ||
+    tagsJson.data?.productUpdate?.userErrors?.[0]?.message;
+  if (tagError) return { ok: false, error: `Mug tags: ${tagError}` };
+
+  if (mugEnabled && product.variants.nodes.length) {
+    const variantsResponse = await admin.graphql(
+      `#graphql
+      mutation UpdateMugPrices($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+        productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+          productVariants { id price compareAtPrice }
+          userErrors { field message }
+        }
+      }`,
+      {
+        variables: {
+          productId,
+          variants: product.variants.nodes.map((variant) => ({
+            id: variant.id,
+            price: mugPrice,
+            compareAtPrice: mugCompareAtPrice,
+          })),
+        },
+      },
+    );
+    const variantsJson = (await variantsResponse.json()) as {
+      data?: {
+        productVariantsBulkUpdate?: {
+          userErrors?: Array<{ message?: string }>;
+        };
+      };
+      errors?: Array<{ message?: string }>;
+    };
+    const variantError =
+      variantsJson.errors?.[0]?.message ||
+      variantsJson.data?.productVariantsBulkUpdate?.userErrors?.[0]?.message;
+    if (variantError)
+      return { ok: false, error: `Mug prices: ${variantError}` };
+  }
+  return { ok: true, mugSetupSaved: mugEnabled };
 }
 
 // ---------------------------------------------------------------------------
@@ -509,6 +648,9 @@ export default function PersonalizerHome() {
   const restoreFetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
   const [selected, setSelected] = useState<Product | null>(products[0] ?? null);
+  const [mugSetup, setMugSetup] = useState<MugSetup>(() =>
+    mugSetupForProduct(products[0] ?? null),
+  );
   const [config, setConfig] = useState<Config>(
     normalizeConfig(selected?.personalizer?.jsonValue ?? emptyConfig),
   );
@@ -679,6 +821,7 @@ export default function PersonalizerHome() {
       skipNextDirtyCheck.current = true;
       setSelected(product);
       setConfig(next);
+      setMugSetup(mugSetupForProduct(product));
       setActiveSlot(next.photoFields[0]?.id ?? null);
       setDirty(false);
     }
@@ -689,6 +832,10 @@ export default function PersonalizerHome() {
     const form = new FormData();
     form.set("productId", selected.id);
     form.set("config", JSON.stringify(configRef.current));
+    form.set("mugEnabled", String(mugSetup.enabled));
+    form.set("mugCategory", mugSetup.category);
+    form.set("mugPrice", mugSetup.price);
+    form.set("mugCompareAtPrice", mugSetup.compareAtPrice);
     saveFetcher.submit(form, { method: "POST" });
   };
 
@@ -1147,7 +1294,7 @@ export default function PersonalizerHome() {
   };
 
   return (
-    <s-page heading="Cartwala Personalizer V5.1" inlineSize="large">
+    <s-page heading="Cartwala Personalizer V5.2" inlineSize="large">
       <s-button
         slot="primary-action"
         variant="primary"
@@ -1283,6 +1430,86 @@ export default function PersonalizerHome() {
               Add Canva-link field
             </s-button>
           </s-stack>
+        </s-stack>
+      </s-section>
+
+      <s-section heading="Mug product setup">
+        <s-stack direction="block" gap="base">
+          <s-paragraph>
+            Enable this only for mug products. Saving automatically applies the
+            gallery tags, category and standard selling prices. Existing gift
+            products remain unchanged.
+          </s-paragraph>
+          <s-switch
+            label="Enable mug gallery and rotating 3D preview"
+            checked={mugSetup.enabled}
+            disabled={!selected}
+            onChange={(event) => {
+              setMugSetup((current) => ({
+                ...current,
+                enabled: event.currentTarget.checked,
+              }));
+              setDirty(true);
+            }}
+          />
+          {mugSetup.enabled && (
+            <>
+              <s-grid gridTemplateColumns="1fr 1fr 1fr" gap="base">
+                <s-select
+                  label="Mug category"
+                  value={mugSetup.category}
+                  onChange={(event) => {
+                    setMugSetup((current) => ({
+                      ...current,
+                      category: event.currentTarget.value as MugCategory,
+                    }));
+                    setDirty(true);
+                  }}
+                >
+                  <s-option value="birthday">Birthday</s-option>
+                  <s-option value="anniversary">Anniversary</s-option>
+                  <s-option value="love">Love</s-option>
+                  <s-option value="family">Family</s-option>
+                  <s-option value="friends">Friends</s-option>
+                  <s-option value="other">Other</s-option>
+                </s-select>
+                <s-money-field
+                  label="Selling price"
+                  value={mugSetup.price}
+                  onInput={(event) => {
+                    setMugSetup((current) => ({
+                      ...current,
+                      price: event.currentTarget.value,
+                    }));
+                    setDirty(true);
+                  }}
+                />
+                <s-money-field
+                  label="Compare-at price"
+                  value={mugSetup.compareAtPrice}
+                  onInput={(event) => {
+                    setMugSetup((current) => ({
+                      ...current,
+                      compareAtPrice: event.currentTarget.value,
+                    }));
+                    setDirty(true);
+                  }}
+                />
+              </s-grid>
+              <s-box
+                padding="base"
+                borderWidth="base"
+                borderRadius="base"
+                background="subdued"
+              >
+                <s-stack direction="inline" gap="base" alignItems="center">
+                  <s-badge tone="info">11 oz white mug</s-badge>
+                  <s-text>Print artwork: 8.5 × 3.5 inches</s-text>
+                  <s-text>Tag: cw-mug</s-text>
+                </s-stack>
+              </s-box>
+            </>
+          )}
         </s-stack>
       </s-section>
 

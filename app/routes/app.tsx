@@ -57,6 +57,14 @@ type Product = {
   id: string;
   title: string;
   handle: string;
+  tags: string[];
+  variants: {
+    nodes: Array<{
+      id: string;
+      price: string;
+      compareAtPrice?: string | null;
+    }>;
+  };
   personalizer?: { jsonValue?: Config | null } | null;
 };
 
@@ -74,6 +82,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           id
           title
           handle
+          tags
+          variants(first: 1) { nodes { id price compareAtPrice } }
           storefrontPersonalizer: metafield(namespace: "cartwala_personalizer", key: "personalizer_config") { jsonValue }
           personalizer: metafield(key: "personalizer_config") { jsonValue }
         }

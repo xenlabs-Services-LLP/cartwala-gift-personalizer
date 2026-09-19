@@ -4,6 +4,7 @@
 
 - Added a mobile-friendly Shopify collection app block for the All Photo Mugs design gallery, with Birthday, Anniversary, Love, Family, Friends and Other filters.
 - Products tagged `cw-mug` now receive a rotating standard white 11oz digital mug preview after Preview & Save. The final customer canvas wraps around the mug and supports drag, arrow-button and keyboard rotation.
+- Added mug setup controls to the admin panel. A single save applies the mug/category tags plus ₹249 selling and ₹499 compare-at defaults to every variant.
 - Mug behavior is isolated by product tag, so existing mirror, pillow and other gift personalizers continue using their current workflow.
 - Added automated regression coverage for mug-only activation, gallery categories and 3D preview assets.
 
