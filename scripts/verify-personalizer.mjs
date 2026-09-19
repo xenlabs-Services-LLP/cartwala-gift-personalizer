@@ -178,6 +178,14 @@ assert.match(cart, /const property=safePreviewUrl/);
 assert.match(cart, /return draftPreview/);
 assert.match(cart, /if\(matches\.length===1\)return matches\[0\]/);
 
+const selectionBox = fs.readFileSync(
+  "extensions/cartwala-personalizer/assets/cartwala-selection-box.js",
+  "utf8",
+);
+assert.match(selectionBox, /const photoWidth=vw\*zoom/);
+assert.match(selectionBox, /const photoHeight=vh\*zoom/);
+assert.doesNotMatch(selectionBox, /nw\*coverScale\*zoom/);
+
 // ---------------------------------------------------------------------------
 // Admin: config validation, PSD import, and Shopify Files upload now live in
 // app/lib/*.ts instead of being inlined in the route file. Assert both that

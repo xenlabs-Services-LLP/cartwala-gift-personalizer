@@ -1,5 +1,10 @@
 # @shopify/shopify-app-template-react-router
 
+## Cartwala V5.1.1 photo selection boundary
+
+- The storefront blue transform boundary now starts at the PSD PHOTO slot/mask dimensions instead of expanding to the uploaded image's natural aspect-ratio bounds.
+- Corner zoom still scales the boundary proportionally, while photo cover, drag, zoom, rotation, no-white-gap constraints, preview and cart data remain unchanged.
+
 ## Cartwala V5.1 safe template revisions
 
 - PSD replacement is now transactional: a failed upload or metafield save keeps the existing live template and removes files created by the failed attempt.
