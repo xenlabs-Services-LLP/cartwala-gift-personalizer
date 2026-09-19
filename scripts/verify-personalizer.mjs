@@ -282,6 +282,8 @@ assert.match(assetRegistry, /export const RETIRED_ASSET_DAYS = 30/);
 
 const psdImport = fs.readFileSync("app/lib/psd-import.ts", "utf8");
 assert.match(psdImport, /Number\(transform\[4\]\) \+ textLeft/);
+assert.match(psdImport, /const psdLayerAlphaBounds/);
+assert.match(psdImport, /if \(alphaUsesDocumentCoordinates\) return alpha/);
 // CMYK fix: a real 4-channel CMYK color used to be matched by the "only K is
 // present" branch and rendered as a flat grayscale, silently dropping C/M/Y.
 assert.match(psdImport, /\["c", "m", "y", "k"\]\.every/);

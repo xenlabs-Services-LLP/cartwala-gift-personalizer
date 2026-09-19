@@ -1,5 +1,11 @@
 # @shopify/shopify-app-template-react-router
 
+## Cartwala V5.1.2 PSD slot width correction
+
+- PSD import now trims transparent padding from PHOTO/UPLOAD layers even when Photoshop supplies a larger explicit outer layer box.
+- The saved photo slot, generated mask and storefront blue transform boundary therefore use the actual visible Photoshop slot bounds on both axes.
+- Existing product configurations remain untouched until their PSD is re-imported and saved, preventing an automatic bulk change to live products.
+
 ## Cartwala V5.1.1 photo selection boundary
 
 - The storefront blue transform boundary now starts at the PSD PHOTO slot/mask dimensions instead of expanding to the uploaded image's natural aspect-ratio bounds.
