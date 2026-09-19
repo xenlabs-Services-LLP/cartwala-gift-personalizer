@@ -136,11 +136,99 @@
     return { photos, texts, files, links, fonts, ratio };
   };
 
+  const initializeMugPreview = (root) => {
+    const preview = root.querySelector("[data-cw-mug-preview]");
+    if (!preview || preview.dataset.cwMugReady === "true") return;
+    preview.dataset.cwMugReady = "true";
+    const stage = preview.querySelector("[data-cw-mug-stage]");
+    const scene = preview.querySelector("[data-cw-mug-scene]");
+    const body = preview.querySelector("[data-cw-mug-body]");
+    const left = preview.querySelector("[data-cw-mug-left]");
+    const right = preview.querySelector("[data-cw-mug-right]");
+    if (!stage || !scene || !body || !left || !right) return;
+
+    const panelCount = 56;
+    const panelWidth = 12;
+    const radius = (panelCount * panelWidth) / (2 * Math.PI);
+    const panels = Array.from({ length: panelCount }, (_, index) => {
+      const panel = document.createElement("span");
+      const angle = (360 / panelCount) * index;
+      panel.className = "cw-mug-preview__panel";
+      panel.style.setProperty("--cw-panel-angle", `${angle}deg`);
+      panel.style.setProperty("--cw-panel-radius", `${radius}px`);
+      panel.style.setProperty("--cw-panel-width", `${panelWidth + 0.5}px`);
+      panel.style.backgroundSize = `${panelCount * panelWidth}px 100%`;
+      panel.style.backgroundPosition = `${-index * panelWidth}px 0`;
+      body.appendChild(panel);
+      return { panel, angle };
+    });
+
+    let rotation = -18;
+    let pointerStart = 0;
+    let rotationStart = rotation;
+    let dragging = false;
+    const render = () => {
+      scene.style.setProperty("--cw-mug-rotation", `${rotation}deg`);
+      panels.forEach(({ panel, angle }) => {
+        const facing = Math.cos(((angle + rotation) * Math.PI) / 180);
+        panel.style.setProperty(
+          "--cw-panel-light",
+          String(Math.max(0.62, Math.min(1.08, 0.8 + facing * 0.25))),
+        );
+      });
+    };
+    const rotate = (amount) => {
+      rotation = (rotation + amount) % 360;
+      render();
+    };
+    const applyTexture = (url) => {
+      if (typeof url !== "string" || !url) return;
+      panels.forEach(({ panel }) => {
+        panel.style.backgroundImage = `url("${url.replace(/["\\\n\r]/g, "")}")`;
+      });
+      preview.hidden = false;
+      render();
+    };
+
+    left.addEventListener("click", () => rotate(-12));
+    right.addEventListener("click", () => rotate(12));
+    stage.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      rotate(event.key === "ArrowLeft" ? -12 : 12);
+    });
+    stage.addEventListener("pointerdown", (event) => {
+      dragging = true;
+      pointerStart = event.clientX;
+      rotationStart = rotation;
+      stage.setPointerCapture?.(event.pointerId);
+      stage.classList.add("is-dragging");
+    });
+    stage.addEventListener("pointermove", (event) => {
+      if (!dragging) return;
+      rotation = rotationStart + (event.clientX - pointerStart) * 0.7;
+      render();
+    });
+    const stopDragging = (event) => {
+      if (!dragging) return;
+      dragging = false;
+      stage.releasePointerCapture?.(event.pointerId);
+      stage.classList.remove("is-dragging");
+    };
+    stage.addEventListener("pointerup", stopDragging);
+    stage.addEventListener("pointercancel", stopDragging);
+    root.addEventListener("cartwala:preview-ready", (event) => {
+      applyTexture(event.detail?.url);
+    });
+    render();
+  };
+
   const initialize = () =>
     document.querySelectorAll("[data-cw-personalizer]").forEach((root) => {
       if (root.dataset.cwReady === "true") return;
       root.dataset.cwReady = "true";
       try {
+        initializeMugPreview(root);
         const dialog = root.querySelector("[data-cw-dialog]");
         const stage = root.querySelector("[data-cw-stage]");
         const photoLayers = root.querySelector("[data-cw-photo-layers]");
@@ -1252,6 +1340,11 @@
               console.warn("Cartwala local draft save skipped", error),
             );
             showProductPreview(previewUrl);
+            root.dispatchEvent(
+              new CustomEvent("cartwala:preview-ready", {
+                detail: { url: previewUrl },
+              }),
+            );
             saved = true;
             setPurchaseReady(true);
             putText(productForm, "_Cartwala Personalization", "Completed");
@@ -1445,6 +1538,11 @@
             });
             previewUrl = URL.createObjectURL(record.blob);
             showProductPreview(previewUrl);
+            root.dispatchEvent(
+              new CustomEvent("cartwala:preview-ready", {
+                detail: { url: previewUrl },
+              }),
+            );
             if (productForm && isReady()) {
               stagedFiles.clear();
               photoStates.forEach((s, i) => {

@@ -1,4 +1,10 @@
 {
+  "mug_gallery": {
+    "block_name": "Mug Design Gallery",
+    "intro": "Introduction",
+    "accent_color": "Accent color",
+    "products_per_page": "Designs per page"
+  },
   "personalizer": {
     "block_name": "Cartwala Personalizer",
     "accent_color": "Accent color",

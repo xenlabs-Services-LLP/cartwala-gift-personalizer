@@ -1,4 +1,32 @@
 {
+  "mug_gallery": {
+    "eyebrow": "Create your mug",
+    "steps_label": "How personalisation works",
+    "select_design": "Select design",
+    "upload_photo": "Upload photo",
+    "preview_buy": "Preview & buy",
+    "filters_label": "Mug design categories",
+    "all": "All",
+    "birthday": "Birthday",
+    "anniversary": "Anniversary",
+    "love": "Love",
+    "family": "Family",
+    "friends": "Friends",
+    "other": "Other designs",
+    "sale": "Sale",
+    "start_design": "Start Design",
+    "empty_title": "New mug designs are coming soon",
+    "empty_text": "Please check again shortly."
+  },
+  "mug_preview": {
+    "eyebrow": "Your design",
+    "title": "3D mug preview",
+    "live": "Live preview",
+    "help": "Drag the mug or use the arrows to rotate",
+    "stage_label": "Rotatable preview of your personalised mug",
+    "rotate_left": "Rotate mug left",
+    "rotate_right": "Rotate mug right"
+  },
   "personalizer": {
     "block_name": "Cartwala Personalizer",
     "accent_color": "Accent color",

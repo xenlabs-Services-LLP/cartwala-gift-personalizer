@@ -1,0 +1,80 @@
+{% liquid
+  assign active_category = 'all'
+  if current_tags contains 'cw-mug-birthday'
+    assign active_category = 'birthday'
+  elsif current_tags contains 'cw-mug-anniversary'
+    assign active_category = 'anniversary'
+  elsif current_tags contains 'cw-mug-love'
+    assign active_category = 'love'
+  elsif current_tags contains 'cw-mug-family'
+    assign active_category = 'family'
+  elsif current_tags contains 'cw-mug-friends'
+    assign active_category = 'friends'
+  elsif current_tags contains 'cw-mug-other'
+    assign active_category = 'other'
+  endif
+%}
+
+{{ 'cartwala-mug-gallery.css' | asset_url | stylesheet_tag }}
+
+<section class="cw-mug-gallery" style="--cw-mug-gallery-accent: {{ block.settings.accent_color }}" {{ block.shopify_attributes }}>
+  <header class="cw-mug-gallery__header">
+    <p class="cw-mug-gallery__eyebrow">{{ 'mug_gallery.eyebrow' | t }}</p>
+    <h1>{{ collection.title | escape }}</h1>
+    <p>{{ block.settings.intro | default: collection.description | strip_html | escape }}</p>
+    <ol class="cw-mug-gallery__steps" aria-label="{{ 'mug_gallery.steps_label' | t | escape }}">
+      <li><span>1</span>{{ 'mug_gallery.select_design' | t }}</li>
+      <li><span>2</span>{{ 'mug_gallery.upload_photo' | t }}</li>
+      <li><span>3</span>{{ 'mug_gallery.preview_buy' | t }}</li>
+    </ol>
+  </header>
+
+  <nav class="cw-mug-gallery__filters" aria-label="{{ 'mug_gallery.filters_label' | t | escape }}">
+    <a href="{{ collection.url }}"{% if active_category == 'all' %} class="is-active" aria-current="page"{% endif %}>{{ 'mug_gallery.all' | t }}</a>
+    <a href="{{ collection.url }}/cw-mug-birthday"{% if active_category == 'birthday' %} class="is-active" aria-current="page"{% endif %}>{{ 'mug_gallery.birthday' | t }}</a>
+    <a href="{{ collection.url }}/cw-mug-anniversary"{% if active_category == 'anniversary' %} class="is-active" aria-current="page"{% endif %}>{{ 'mug_gallery.anniversary' | t }}</a>
+    <a href="{{ collection.url }}/cw-mug-love"{% if active_category == 'love' %} class="is-active" aria-current="page"{% endif %}>{{ 'mug_gallery.love' | t }}</a>
+    <a href="{{ collection.url }}/cw-mug-family"{% if active_category == 'family' %} class="is-active" aria-current="page"{% endif %}>{{ 'mug_gallery.family' | t }}</a>
+    <a href="{{ collection.url }}/cw-mug-friends"{% if active_category == 'friends' %} class="is-active" aria-current="page"{% endif %}>{{ 'mug_gallery.friends' | t }}</a>
+    <a href="{{ collection.url }}/cw-mug-other"{% if active_category == 'other' %} class="is-active" aria-current="page"{% endif %}>{{ 'mug_gallery.other' | t }}</a>
+  </nav>
+
+  {% paginate collection.products by block.settings.products_per_page %}
+    {% if collection.products_count > 0 %}
+      <div class="cw-mug-gallery__grid">
+        {% for product in collection.products %}
+          <article class="cw-mug-card">
+            <a class="cw-mug-card__image" href="{{ product.url | within: collection }}" aria-label="{{ product.title | escape }}">
+              {% if product.featured_image %}
+                {{ product.featured_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '240,360,540,720,900', sizes: '(min-width: 990px) 25vw, (min-width: 600px) 33vw, 50vw', alt: product.featured_image.alt | default: product.title }}
+              {% else %}
+                {{ 'product-1' | placeholder_svg_tag: 'cw-mug-card__placeholder' }}
+              {% endif %}
+              {% if product.compare_at_price_max > product.price %}
+                <span class="cw-mug-card__sale">{{ 'mug_gallery.sale' | t }}</span>
+              {% endif %}
+            </a>
+            <div class="cw-mug-card__content">
+              <h2><a href="{{ product.url | within: collection }}">{{ product.title | escape }}</a></h2>
+              <p class="cw-mug-card__price">
+                <strong>{{ product.price | money }}</strong>
+                {% if product.compare_at_price_max > product.price %}<s>{{ product.compare_at_price_max | money }}</s>{% endif %}
+              </p>
+              <a class="cw-mug-card__start" href="{{ product.url | within: collection }}">{{ 'mug_gallery.start_design' | t }}</a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+      {% if paginate.pages > 1 %}<div class="cw-mug-gallery__pagination">{{ paginate | default_pagination }}</div>{% endif %}
+    {% else %}
+      <div class="cw-mug-gallery__empty">
+        <h2>{{ 'mug_gallery.empty_title' | t }}</h2>
+        <p>{{ 'mug_gallery.empty_text' | t }}</p>
+      </div>
+    {% endif %}
+  {% endpaginate %}
+</section>
+
+{% schema %}
+{"name":"t:mug_gallery.block_name","target":"section","enabled_on":{"templates":["collection"]},"settings":[{"type":"inline_richtext","id":"intro","label":"t:mug_gallery.intro","default":"Choose a design, upload your photo and preview your personalised mug."},{"type":"color","id":"accent_color","label":"t:mug_gallery.accent_color","default":"#ff6200"},{"type":"range","id":"products_per_page","label":"t:mug_gallery.products_per_page","min":12,"max":48,"step":4,"default":24}]}
+{% endschema %}

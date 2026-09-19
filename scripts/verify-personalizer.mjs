@@ -131,6 +131,9 @@ for (const token of [
   "allowColorChoice",
   "cw-personalizer__text-handle--rotate",
   "field?.movable === true",
+  "const initializeMugPreview = (root) =>",
+  "cartwala:preview-ready",
+  "const panelCount = 56",
 ])
   assert.ok(
     storefront.includes(token),
@@ -163,6 +166,24 @@ const storefrontCss = fs.readFileSync(
 assert.match(storefrontCss, /--cw-slot-icon/);
 assert.match(storefrontCss, /min-width: 0/);
 assert.doesNotMatch(storefrontCss, /min-width:min\(190px,85%\)/);
+assert.match(storefrontCss, /\.cw-mug-preview__panel/);
+assert.match(storefrontCss, /perspective: 900px/);
+
+const personalizerBlock = fs.readFileSync(
+  "extensions/cartwala-personalizer/blocks/personalizer.liquid",
+  "utf8",
+);
+assert.match(personalizerBlock, /product\.tags contains 'cw-mug'/);
+assert.match(personalizerBlock, /data-cw-mug-preview/);
+
+const mugGallery = fs.readFileSync(
+  "extensions/cartwala-personalizer/blocks/mug-design-gallery.liquid",
+  "utf8",
+);
+assert.match(mugGallery, /paginate collection\.products/);
+assert.match(mugGallery, /cw-mug-birthday/);
+assert.match(mugGallery, /mug_gallery\.start_design/);
+assert.match(mugGallery, /cartwala-mug-gallery\.css/);
 
 const cart = fs.readFileSync(
   "extensions/cartwala-personalizer/assets/cartwala-cart-preview.js",

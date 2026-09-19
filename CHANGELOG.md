@@ -1,5 +1,12 @@
 # @shopify/shopify-app-template-react-router
 
+## Cartwala V5.2.0 mug design gallery and 3D preview
+
+- Added a mobile-friendly Shopify collection app block for the All Photo Mugs design gallery, with Birthday, Anniversary, Love, Family, Friends and Other filters.
+- Products tagged `cw-mug` now receive a rotating standard white 11oz digital mug preview after Preview & Save. The final customer canvas wraps around the mug and supports drag, arrow-button and keyboard rotation.
+- Mug behavior is isolated by product tag, so existing mirror, pillow and other gift personalizers continue using their current workflow.
+- Added automated regression coverage for mug-only activation, gallery categories and 3D preview assets.
+
 ## Cartwala V5.1.4 full-photo selection boundary
 
 - The blue transform box now follows the uploaded photo's actual rendered width and height, including its natural aspect ratio, cover fit and customer zoom.
