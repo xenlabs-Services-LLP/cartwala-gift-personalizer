@@ -694,6 +694,13 @@
         const constrainPhoto = (state) => {
           state.x = Number.isFinite(Number(state.x)) ? Number(state.x) : 0;
           state.y = Number.isFinite(Number(state.y)) ? Number(state.y) : 0;
+          const viewportWidth = state.viewport.clientWidth;
+          const viewportHeight = state.viewport.clientHeight;
+          if (!viewportWidth || !viewportHeight) return;
+          const maxX = Math.max(0, (viewportWidth * (state.scale - 1)) / 2);
+          const maxY = Math.max(0, (viewportHeight * (state.scale - 1)) / 2);
+          state.x = clamp(state.x, -maxX, maxX, 0);
+          state.y = clamp(state.y, -maxY, maxY, 0);
         };
         const apply = (state) => {
           invalidate();
@@ -742,7 +749,7 @@
           state.objectUrl = URL.createObjectURL(file);
           state.image.src = state.objectUrl;
           state.image.style.display = "block";
-          state.image.style.objectFit = "contain";
+          state.image.style.objectFit = "cover";
           state.fileLabel.hidden = true;
           state.slot.hidden = true;
           selectPhoto(state.index);

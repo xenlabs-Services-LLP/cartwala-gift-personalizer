@@ -16,7 +16,7 @@
           if(field&&image.naturalWidth&&image.naturalHeight){
             const slotW=this.canvas.width*(Number(field.width)||24)/100;
             const slotH=this.canvas.height*(Number(field.height)||24)/100;
-            const fit=Math.min(slotW/image.naturalWidth,slotH/image.naturalHeight);
+            const fit=Math.max(slotW/image.naturalWidth,slotH/image.naturalHeight);
             const width=image.naturalWidth*fit;
             const height=image.naturalHeight*fit;
             return original.call(this,image,-width/2,-height/2,width,height);

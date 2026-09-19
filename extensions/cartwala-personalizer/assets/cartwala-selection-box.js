@@ -35,14 +35,9 @@
       const stageRect=stage.getBoundingClientRect();
       const viewportRect=viewport.getBoundingClientRect();
       const vw=viewport.clientWidth,vh=viewport.clientHeight;
-      const nw=image.naturalWidth||vw,nh=image.naturalHeight||vh;
-      if(!vw||!vh||!nw||!nh){box.hidden=true;return}
-      const imageRatio=nw/nh;
-      const viewportRatio=vw/vh;
-      // The editor displays uploaded photos with object-fit: contain. The blue
-      // selection frame must follow the visible bitmap, not the mask viewport.
-      const visibleWidth=imageRatio>viewportRatio?vw:vh*imageRatio;
-      const visibleHeight=imageRatio>viewportRatio?vw/imageRatio:vh;
+      if(!vw||!vh){box.hidden=true;return}
+      const visibleWidth=vw;
+      const visibleHeight=vh;
       let matrix;
       try{matrix=new DOMMatrixReadOnly(getComputedStyle(image).transform)}catch(error){matrix=null}
       const scale=matrix?Math.hypot(matrix.a,matrix.b):1;
