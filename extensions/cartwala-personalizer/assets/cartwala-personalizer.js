@@ -721,7 +721,9 @@
           invalidate();
           state.scale = clamp(state.scale, 1, 5, 1);
           constrainPhoto(state);
-          state.image.style.objectPosition = `calc(50% + ${state.x}px) calc(50% + ${state.y}px)`;
+          const objectOffsetX = state.x / state.scale;
+          const objectOffsetY = state.y / state.scale;
+          state.image.style.objectPosition = `calc(50% + ${objectOffsetX}px) calc(50% + ${objectOffsetY}px)`;
           state.image.style.transform = `scale(${state.scale}) rotate(${state.angle}deg)`;
           state.image.dataset.cwX = String(state.x);
           state.image.dataset.cwY = String(state.y);
