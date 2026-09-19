@@ -3,6 +3,10 @@
     "block_name": "Mug Design Gallery",
     "intro": "Introduction",
     "accent_color": "Accent color",
+    "normal_mug_image": "Normal mug category image",
+    "magic_mug_image": "Magic mug category image",
+    "love_handle_mug_image": "Love handle mug category image",
+    "inner_red_mug_image": "Inner colour red mug category image",
     "products_per_page": "Designs per page"
   },
   "personalizer": {

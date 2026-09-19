@@ -140,74 +140,188 @@
     const preview = root.querySelector("[data-cw-mug-preview]");
     if (!preview || preview.dataset.cwMugReady === "true") return;
     preview.dataset.cwMugReady = "true";
-    const stage = preview.querySelector("[data-cw-mug-stage]");
-    const scene = preview.querySelector("[data-cw-mug-scene]");
-    const body = preview.querySelector("[data-cw-mug-body]");
-    const left = preview.querySelector("[data-cw-mug-left]");
-    const right = preview.querySelector("[data-cw-mug-right]");
-    if (!stage || !scene || !body || !left || !right) return;
+    const mugDialog = root.querySelector("[data-cw-mug-dialog]");
+    const mugModel = root.dataset.cwMugModel || "white";
+    const stage = root.querySelector("[data-cw-mug-stage]");
+    const open = preview.querySelector("[data-cw-mug-open]");
+    const close = mugDialog?.querySelector("[data-cw-mug-close]");
+    const magicToggle = preview.querySelector("[data-cw-magic-toggle]");
+    const sceneElements = Array.from(
+      root.querySelectorAll("[data-cw-mug-scene]"),
+    );
+    if (!mugDialog || !stage || !open || !close || !sceneElements.length) return;
 
     const panelCount = 56;
-    const panelWidth = 12;
+    const panelWidth = 11.5;
+    const handleGapStart = 10;
+    const handleGapEnd = 18;
+    const printablePanelCount = panelCount - (handleGapEnd - handleGapStart + 1);
     const radius = (panelCount * panelWidth) / (2 * Math.PI);
-    const panels = Array.from({ length: panelCount }, (_, index) => {
-      const panel = document.createElement("span");
-      const angle = (360 / panelCount) * index;
-      panel.className = "cw-mug-preview__panel";
-      panel.style.setProperty("--cw-panel-angle", `${angle}deg`);
-      panel.style.setProperty("--cw-panel-radius", `${radius}px`);
-      panel.style.setProperty("--cw-panel-width", `${panelWidth + 0.5}px`);
-      panel.style.backgroundSize = `${panelCount * panelWidth}px 100%`;
-      panel.style.backgroundPosition = `${-index * panelWidth}px 0`;
-      body.appendChild(panel);
-      return { panel, angle };
+    const scenes = sceneElements.map((scene) => {
+      scene.dataset.cwMugModel = mugModel;
+      const handle = document.createElement("div");
+      const body = document.createElement("div");
+      const rim = document.createElement("div");
+      const base = document.createElement("div");
+      handle.className = "cw-mug-preview__handle";
+      body.className = "cw-mug-preview__body";
+      rim.className = "cw-mug-preview__rim";
+      base.className = "cw-mug-preview__base";
+      scene.append(handle, body, rim, base);
+      const panels = Array.from({ length: panelCount }, (_, index) => {
+        const panel = document.createElement("span");
+        const angle = (360 / panelCount) * index;
+        const handleGap = index >= handleGapStart && index <= handleGapEnd;
+        const textureIndex =
+          index > handleGapEnd
+            ? index - handleGapEnd - 1
+            : panelCount - handleGapEnd - 1 + index;
+        panel.className = "cw-mug-preview__panel";
+        panel.classList.toggle("is-handle-gap", handleGap);
+        panel.style.setProperty("--cw-panel-angle", `${angle}deg`);
+        panel.style.setProperty("--cw-panel-radius", `${radius}px`);
+        panel.style.setProperty("--cw-panel-width", `${panelWidth + 0.5}px`);
+        panel.style.backgroundSize = `${printablePanelCount * panelWidth}px 100%`;
+        panel.style.backgroundPosition = `${-textureIndex * panelWidth}px 0`;
+        body.appendChild(panel);
+        return { panel, angle, handleGap };
+      });
+      return {
+        scene,
+        panels,
+        rotationX: Number(scene.dataset.cwRotationX || -5),
+        rotationY: Number(scene.dataset.cwRotationY || 0),
+      };
     });
+    const interactive = scenes.find(({ scene }) => stage.contains(scene));
+    if (!interactive) return;
 
-    let rotation = -18;
-    let pointerStart = 0;
-    let rotationStart = rotation;
+    const colourMap = {
+      white: "#ffffff",
+      black: "#171717",
+      "light green": "#8cdb72",
+      green: "#48c95d",
+      orange: "#ee6c2d",
+      yellow: "#f2df31",
+      red: "#df3e43",
+      pink: "#ed6d9a",
+      blue: "#347bd1",
+      purple: "#8756c7",
+    };
+    const colourFromName = (value) => {
+      const normalized = String(value || "").trim().toLowerCase();
+      if (/^#[0-9a-f]{3,8}$/i.test(normalized)) return normalized;
+      return colourMap[normalized] || "#ffffff";
+    };
+    const selectedColourName = () => {
+      const controls = Array.from(
+        document.querySelectorAll('select, input[type="radio"]:checked'),
+      );
+      const colourControl = controls.find((control) => {
+        const fieldset = control.closest("fieldset");
+        const label = control.id
+          ? document.querySelector(`label[for="${CSS.escape(control.id)}"]`)
+          : null;
+        const descriptor = [
+          control.name,
+          control.id,
+          control.dataset.optionName,
+          fieldset?.querySelector("legend")?.textContent,
+          label?.dataset.optionName,
+        ]
+          .filter(Boolean)
+          .join(" ");
+        return /colou?r/i.test(descriptor);
+      });
+      if (!colourControl) return "";
+      if (colourControl.tagName === "SELECT") {
+        return colourControl.selectedOptions[0]?.textContent || colourControl.value;
+      }
+      return colourControl.value || colourControl.dataset.value || "White";
+    };
+    const applyColour = () => {
+      const modelColour =
+        mugModel === "magic"
+          ? "#171717"
+          : mugModel === "red" || mugModel === "love-handle"
+            ? "#d92f3f"
+            : "#ffffff";
+      const selectedColour = selectedColourName();
+      const colour = selectedColour
+        ? colourFromName(selectedColour)
+        : modelColour;
+      scenes.forEach(({ scene }) =>
+        scene.style.setProperty("--cw-mug-colour", colour),
+      );
+    };
+
+    let pointerStartX = 0;
+    let pointerStartY = 0;
+    let rotationStartX = interactive.rotationX;
+    let rotationStartY = interactive.rotationY;
     let dragging = false;
-    const render = () => {
-      scene.style.setProperty("--cw-mug-rotation", `${rotation}deg`);
-      panels.forEach(({ panel, angle }) => {
-        const facing = Math.cos(((angle + rotation) * Math.PI) / 180);
+    const renderScene = (model) => {
+      model.scene.style.setProperty("--cw-mug-rotation-x", `${model.rotationX}deg`);
+      model.scene.style.setProperty("--cw-mug-rotation-y", `${model.rotationY}deg`);
+      model.panels.forEach(({ panel, angle }) => {
+        const facing = Math.cos(((angle + model.rotationY) * Math.PI) / 180);
         panel.style.setProperty(
           "--cw-panel-light",
-          String(Math.max(0.62, Math.min(1.08, 0.8 + facing * 0.25))),
+          String(Math.max(0.58, Math.min(1.08, 0.82 + facing * 0.24))),
         );
       });
     };
-    const rotate = (amount) => {
-      rotation = (rotation + amount) % 360;
-      render();
-    };
+    const render = () => scenes.forEach(renderScene);
     const applyTexture = (url) => {
       if (typeof url !== "string" || !url) return;
-      panels.forEach(({ panel }) => {
-        panel.style.backgroundImage = `url("${url.replace(/["\\\n\r]/g, "")}")`;
+      const safeUrl = url.replace(/["\\\n\r]/g, "");
+      scenes.forEach(({ panels }) => {
+        panels.forEach(({ panel, handleGap }) => {
+          panel.style.backgroundImage = handleGap ? "none" : `url("${safeUrl}")`;
+        });
       });
       preview.hidden = false;
       render();
     };
 
-    left.addEventListener("click", () => rotate(-12));
-    right.addEventListener("click", () => rotate(12));
+    open.addEventListener("click", () => mugDialog.showModal());
+    close.addEventListener("click", () => mugDialog.close());
+    magicToggle?.addEventListener("click", () => {
+      const heated = root.classList.toggle("is-magic-heated");
+      magicToggle.textContent = heated
+        ? magicToggle.dataset.hotLabel
+        : magicToggle.dataset.coldLabel;
+      magicToggle.setAttribute("aria-pressed", String(heated));
+    });
+    mugDialog.addEventListener("click", (event) => {
+      if (event.target === mugDialog) mugDialog.close();
+    });
     stage.addEventListener("keydown", (event) => {
-      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
       event.preventDefault();
-      rotate(event.key === "ArrowLeft" ? -12 : 12);
+      if (event.key === "ArrowLeft") interactive.rotationY -= 12;
+      if (event.key === "ArrowRight") interactive.rotationY += 12;
+      if (event.key === "ArrowUp") interactive.rotationX = Math.max(-82, interactive.rotationX - 8);
+      if (event.key === "ArrowDown") interactive.rotationX = Math.min(82, interactive.rotationX + 8);
+      renderScene(interactive);
     });
     stage.addEventListener("pointerdown", (event) => {
       dragging = true;
-      pointerStart = event.clientX;
-      rotationStart = rotation;
+      pointerStartX = event.clientX;
+      pointerStartY = event.clientY;
+      rotationStartX = interactive.rotationX;
+      rotationStartY = interactive.rotationY;
       stage.setPointerCapture?.(event.pointerId);
       stage.classList.add("is-dragging");
     });
     stage.addEventListener("pointermove", (event) => {
       if (!dragging) return;
-      rotation = rotationStart + (event.clientX - pointerStart) * 0.7;
-      render();
+      interactive.rotationY = rotationStartY + (event.clientX - pointerStartX) * 0.75;
+      interactive.rotationX = Math.max(
+        -82,
+        Math.min(82, rotationStartX - (event.clientY - pointerStartY) * 0.55),
+      );
+      renderScene(interactive);
     });
     const stopDragging = (event) => {
       if (!dragging) return;
@@ -217,9 +331,14 @@
     };
     stage.addEventListener("pointerup", stopDragging);
     stage.addEventListener("pointercancel", stopDragging);
+    document.addEventListener("change", applyColour);
+    document.addEventListener("click", () => setTimeout(applyColour));
+    document.addEventListener("variant:change", applyColour);
+    document.addEventListener("product:variant-change", applyColour);
     root.addEventListener("cartwala:preview-ready", (event) => {
       applyTexture(event.detail?.url);
     });
+    applyColour();
     render();
   };
 

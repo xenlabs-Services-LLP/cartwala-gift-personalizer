@@ -62,6 +62,16 @@ type Product = {
   personalizer?: { jsonValue?: unknown } | null;
 };
 
+function switchChecked(event: unknown): boolean {
+  const switchEvent = event as {
+    currentTarget?: { checked?: boolean } | null;
+    target?: { checked?: boolean } | null;
+  };
+  return Boolean(
+    switchEvent.currentTarget?.checked ?? switchEvent.target?.checked,
+  );
+}
+
 const MUG_CATEGORY_TAGS = {
   birthday: "cw-mug-birthday",
   anniversary: "cw-mug-anniversary",
@@ -71,25 +81,89 @@ const MUG_CATEGORY_TAGS = {
   other: "cw-mug-other",
 } as const;
 type MugCategory = keyof typeof MUG_CATEGORY_TAGS;
+const MUG_MODEL_TAGS = {
+  white: "cw-mug-model-white",
+  magic: "cw-mug-model-magic",
+  love_handle: "cw-mug-model-love-handle",
+  red: "cw-mug-model-red",
+} as const;
+type MugModel = keyof typeof MUG_MODEL_TAGS;
+const MUG_MODEL_DEFAULTS: Record<
+  MugModel,
+  {
+    price: string;
+    compareAtPrice: string;
+    sku: string;
+    stock: number;
+    weightGrams: number;
+  }
+> = {
+  white: {
+    price: "250.00",
+    compareAtPrice: "450.00",
+    sku: "CW-MUG-NORMAL",
+    stock: 50,
+    weightGrams: 350,
+  },
+  magic: {
+    price: "400.00",
+    compareAtPrice: "800.00",
+    sku: "CW-MUG-MAGIC",
+    stock: 50,
+    weightGrams: 350,
+  },
+  love_handle: {
+    price: "300.00",
+    compareAtPrice: "700.00",
+    sku: "CW-MUG-LOVE",
+    stock: 50,
+    weightGrams: 350,
+  },
+  red: {
+    price: "300.00",
+    compareAtPrice: "700.00",
+    sku: "CW-MUG-INNER-RED",
+    stock: 50,
+    weightGrams: 350,
+  },
+};
+const MUG_TEMPLATE_TAG_PREFIX = "cw-mug-template-";
 type MugSetup = {
   enabled: boolean;
   category: MugCategory;
+  model: MugModel;
+  templateId: string;
   price: string;
   compareAtPrice: string;
 };
-const MUG_TAGS = ["cw-mug", ...Object.values(MUG_CATEGORY_TAGS)];
+const MUG_TAGS = [
+  "cw-mug",
+  ...Object.values(MUG_CATEGORY_TAGS),
+  ...Object.values(MUG_MODEL_TAGS),
+];
 const mugSetupForProduct = (product: Product | null): MugSetup => {
   const tags = product?.tags ?? [];
   const category =
     (Object.entries(MUG_CATEGORY_TAGS).find(([, tag]) =>
       tags.includes(tag),
     )?.[0] as MugCategory | undefined) ?? "other";
+  const model =
+    (Object.entries(MUG_MODEL_TAGS).find(([, tag]) =>
+      tags.includes(tag),
+    )?.[0] as MugModel | undefined) ?? "white";
+  const templateId =
+    tags
+      .find((tag) => tag.startsWith(MUG_TEMPLATE_TAG_PREFIX))
+      ?.slice(MUG_TEMPLATE_TAG_PREFIX.length) ?? "";
   const variant = product?.variants.nodes[0];
+  const defaults = MUG_MODEL_DEFAULTS[model];
   return {
     enabled: tags.includes("cw-mug"),
     category,
-    price: variant?.price || "249.00",
-    compareAtPrice: variant?.compareAtPrice || "499.00",
+    model,
+    templateId,
+    price: variant?.price || defaults.price,
+    compareAtPrice: variant?.compareAtPrice || defaults.compareAtPrice,
   };
 };
 
@@ -145,6 +219,7 @@ type ActionResult = {
   restoredConfig?: Config;
   bulkSaved?: number;
   mugSetupSaved?: boolean;
+  sharedProductsUpdated?: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -513,12 +588,27 @@ async function handleSave(
     return { ok: false, error: "The selected product is invalid." };
   const mugEnabled = String(data.get("mugEnabled")) === "true";
   const mugCategory = String(data.get("mugCategory")) as MugCategory;
+  const mugModel = String(data.get("mugModel")) as MugModel;
+  const mugTemplateId = String(data.get("mugTemplateId") || "")
+    .trim()
+    .toLowerCase();
   const mugPrice = String(data.get("mugPrice") || "249.00").trim();
   const mugCompareAtPrice = String(
     data.get("mugCompareAtPrice") || "499.00",
   ).trim();
   if (mugEnabled && !(mugCategory in MUG_CATEGORY_TAGS))
     return { ok: false, error: "Choose a valid mug category." };
+  if (mugEnabled && !(mugModel in MUG_MODEL_TAGS))
+    return { ok: false, error: "Choose a valid mug model." };
+  if (
+    mugEnabled &&
+    !/^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/.test(mugTemplateId)
+  )
+    return {
+      ok: false,
+      error:
+        "Enter a shared template ID using lowercase letters, numbers and hyphens.",
+    };
   if (
     mugEnabled &&
     (!/^\d{1,6}(\.\d{1,2})?$/.test(mugPrice) ||
@@ -574,8 +664,17 @@ async function handleSave(
   if (productJson.errors?.length || !productJson.data?.product)
     return { ok: false, error: "Settings saved, but mug setup could not load." };
   const product = productJson.data.product;
-  const tags = product.tags.filter((tag) => !MUG_TAGS.includes(tag));
-  if (mugEnabled) tags.push("cw-mug", MUG_CATEGORY_TAGS[mugCategory]);
+  const tags = product.tags.filter(
+    (tag) =>
+      !MUG_TAGS.includes(tag) && !tag.startsWith(MUG_TEMPLATE_TAG_PREFIX),
+  );
+  if (mugEnabled)
+    tags.push(
+      "cw-mug",
+      MUG_CATEGORY_TAGS[mugCategory],
+      MUG_MODEL_TAGS[mugModel],
+      `${MUG_TEMPLATE_TAG_PREFIX}${mugTemplateId}`,
+    );
   const tagsResponse = await admin.graphql(
     `#graphql
     mutation UpdateMugTags($product: ProductUpdateInput!) {
@@ -607,10 +706,23 @@ async function handleSave(
       {
         variables: {
           productId,
-          variants: product.variants.nodes.map((variant) => ({
+          variants: product.variants.nodes.map((variant, index) => ({
             id: variant.id,
             price: mugPrice,
             compareAtPrice: mugCompareAtPrice,
+            inventoryItem: {
+              tracked: true,
+              requiresShipping: true,
+              sku: `${MUG_MODEL_DEFAULTS[mugModel].sku}${
+                index ? `-${index + 1}` : ""
+              }`,
+              measurement: {
+                weight: {
+                  unit: "GRAMS",
+                  value: MUG_MODEL_DEFAULTS[mugModel].weightGrams,
+                },
+              },
+            },
           })),
         },
       },
@@ -629,7 +741,53 @@ async function handleSave(
     if (variantError)
       return { ok: false, error: `Mug prices: ${variantError}` };
   }
-  return { ok: true, mugSetupSaved: mugEnabled };
+  let sharedProductsUpdated = 0;
+  if (mugEnabled) {
+    const sharedResponse = await admin.graphql(
+      `#graphql
+      query SharedMugProducts($query: String!) {
+        products(first: 100, query: $query) { nodes { id } }
+      }`,
+      {
+        variables: {
+          query: `tag:${MUG_TEMPLATE_TAG_PREFIX}${mugTemplateId}`,
+        },
+      },
+    );
+    const sharedJson = (await sharedResponse.json()) as {
+      data?: { products?: { nodes?: Array<{ id: string }> } };
+      errors?: Array<{ message?: string }>;
+    };
+    const sharedError = sharedJson.errors?.[0]?.message;
+    if (sharedError)
+      return { ok: false, error: `Shared template: ${sharedError}` };
+    const sharedProducts = sharedJson.data?.products?.nodes ?? [];
+    for (let offset = 0; offset < sharedProducts.length; offset += 12) {
+      const metafields = sharedProducts
+        .slice(offset, offset + 12)
+        .flatMap((sharedProduct) =>
+          personalizerMetafields(sharedProduct.id, config),
+        );
+      if (!metafields.length) continue;
+      const sharedSaveResponse = await admin.graphql(
+        `#graphql
+        mutation SaveSharedMugTemplate($metafields: [MetafieldsSetInput!]!) {
+          metafieldsSet(metafields: $metafields) { userErrors { field message code } }
+        }`,
+        { variables: { metafields } },
+      );
+      const sharedSaveJson = await sharedSaveResponse.json();
+      const sharedSaveError = firstMetafieldsSetError(sharedSaveJson);
+      if (sharedSaveError)
+        return { ok: false, error: `Shared template: ${sharedSaveError}` };
+      sharedProductsUpdated += metafields.length / 2;
+    }
+  }
+  return {
+    ok: true,
+    mugSetupSaved: mugEnabled,
+    sharedProductsUpdated,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -709,7 +867,12 @@ export default function PersonalizerHome() {
 
   useEffect(() => {
     if (saveFetcher.data?.ok) {
-      shopify.toast.show("Personalizer settings saved");
+      const sharedCount = saveFetcher.data.sharedProductsUpdated ?? 0;
+      shopify.toast.show(
+        sharedCount > 1
+          ? `Template saved to ${sharedCount} linked mug products`
+          : "Personalizer settings saved",
+      );
       setDirty(false);
     }
     if (saveFetcher.data?.error)
@@ -834,6 +997,8 @@ export default function PersonalizerHome() {
     form.set("config", JSON.stringify(configRef.current));
     form.set("mugEnabled", String(mugSetup.enabled));
     form.set("mugCategory", mugSetup.category);
+    form.set("mugModel", mugSetup.model);
+    form.set("mugTemplateId", mugSetup.templateId);
     form.set("mugPrice", mugSetup.price);
     form.set("mugCompareAtPrice", mugSetup.compareAtPrice);
     saveFetcher.submit(form, { method: "POST" });
@@ -1324,7 +1489,7 @@ export default function PersonalizerHome() {
             label="Enable personalization"
             checked={config.enabled}
             onChange={(event) => {
-              const enabled = event.currentTarget.checked;
+              const enabled = switchChecked(event);
               setConfig((current) => ({ ...current, enabled }));
             }}
           />
@@ -1447,7 +1612,7 @@ export default function PersonalizerHome() {
             onChange={(event) => {
               setMugSetup((current) => ({
                 ...current,
-                enabled: event.currentTarget.checked,
+                enabled: switchChecked(event),
               }));
               setDirty(true);
             }}
@@ -1473,6 +1638,43 @@ export default function PersonalizerHome() {
                   <s-option value="friends">Friends</s-option>
                   <s-option value="other">Other</s-option>
                 </s-select>
+                <s-select
+                  label="Mug model"
+                  value={mugSetup.model}
+                  onChange={(event) => {
+                    const model = event.currentTarget.value as MugModel;
+                    const defaults = MUG_MODEL_DEFAULTS[model];
+                    setMugSetup((current) => ({
+                      ...current,
+                      model,
+                      price: defaults.price,
+                      compareAtPrice: defaults.compareAtPrice,
+                    }));
+                    setDirty(true);
+                  }}
+                >
+                  <s-option value="white">White mug</s-option>
+                  <s-option value="magic">Magic mug</s-option>
+                  <s-option value="love_handle">White love handle mug</s-option>
+                  <s-option value="red">Inner colour red mug</s-option>
+                </s-select>
+                <s-text-field
+                  label="Shared design template ID"
+                  value={mugSetup.templateId}
+                  placeholder="love-hearts-001"
+                  details="Use the same ID on all four mug products. Saving any linked product updates the shared design on every linked product."
+                  onInput={(event) => {
+                    setMugSetup((current) => ({
+                      ...current,
+                      templateId: event.currentTarget.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9-]/g, "-"),
+                    }));
+                    setDirty(true);
+                  }}
+                />
+              </s-grid>
+              <s-grid gridTemplateColumns="1fr 1fr" gap="base">
                 <s-money-field
                   label="Selling price"
                   value={mugSetup.price}
@@ -1503,9 +1705,23 @@ export default function PersonalizerHome() {
                 background="subdued"
               >
                 <s-stack direction="inline" gap="base" alignItems="center">
-                  <s-badge tone="info">11 oz white mug</s-badge>
+                  <s-badge tone="info">
+                    {mugSetup.model === "white"
+                      ? "11 oz white mug"
+                      : mugSetup.model === "magic"
+                        ? "11 oz magic mug"
+                        : mugSetup.model === "love_handle"
+                          ? "11 oz white love handle mug"
+                          : "11 oz inner colour red mug"}
+                  </s-badge>
                   <s-text>Print artwork: 8.5 × 3.5 inches</s-text>
+                  <s-text>Capacity: 11 Oz</s-text>
+                  <s-text>Weight: 350 g</s-text>
+                  <s-text>Default stock: 50</s-text>
                   <s-text>Tag: cw-mug</s-text>
+                  <s-text>
+                    Template: {mugSetup.templateId || "Not assigned"}
+                  </s-text>
                 </s-stack>
               </s-box>
             </>
@@ -1849,7 +2065,7 @@ export default function PersonalizerHome() {
                 checked={field.required}
                 onChange={(event) =>
                   updatePhoto(field.id, {
-                    required: event.currentTarget.checked,
+                    required: switchChecked(event),
                   })
                 }
               />
@@ -1858,7 +2074,7 @@ export default function PersonalizerHome() {
                 checked={field.rotationEnabled}
                 onChange={(event) =>
                   updatePhoto(field.id, {
-                    rotationEnabled: event.currentTarget.checked,
+                    rotationEnabled: switchChecked(event),
                   })
                 }
               />
@@ -2017,7 +2233,7 @@ export default function PersonalizerHome() {
                 checked={field.required}
                 onChange={(event) =>
                   updateText(field.id, {
-                    required: event.currentTarget.checked,
+                    required: switchChecked(event),
                   })
                 }
               />
@@ -2025,7 +2241,7 @@ export default function PersonalizerHome() {
                 label="Customer can move"
                 checked={field.movable}
                 onChange={(event) =>
-                  updateText(field.id, { movable: event.currentTarget.checked })
+                  updateText(field.id, { movable: switchChecked(event) })
                 }
               />
               <s-switch
@@ -2033,7 +2249,7 @@ export default function PersonalizerHome() {
                 checked={field.scalable}
                 onChange={(event) =>
                   updateText(field.id, {
-                    scalable: event.currentTarget.checked,
+                    scalable: switchChecked(event),
                   })
                 }
               />
@@ -2042,7 +2258,7 @@ export default function PersonalizerHome() {
                 checked={field.rotatable}
                 onChange={(event) =>
                   updateText(field.id, {
-                    rotatable: event.currentTarget.checked,
+                    rotatable: switchChecked(event),
                   })
                 }
               />
@@ -2051,7 +2267,7 @@ export default function PersonalizerHome() {
                 checked={field.allowColorChoice}
                 onChange={(event) =>
                   updateText(field.id, {
-                    allowColorChoice: event.currentTarget.checked,
+                    allowColorChoice: switchChecked(event),
                   })
                 }
               />
@@ -2060,7 +2276,7 @@ export default function PersonalizerHome() {
                 checked={field.allowFontChoice}
                 onChange={(event) =>
                   updateText(field.id, {
-                    allowFontChoice: event.currentTarget.checked,
+                    allowFontChoice: switchChecked(event),
                   })
                 }
               />
@@ -2115,7 +2331,7 @@ export default function PersonalizerHome() {
               label="Required"
               checked={field.required}
               onChange={(event) =>
-                updateFile(field.id, { required: event.currentTarget.checked })
+                updateFile(field.id, { required: switchChecked(event) })
               }
             />
             {fieldActions(
@@ -2149,7 +2365,7 @@ export default function PersonalizerHome() {
               label="Required"
               checked={field.required}
               onChange={(event) =>
-                updateLink(field.id, { required: event.currentTarget.checked })
+                updateLink(field.id, { required: switchChecked(event) })
               }
             />
             {fieldActions(
