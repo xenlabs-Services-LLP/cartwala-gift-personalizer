@@ -86,7 +86,7 @@
           {% if normal_image %}
             {{ normal_image | image_url: width: 900 | image_tag: loading: 'eager', widths: '240,360,540,720,900', sizes: '(min-width: 990px) 25vw, 50vw', alt: normal_mug_alt }}
           {% else %}
-            {{ 'product-1' | placeholder_svg_tag: 'cw-mug-type-card__placeholder' }}
+            <img src="{{ 'cartwala-mug-normal.webp' | asset_url }}" alt="{{ normal_mug_alt | escape }}" width="1254" height="1254" loading="eager">
           {% endif %}
         </div>
         <div class="cw-mug-type-card__content"><h2>{{ 'mug_gallery.normal_mugs' | t }}</h2><p><s>{{ 45000 | money }}</s><strong>{{ 25000 | money }}</strong></p><span>{{ 'mug_gallery.view_designs' | t }} →</span></div>
@@ -96,7 +96,7 @@
           {% if magic_image %}
             {{ magic_image | image_url: width: 900 | image_tag: loading: 'eager', widths: '240,360,540,720,900', sizes: '(min-width: 990px) 25vw, 50vw', alt: magic_mug_alt }}
           {% else %}
-            {{ 'product-2' | placeholder_svg_tag: 'cw-mug-type-card__placeholder' }}
+            <img src="{{ 'cartwala-mug-magic.webp' | asset_url }}" alt="{{ magic_mug_alt | escape }}" width="1254" height="1254" loading="eager">
           {% endif %}
           <span class="cw-mug-type-card__effect">{{ 'mug_gallery.hot_water_reveal' | t }}</span>
         </div>
@@ -107,7 +107,7 @@
           {% if love_handle_image %}
             {{ love_handle_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '240,360,540,720,900', sizes: '(min-width: 990px) 25vw, 50vw', alt: love_handle_mug_alt }}
           {% else %}
-            {{ 'product-3' | placeholder_svg_tag: 'cw-mug-type-card__placeholder' }}
+            <img src="{{ 'cartwala-mug-love-handle.webp' | asset_url }}" alt="{{ love_handle_mug_alt | escape }}" width="1254" height="1254" loading="lazy">
           {% endif %}
         </div>
         <div class="cw-mug-type-card__content"><h2>{{ 'mug_gallery.love_handle_mugs' | t }}</h2><p><s>{{ 70000 | money }}</s><strong>{{ 30000 | money }}</strong></p><span>{{ 'mug_gallery.view_designs' | t }} →</span></div>
@@ -117,7 +117,7 @@
           {% if inner_red_image %}
             {{ inner_red_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '240,360,540,720,900', sizes: '(min-width: 990px) 25vw, 50vw', alt: inner_red_mug_alt }}
           {% else %}
-            {{ 'product-4' | placeholder_svg_tag: 'cw-mug-type-card__placeholder' }}
+            <img src="{{ 'cartwala-mug-inner-red.webp' | asset_url }}" alt="{{ inner_red_mug_alt | escape }}" width="1254" height="1254" loading="lazy">
           {% endif %}
         </div>
         <div class="cw-mug-type-card__content"><h2>{{ 'mug_gallery.inner_red_mugs' | t }}</h2><p><s>{{ 70000 | money }}</s><strong>{{ 30000 | money }}</strong></p><span>{{ 'mug_gallery.view_designs' | t }} →</span></div>
