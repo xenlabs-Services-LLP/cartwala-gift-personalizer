@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, no-empty -- Shopify GraphQL and ag-psd payloads are runtime-normalized below. */
 import { useMemo, useState } from "react";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";

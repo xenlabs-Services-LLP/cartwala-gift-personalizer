@@ -83,8 +83,7 @@
     const texts = textFields
       .map((field, index) => {
         const layer = textLayers[index],
-          matrix = layer ? matrixFor(layer) : null,
-          style = layer ? getComputedStyle(layer) : null;
+          matrix = layer ? matrixFor(layer) : null;
         return {
           i: String(field.id ?? index),
           l: String(field.label || `Text ${index + 1}`),

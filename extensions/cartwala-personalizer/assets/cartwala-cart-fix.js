@@ -1,3 +1,4 @@
+/* eslint-disable no-empty -- Storage and network fallbacks intentionally continue without blocking the cart. */
 (()=>{
   if(window.cartwalaCartFixFast)return;window.cartwalaCartFixFast=true;
   const normalize=text=>String(text||'').replace(/\s+/g,' ').trim();const isCdnValue=text=>/cdn\.shopify\.com\/s\/files\//i.test(text||'');let lightTimer=0,previewTimer=0,lastDesign='',opening=false,syncTimer=0;const drawerSelector='cart-drawer,#CartDrawer,[data-cart-drawer],.cart-drawer';const cartRoot=()=>document.querySelector(drawerSelector)||document;const rows=root=>[...root.querySelectorAll('.cart-item,[data-cart-item],cart-drawer-item,.drawer__cart-item')];

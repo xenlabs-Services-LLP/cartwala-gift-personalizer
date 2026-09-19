@@ -1,3 +1,4 @@
+/* eslint-disable no-empty -- Invalid legacy config blocks are skipped independently. */
 (()=>{
   if(window.cwStabilityFixReady)return;window.cwStabilityFixReady=true;
 

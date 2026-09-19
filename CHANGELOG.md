@@ -1,5 +1,13 @@
 # @shopify/shopify-app-template-react-router
 
+## Cartwala V5.1 safe template revisions
+
+- PSD replacement is now transactional: a failed upload or metafield save keeps the existing live template and removes files created by the failed attempt.
+- Each product keeps the active generated overlay/masks plus one previous revision for rollback safety; older app-generated assets get a 30-day order-safety window before best-effort cleanup from Shopify Files.
+- Added a one-click Restore previous PSD template action; restoring swaps current/previous revisions so the merchant can also undo the restore without re-uploading product templates.
+- Generated asset names now include the product handle and revision timestamp, making files traceable at scale.
+- Added regression checks for the stable storefront metafield namespace so a future app-namespace change cannot silently hide customization across every product.
+
 ## Cartwala V5.0.4 admin code audit and refactor
 
 Structural refactor of the admin app - no intended change to the merchant or customer-facing flows, only to code organization and to the specific bugs listed below. `npm run verify` must be run before deploying; it was not run as part of this change (see project notes).
@@ -13,7 +21,7 @@ Structural refactor of the admin app - no intended change to the merchant or cus
 - Added: the CSV bulk importer now reports which rows didn't match a Shopify product handle instead of silently dropping them.
 - Storefront (`extensions/cartwala-personalizer/assets/cartwala-personalizer.js`): replaced the repeated literal `200`/`50` field-count caps with named `MAX_FIELDS`/`MAX_FONTS` constants; added a `crypto.randomUUID()` fallback so a non-secure context can't hard-crash setup; wrapped each product block's initialization in its own `try/catch` so one broken block can no longer take down every other personalizer block on the page.
 - `scripts/verify-personalizer.mjs` updated to match: points its source-pinning assertions at the new `app/lib/*` files, and adds assertions for each fix above.
-- Added `overrides`/`resolutions`/`pnpm.overrides` entries pinning `deepmerge-ts@^8.0.2`, `lodash@^4.18.1`, and `minimatch@^9.0.8` - clears the three `npm audit` high-severity findings (all in transitive dev-tooling dependencies of `prisma`, `@shopify/api-codegen-preset`, and `@typescript-eslint/parser`, none reachable at runtime) without bumping any of those tools to a new major version. Run `npm install` after pulling this change so the overrides take effect, then `npm audit` to confirm clean.
+- Added `overrides`/`resolutions`/`pnpm.overrides` entries for `deepmerge-ts@^8.0.2` and `lodash@^4.18.1`. `minimatch` is intentionally not forced globally because ESLint 8 plugins require its older callable API; forcing v9 made the verification command itself crash before linting.
 
 ## Cartwala V5.0.3 selected-photo controls and cart preview fix
 
@@ -56,14 +64,17 @@ Structural refactor of the admin app - no intended change to the merchant or cus
 - Kept Add to cart and dynamic checkout locked until required fields are complete and Preview succeeds.
 
 ## 2026.09.03
+
 - [#280](https://github.com/Shopify/shopify-app-template-react-router/pull/280) - Pin the React Router family to 7.18.2. 7.18.3 tightened action-origin validation to compare the full origin, which made every action return `400 Bad Request` under `shopify app dev` and, in production, behind TLS-terminating proxies that forward to the app over plain HTTP (`react-router-serve` never enables Express `trust proxy`). Fixes [#279](https://github.com/Shopify/shopify-app-template-react-router/issues/279).
 - [#280](https://github.com/Shopify/shopify-app-template-react-router/pull/280) - Force `qs` to `^6.16.0` to clear [CVE-2026-82562](https://github.com/advisories/GHSA-x5fp-wj9c-mxmx) and [CVE-2026-82417](https://github.com/advisories/GHSA-4mjr-xmp4-gh2g), which reach the app transitively through `@react-router/serve` → `express@4`.
 
 ## 2026.02.09
+
 - Add declarative product metafield definition and demonstrate metafield usage in the product creation flow
 - Add declarative metaobject definition and demonstrate metaobject upsert in the product creation flow
 
 ## 2026.01.08
+
 - [#170](https://github.com/Shopify/shopify-app-template-react-router/pull/170) - Update React Router minimum version to v7.12.0
 
 ## 2025.12.11
@@ -90,7 +101,7 @@ Structural refactor of the admin app - no intended change to the merchant or cus
 
 ## 2025.08.17
 
-- [#58](https://github.com/Shopify/shopify-app-template-react-router/pull/58) Update Shopify & React Router dependencies.  Use Shopify React Router in graphqlrc, not shopify-api
+- [#58](https://github.com/Shopify/shopify-app-template-react-router/pull/58) Update Shopify & React Router dependencies. Use Shopify React Router in graphqlrc, not shopify-api
 - [#57](https://github.com/Shopify/shopify-app-template-react-router/pull/57) Update Webhook API version in `shopify.app.toml` to `2025-07`
 - [#56](https://github.com/Shopify/shopify-app-template-react-router/pull/56) Remove local CLI from package.json in favor of global CLI installation
 - [#53](https://github.com/Shopify/shopify-app-template-react-router/pull/53) Add the Shopify Dev MCP to the template
@@ -133,9 +144,11 @@ Forked the [shopify-app-template repo](https://github.com/Shopify/shopify-app-te
 
 - [#904](https://github.com/Shopify/shopify-app-template-remix/pull/904) bump `@shopify/app-bridge-react` to latest
 -
+
 ## 2024.12.18
 
 - [875](https://github.com/Shopify/shopify-app-template-remix/pull/875) Add Scopes Update Webhook
+
 ## 2024.12.05
 
 - [#910](https://github.com/Shopify/shopify-app-template-remix/pull/910) Install `openssl` in Docker image to fix Prisma (see [#25817](https://github.com/prisma/prisma/issues/25817#issuecomment-2538544254))

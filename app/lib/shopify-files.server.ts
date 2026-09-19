@@ -28,16 +28,28 @@ type GraphQLJson = {
 
 export class ShopifyFileUploadError extends Error {}
 
-const userErrorsAt = (json: GraphQLJson, mutationKey: string): string | undefined => {
-  const mutation = json.data?.[mutationKey] as { userErrors?: Array<{ message?: string }> } | undefined;
+const userErrorsAt = (
+  json: GraphQLJson,
+  mutationKey: string,
+): string | undefined => {
+  const mutation = json.data?.[mutationKey] as
+    { userErrors?: Array<{ message?: string }> } | undefined;
   return mutation?.userErrors?.[0]?.message;
 };
 
 /** Prefers a top-level GraphQL error over a mutation's own userErrors. */
-const firstError = (json: GraphQLJson, mutationKey?: string): string | undefined =>
-  json.errors?.[0]?.message ?? (mutationKey ? userErrorsAt(json, mutationKey) : undefined);
+const firstError = (
+  json: GraphQLJson,
+  mutationKey?: string,
+): string | undefined =>
+  json.errors?.[0]?.message ??
+  (mutationKey ? userErrorsAt(json, mutationKey) : undefined);
 
-async function stageUpload(admin: AdminApiContext, file: File, resource: "FILE" | "IMAGE"): Promise<StagedTarget> {
+async function stageUpload(
+  admin: AdminApiContext,
+  file: File,
+  resource: "FILE" | "IMAGE",
+): Promise<StagedTarget> {
   const response = await admin.graphql(
     `#graphql
     mutation CartwalaStageUpload($input: [StagedUploadInput!]!) {
@@ -51,7 +63,8 @@ async function stageUpload(admin: AdminApiContext, file: File, resource: "FILE" 
         input: [
           {
             filename: file.name,
-            mimeType: file.type || (resource === "IMAGE" ? "image/png" : "font/ttf"),
+            mimeType:
+              file.type || (resource === "IMAGE" ? "image/png" : "font/ttf"),
             resource,
             httpMethod: "POST",
             fileSize: String(file.size),
@@ -62,18 +75,34 @@ async function stageUpload(admin: AdminApiContext, file: File, resource: "FILE" 
   );
   const json = (await response.json()) as GraphQLJson;
   const error = firstError(json, "stagedUploadsCreate");
-  const target = (json.data?.stagedUploadsCreate as { stagedTargets?: StagedTarget[] } | undefined)?.stagedTargets?.[0];
-  if (error || !target) throw new ShopifyFileUploadError(error || "The upload could not be started.");
+  const target = (
+    json.data?.stagedUploadsCreate as
+      { stagedTargets?: StagedTarget[] } | undefined
+  )?.stagedTargets?.[0];
+  if (error || !target)
+    throw new ShopifyFileUploadError(
+      error || "The upload could not be started.",
+    );
   return target;
 }
 
-async function sendToStagedTarget(target: StagedTarget, file: File): Promise<void> {
+async function sendToStagedTarget(
+  target: StagedTarget,
+  file: File,
+): Promise<void> {
   const body = new FormData();
-  target.parameters.forEach((parameter) => body.append(parameter.name, parameter.value));
+  target.parameters.forEach((parameter) =>
+    body.append(parameter.name, parameter.value),
+  );
   body.append("file", file, file.name);
   const sent = await fetch(target.url, { method: "POST", body });
-  if (!sent.ok) throw new ShopifyFileUploadError("The file could not be uploaded to Shopify.");
+  if (!sent.ok)
+    throw new ShopifyFileUploadError(
+      "The file could not be uploaded to Shopify.",
+    );
 }
+
+export type ShopifyFileAsset = { id: string; url: string };
 
 type CreatedFile = { id: string; fileStatus?: string; url?: string };
 
@@ -96,16 +125,40 @@ async function createShopifyFile(
         userErrors { message }
       }
     }`,
-    { variables: { files: [{ alt, contentType, originalSource: resourceUrl }] } },
+    {
+      variables: { files: [{ alt, contentType, originalSource: resourceUrl }] },
+    },
   );
   const json = (await response.json()) as GraphQLJson;
   const error = firstError(json, "fileCreate");
-  const created = (json.data?.fileCreate as { files?: Array<{ id: string; fileStatus?: string; url?: string; image?: { url?: string } }> } | undefined)?.files?.[0];
-  if (error || !created) throw new ShopifyFileUploadError(error || "The file could not be saved to Shopify Files.");
-  return { id: created.id, fileStatus: created.fileStatus, url: created.url ?? created.image?.url };
+  const created = (
+    json.data?.fileCreate as
+      | {
+          files?: Array<{
+            id: string;
+            fileStatus?: string;
+            url?: string;
+            image?: { url?: string };
+          }>;
+        }
+      | undefined
+  )?.files?.[0];
+  if (error || !created)
+    throw new ShopifyFileUploadError(
+      error || "The file could not be saved to Shopify Files.",
+    );
+  return {
+    id: created.id,
+    fileStatus: created.fileStatus,
+    url: created.url ?? created.image?.url,
+  };
 }
 
-async function pollForUrl(admin: AdminApiContext, id: string, attempts: number): Promise<string> {
+async function pollForUrl(
+  admin: AdminApiContext,
+  id: string,
+  attempts: number,
+): Promise<string> {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, 500));
     const response = await admin.graphql(
@@ -121,12 +174,18 @@ async function pollForUrl(admin: AdminApiContext, id: string, attempts: number):
     const json = (await response.json()) as GraphQLJson;
     const error = firstError(json);
     if (error) throw new ShopifyFileUploadError(error);
-    const node = json.data?.node as { fileStatus?: string; url?: string; image?: { url?: string } } | null | undefined;
-    if (node?.fileStatus === "FAILED") throw new ShopifyFileUploadError("Shopify could not process this file.");
+    const node = json.data?.node as
+      | { fileStatus?: string; url?: string; image?: { url?: string } }
+      | null
+      | undefined;
+    if (node?.fileStatus === "FAILED")
+      throw new ShopifyFileUploadError("Shopify could not process this file.");
     const url = node?.url ?? node?.image?.url;
     if (url) return url;
   }
-  throw new ShopifyFileUploadError("The file is still processing. Please try the upload again after a few seconds.");
+  throw new ShopifyFileUploadError(
+    "The file is still processing. Please try the upload again after a few seconds.",
+  );
 }
 
 async function uploadToShopifyFiles(
@@ -134,27 +193,91 @@ async function uploadToShopifyFiles(
   file: File,
   resource: "FILE" | "IMAGE",
   pollAttempts: number,
-): Promise<string> {
+): Promise<ShopifyFileAsset> {
   const target = await stageUpload(admin, file, resource);
   await sendToStagedTarget(target, file);
-  const created = await createShopifyFile(admin, target.resourceUrl, file.name, resource);
-  if (created.fileStatus === "FAILED") throw new ShopifyFileUploadError("Shopify could not process this file.");
-  if (created.url) return created.url;
-  return pollForUrl(admin, created.id, pollAttempts);
-}
-
-export async function uploadFont(admin: AdminApiContext, file: File): Promise<string> {
-  if (!/\.(woff2?|ttf|otf)$/i.test(file.name) || file.size > 10 * 1024 * 1024) {
-    throw new ShopifyFileUploadError("Choose a WOFF, WOFF2, TTF or OTF font smaller than 10 MB.");
+  const created = await createShopifyFile(
+    admin,
+    target.resourceUrl,
+    file.name,
+    resource,
+  );
+  if (created.fileStatus === "FAILED")
+    throw new ShopifyFileUploadError("Shopify could not process this file.");
+  try {
+    const url =
+      created.url || (await pollForUrl(admin, created.id, pollAttempts));
+    return { id: created.id, url };
+  } catch (error) {
+    // fileCreate already succeeded, so a later polling failure would otherwise
+    // leave an invisible orphan in Shopify Files after every retry.
+    await deleteShopifyFiles(admin, [created.id]).catch(() => undefined);
+    throw error;
   }
-  return uploadToShopifyFiles(admin, file, "FILE", 12);
 }
 
-export async function uploadImage(admin: AdminApiContext, file: File): Promise<string> {
+export async function uploadFont(
+  admin: AdminApiContext,
+  file: File,
+): Promise<string> {
+  if (!/\.(woff2?|ttf|otf)$/i.test(file.name) || file.size > 10 * 1024 * 1024) {
+    throw new ShopifyFileUploadError(
+      "Choose a WOFF, WOFF2, TTF or OTF font smaller than 10 MB.",
+    );
+  }
+  return (await uploadToShopifyFiles(admin, file, "FILE", 12)).url;
+}
+
+export async function uploadImage(
+  admin: AdminApiContext,
+  file: File,
+): Promise<string> {
+  return (await uploadImageAsset(admin, file)).url;
+}
+
+export async function uploadImageAsset(
+  admin: AdminApiContext,
+  file: File,
+): Promise<ShopifyFileAsset> {
   if (!/\.(png|jpe?g|webp)$/i.test(file.name) || file.size > 25 * 1024 * 1024) {
-    throw new ShopifyFileUploadError("Choose a PNG, JPG or WebP image smaller than 25 MB.");
+    throw new ShopifyFileUploadError(
+      "Choose a PNG, JPG or WebP image smaller than 25 MB.",
+    );
   }
   return uploadToShopifyFiles(admin, file, "IMAGE", 20);
+}
+
+/**
+ * Permanently removes app-owned generated assets. Callers must only pass IDs
+ * recorded by uploadImageAsset; deleting arbitrary merchant files is unsafe.
+ */
+export async function deleteShopifyFiles(
+  admin: AdminApiContext,
+  fileIds: string[],
+): Promise<string[]> {
+  const safeIds = [...new Set(fileIds)].filter((id) =>
+    /^gid:\/\/shopify\/(MediaImage|GenericFile)\/\d+$/.test(id),
+  );
+  const deleted: string[] = [];
+  for (let offset = 0; offset < safeIds.length; offset += 100) {
+    const response = await admin.graphql(
+      `#graphql
+      mutation CartwalaDeleteGeneratedFiles($fileIds: [ID!]!) {
+        fileDelete(fileIds: $fileIds) {
+          deletedFileIds
+          userErrors { field message code }
+        }
+      }`,
+      { variables: { fileIds: safeIds.slice(offset, offset + 100) } },
+    );
+    const json = (await response.json()) as GraphQLJson;
+    const error = firstError(json, "fileDelete");
+    if (error) throw new ShopifyFileUploadError(error);
+    const payload = json.data?.fileDelete as
+      { deletedFileIds?: string[] } | undefined;
+    deleted.push(...(payload?.deletedFileIds ?? []));
+  }
+  return deleted;
 }
 
 /** Shared by every metafieldsSet caller in the action - see app/routes/app._index.tsx. */

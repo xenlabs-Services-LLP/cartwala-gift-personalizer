@@ -116,12 +116,26 @@ assert.equal(overCap.photos.length, 200);
 // ---------------------------------------------------------------------------
 
 for (const token of [
-  "data-cw-save", "_Personalised Preview", "showProductPreview(previewUrl)",
-  "cartwala-designs", "putFile(productForm, state.field.label, state.file)",
-  "cart/add.js", "new FormData(productForm)", "const constrainPhoto", "hideBuyNow",
-  "setPurchaseReady(false)", "cart-drawer,cart-icon-bubble", "showCartPreview(previewUrl, designId)",
-  "allowColorChoice", "cw-personalizer__text-handle--rotate", "field?.movable === true",
-]) assert.ok(storefront.includes(token), `Storefront behavior token is present: ${token}`);
+  "data-cw-save",
+  "_Personalised Preview",
+  "showProductPreview(previewUrl)",
+  "cartwala-designs",
+  "putFile(productForm, state.field.label, state.file)",
+  "cart/add.js",
+  "new FormData(productForm)",
+  "const constrainPhoto",
+  "hideBuyNow",
+  "setPurchaseReady(false)",
+  "cart-drawer,cart-icon-bubble",
+  "showCartPreview(previewUrl, designId)",
+  "allowColorChoice",
+  "cw-personalizer__text-handle--rotate",
+  "field?.movable === true",
+])
+  assert.ok(
+    storefront.includes(token),
+    `Storefront behavior token is present: ${token}`,
+  );
 assert.doesNotMatch(storefront, /data-cw-preview/);
 
 // Defensive fixes: a shared field-count constant instead of a bare literal
@@ -137,7 +151,10 @@ assert.doesNotMatch(
   "createId() must not call itself - this was a real recursion bug introduced and caught during this refactor",
 );
 assert.match(storefront, /root\.dataset\.cwReady = "true";/);
-assert.match(storefront, /Cartwala personalizer failed to initialize for this block\./);
+assert.match(
+  storefront,
+  /Cartwala personalizer failed to initialize for this block\./,
+);
 
 const storefrontCss = fs.readFileSync(
   "extensions/cartwala-personalizer/assets/cartwala-personalizer.css",
@@ -193,6 +210,36 @@ assert.match(admin, /didn't match a Shopify product/);
 // Numeric editor inputs must clamp instead of letting a bare Number() cast
 // through, which could render a slot/text preview at NaN%.
 assert.match(admin, /updateClampedNumber/);
+// PSD replacement is transactional: newly uploaded assets are rolled back on
+// failure, while one prior working revision is retained for recovery.
+assert.match(admin, /personalizer_asset_registry/);
+assert.match(admin, /if \(!committed && uploadedIds\.length\)/);
+assert.match(
+  admin,
+  /previous: oldRegistry\.current \?\? legacyVersion\(oldConfig\)/,
+);
+assert.match(
+  admin,
+  /const newlyRetired = retireAssets\(oldRegistry\.previous\)/,
+);
+assert.match(admin, /Date\.parse\(retired\.deleteAfter\) > Date\.now\(\)/);
+assert.match(admin, /intent === "restorePsdRevision"/);
+assert.match(admin, /Previous PSD template restored safely/);
+assert.match(admin, /Restore previous PSD template/);
+
+const liquid = fs.readFileSync(
+  "extensions/cartwala-personalizer/blocks/personalizer.liquid",
+  "utf8",
+);
+const publicNamespace =
+  "product.metafields.cartwala_personalizer.personalizer_config.value";
+const appNamespace =
+  "product.metafields['app--340764327937'].personalizer_config.value";
+assert.ok(
+  liquid.indexOf(publicNamespace) >= 0 &&
+    liquid.indexOf(publicNamespace) < liquid.indexOf(appNamespace),
+  "The stable storefront namespace must be read before the legacy app namespace",
+);
 
 const personalizerConfig = fs.readFileSync(
   "app/lib/personalizer-config.ts",
@@ -213,6 +260,17 @@ assert.match(shopifyFiles, /export async function uploadFont/);
 // otherwise rejected request could be reported as a silent success.
 assert.match(shopifyFiles, /json\.errors\?\.\[0\]\?\.message/);
 assert.match(shopifyFiles, /firstMetafieldsSetError/);
+assert.match(shopifyFiles, /export async function deleteShopifyFiles/);
+assert.match(shopifyFiles, /fileDelete\(fileIds: \$fileIds\)/);
+
+const assetRegistry = fs.readFileSync(
+  "app/lib/personalizer-assets.server.ts",
+  "utf8",
+);
+assert.match(assetRegistry, /schemaVersion: 1/);
+assert.match(assetRegistry, /current: PersonalizerAssetVersion \| null/);
+assert.match(assetRegistry, /previous: PersonalizerAssetVersion \| null/);
+assert.match(assetRegistry, /export const RETIRED_ASSET_DAYS = 30/);
 
 const psdImport = fs.readFileSync("app/lib/psd-import.ts", "utf8");
 assert.match(psdImport, /Number\(transform\[4\]\) \+ textLeft/);

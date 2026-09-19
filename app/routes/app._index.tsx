@@ -22,10 +22,20 @@ import {
   type TextField,
 } from "../lib/personalizer-config";
 import {
+  deleteShopifyFiles,
   uploadFont,
   uploadImage,
+  uploadImageAsset,
   firstMetafieldsSetError,
+  type ShopifyFileAsset,
 } from "../lib/shopify-files.server";
+import {
+  ASSET_REGISTRY_KEY,
+  legacyVersion,
+  normalizeAssetRegistry,
+  retireAssets,
+  type PersonalizerAssetRegistry,
+} from "../lib/personalizer-assets.server";
 import {
   canvasBlob,
   canvasHasPixels,
@@ -67,6 +77,19 @@ function personalizerMetafields(ownerId: string, config: Config) {
   ];
 }
 
+function assetRegistryMetafield(
+  ownerId: string,
+  registry: PersonalizerAssetRegistry,
+) {
+  return {
+    ownerId,
+    namespace: PERSONALIZER_METAFIELD_NAMESPACE,
+    key: ASSET_REGISTRY_KEY,
+    type: "json",
+    value: JSON.stringify(registry),
+  };
+}
+
 // Every action intent returns this same shape (with only the fields relevant
 // to that intent populated) so `typeof action` gives useFetcher<typeof action>
 // one concrete, precise type instead of TypeScript widening/narrowing the
@@ -76,9 +99,11 @@ function personalizerMetafields(ownerId: string, config: Config) {
 type ActionResult = {
   ok: boolean;
   error?: string;
+  warning?: string;
   fontUpload?: { id: string; name: string; url: string };
   imageUpload?: { url: string; target: string };
   psdImport?: { config: Config; photos: number; texts: number };
+  restoredConfig?: Config;
   bulkSaved?: number;
 };
 
@@ -96,6 +121,8 @@ export const action = async ({
   if (intent === "uploadFont") return handleUploadFont(admin, data);
   if (intent === "uploadImage") return handleUploadImage(admin, data);
   if (intent === "psdImport") return handlePsdImport(admin, data);
+  if (intent === "restorePsdRevision")
+    return handleRestorePsdRevision(admin, data);
   if (intent === "bulkImport") return handleBulkImport(admin, data);
   return handleSave(admin, data);
 };
@@ -146,7 +173,13 @@ async function handlePsdImport(
   admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"],
   data: FormData,
 ): Promise<ActionResult> {
+  const uploadedIds: string[] = [];
+  let committed = false;
   try {
+    const productId = String(data.get("productId") || "");
+    if (!productId.startsWith("gid://shopify/Product/"))
+      throw new Error("Choose a valid product before importing a PSD.");
+
     const overlayFile = data.get("overlayFile");
     const maskFiles = data.getAll("maskFiles");
     const imported = JSON.parse(String(data.get("config") || "{}")) as Config;
@@ -170,43 +203,129 @@ async function handlePsdImport(
       );
     }
 
-    const overlayUrl = await uploadImage(admin, overlayFile);
-    const maskUrls: string[] = [];
+    // Read the active revision before uploading anything. A failed replacement
+    // must never erase a working product template.
+    const stateResponse = await admin.graphql(
+      `#graphql
+      query CartwalaPsdImportState($id: ID!) {
+        product(id: $id) {
+          storefrontConfig: metafield(namespace: "cartwala_personalizer", key: "personalizer_config") { jsonValue }
+          appConfig: metafield(key: "personalizer_config") { jsonValue }
+          assetRegistry: metafield(key: "personalizer_asset_registry") { jsonValue }
+        }
+      }`,
+      { variables: { id: productId } },
+    );
+    const stateJson = (await stateResponse.json()) as {
+      data?: {
+        product?: {
+          storefrontConfig?: { jsonValue?: unknown } | null;
+          appConfig?: { jsonValue?: unknown } | null;
+          assetRegistry?: { jsonValue?: unknown } | null;
+        } | null;
+      };
+      errors?: Array<{ message?: string }>;
+    };
+    if (stateJson.errors?.length)
+      throw new Error(
+        stateJson.errors[0]?.message ||
+          "The current template could not be read.",
+      );
+    const productState = stateJson.data?.product;
+    if (!productState)
+      throw new Error("The selected product no longer exists.");
+    const oldRegistry = normalizeAssetRegistry(
+      productState.assetRegistry?.jsonValue,
+    );
+    const oldConfig =
+      productState.storefrontConfig?.jsonValue ??
+      productState.appConfig?.jsonValue;
+
+    // Retired revisions get a 30-day safety window for old orders. Cleanup is
+    // best-effort and never blocks or modifies the active/previous templates.
+    let warning: string | undefined;
+    const retainedRetired: PersonalizerAssetRegistry["retired"] = [];
+    for (const retired of oldRegistry.retired) {
+      if (Date.parse(retired.deleteAfter) > Date.now()) {
+        retainedRetired.push(retired);
+        continue;
+      }
+      try {
+        await deleteShopifyFiles(
+          admin,
+          retired.assets.map((asset) => asset.id),
+        );
+      } catch {
+        retainedRetired.push(retired);
+        warning =
+          "The template is safe, but an expired generated file could not be cleaned up and will be retried later.";
+      }
+    }
+
+    const overlay = await uploadImageAsset(admin, overlayFile);
+    uploadedIds.push(overlay.id);
+    const masks: ShopifyFileAsset[] = [];
     for (const maskFile of maskFiles) {
       if (!(maskFile instanceof File) || !maskFile.size)
         throw new Error("One of the PSD photo masks is empty.");
-      maskUrls.push(await uploadImage(admin, maskFile));
+      const mask = await uploadImageAsset(admin, maskFile);
+      uploadedIds.push(mask.id);
+      masks.push(mask);
     }
 
     const config = normalizeConfig({
       ...imported,
-      overlayUrl,
+      overlayUrl: overlay.url,
       photoFields: imported.photoFields.map((field, index) => ({
         ...field,
-        maskUrl: maskUrls[index],
+        maskUrl: masks[index].url,
       })),
     });
+
+    const newlyRetired = retireAssets(oldRegistry.previous);
+    const registry: PersonalizerAssetRegistry = {
+      schemaVersion: 1,
+      current: {
+        createdAt: new Date().toISOString(),
+        config,
+        overlay,
+        masks,
+      },
+      // Keep exactly one rollback revision. Legacy configurations are retained
+      // too, but have no app-owned file IDs and are therefore never auto-deleted.
+      previous: oldRegistry.current ?? legacyVersion(oldConfig),
+      retired: [
+        ...retainedRetired,
+        ...(newlyRetired ? [newlyRetired] : []),
+      ].slice(-100),
+    };
 
     // A PSD import is a product template import, so persist it immediately.
     // Previously the generated overlay/masks were uploaded but the product
     // metafield stayed empty until a separate Save click, leaving the
     // storefront Customize Now button with no configuration to open.
-    const productId = String(data.get("productId") || "");
-    if (!productId.startsWith("gid://shopify/Product/"))
-      throw new Error("Choose a valid product before importing a PSD.");
     const saveResponse = await admin.graphql(
       `#graphql
       mutation SaveImportedPsdPersonalizer($metafields: [MetafieldsSetInput!]!) {
         metafieldsSet(metafields: $metafields) { userErrors { field message code } }
       }`,
-      { variables: { metafields: personalizerMetafields(productId, config) } },
+      {
+        variables: {
+          metafields: [
+            ...personalizerMetafields(productId, config),
+            assetRegistryMetafield(productId, registry),
+          ],
+        },
+      },
     );
     const saveJson = await saveResponse.json();
     const saveError = firstMetafieldsSetError(saveJson);
     if (saveError) throw new Error(saveError);
+    committed = true;
 
     return {
       ok: true,
+      warning,
       psdImport: {
         config,
         photos: config.photoFields.length,
@@ -214,9 +333,83 @@ async function handlePsdImport(
       },
     };
   } catch (error) {
+    // Transaction rollback: remove only files created by this failed attempt.
+    // The existing active product configuration is left untouched.
+    if (!committed && uploadedIds.length)
+      await deleteShopifyFiles(admin, uploadedIds).catch(() => undefined);
     return {
       ok: false,
       error: error instanceof Error ? error.message : "PSD import failed.",
+    };
+  }
+}
+
+async function handleRestorePsdRevision(
+  admin: Awaited<ReturnType<typeof authenticate.admin>>["admin"],
+  data: FormData,
+): Promise<ActionResult> {
+  try {
+    const productId = String(data.get("productId") || "");
+    if (!productId.startsWith("gid://shopify/Product/"))
+      throw new Error("Choose a valid product before restoring a template.");
+    const response = await admin.graphql(
+      `#graphql
+      query CartwalaPreviousPsdRevision($id: ID!) {
+        product(id: $id) {
+          assetRegistry: metafield(key: "personalizer_asset_registry") { jsonValue }
+        }
+      }`,
+      { variables: { id: productId } },
+    );
+    const json = (await response.json()) as {
+      data?: {
+        product?: {
+          assetRegistry?: { jsonValue?: unknown } | null;
+        } | null;
+      };
+      errors?: Array<{ message?: string }>;
+    };
+    if (json.errors?.length)
+      throw new Error(
+        json.errors[0]?.message || "The template history could not be read.",
+      );
+    const registry = normalizeAssetRegistry(
+      json.data?.product?.assetRegistry?.jsonValue,
+    );
+    if (!registry.previous)
+      throw new Error(
+        "No previous PSD template is available for this product.",
+      );
+
+    const restored = registry.previous;
+    const swapped: PersonalizerAssetRegistry = {
+      ...registry,
+      current: restored,
+      previous: registry.current,
+    };
+    const saveResponse = await admin.graphql(
+      `#graphql
+      mutation RestoreCartwalaPsdRevision($metafields: [MetafieldsSetInput!]!) {
+        metafieldsSet(metafields: $metafields) { userErrors { field message code } }
+      }`,
+      {
+        variables: {
+          metafields: [
+            ...personalizerMetafields(productId, restored.config),
+            assetRegistryMetafield(productId, swapped),
+          ],
+        },
+      },
+    );
+    const saveJson = await saveResponse.json();
+    const saveError = firstMetafieldsSetError(saveJson);
+    if (saveError) throw new Error(saveError);
+    return { ok: true, restoredConfig: restored.config };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "Template restore failed.",
     };
   }
 }
@@ -313,6 +506,7 @@ export default function PersonalizerHome() {
   const imageFetcher = useFetcher<typeof action>();
   const bulkFetcher = useFetcher<typeof action>();
   const psdFetcher = useFetcher<typeof action>();
+  const restoreFetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
   const [selected, setSelected] = useState<Product | null>(products[0] ?? null);
   const [config, setConfig] = useState<Config>(
@@ -429,21 +623,37 @@ export default function PersonalizerHome() {
     const imported = psdFetcher.data?.psdImport;
     if (imported) {
       configRef.current = imported.config;
+      skipNextDirtyCheck.current = true;
       setConfig(imported.config);
+      setDirty(false);
       setActiveSlot(imported.config.photoFields[0]?.id ?? null);
       setPsdKey((value) => value + 1);
       setPsdStatus(
-        `Detected ${imported.photos} photo upload layers and ${imported.texts} editable text layers. Review and save the configuration.`,
+        `Saved ${imported.photos} photo upload layers and ${imported.texts} editable text layers.`,
       );
-      shopify.toast.show(
-        "PSD template imported. Review it, then save the configuration.",
-      );
+      shopify.toast.show("PSD template imported and saved safely.");
     }
+    if (psdFetcher.data?.warning)
+      shopify.toast.show(psdFetcher.data.warning, { isError: true });
     if (psdFetcher.data?.error) {
       setPsdStatus("");
       shopify.toast.show(psdFetcher.data.error, { isError: true });
     }
   }, [psdFetcher.data, shopify]);
+
+  useEffect(() => {
+    const restored = restoreFetcher.data?.restoredConfig;
+    if (restored) {
+      configRef.current = restored;
+      skipNextDirtyCheck.current = true;
+      setConfig(restored);
+      setDirty(false);
+      setActiveSlot(restored.photoFields[0]?.id ?? null);
+      shopify.toast.show("Previous PSD template restored safely.");
+    }
+    if (restoreFetcher.data?.error)
+      shopify.toast.show(restoreFetcher.data.error, { isError: true });
+  }, [restoreFetcher.data, shopify]);
 
   const confirmDiscardIfDirty = (message: string) =>
     !dirty || window.confirm(message);
@@ -719,6 +929,13 @@ export default function PersonalizerHome() {
   const importPsd = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files?.[0];
     if (!file) return;
+    if (!selected) {
+      shopify.toast.show("Choose a product before importing a PSD.", {
+        isError: true,
+      });
+      event.currentTarget.value = "";
+      return;
+    }
     if (!/\.psd$/i.test(file.name) || file.size > 250 * 1024 * 1024) {
       shopify.toast.show("Choose a PSD file smaller than 250 MB.", {
         isError: true,
@@ -726,6 +943,10 @@ export default function PersonalizerHome() {
       event.currentTarget.value = "";
       return;
     }
+    const assetPrefix = `cartwala-${selected.handle
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, "-")
+      .replace(/^-|-$/g, "")}-${Date.now()}`;
     setPsdStatus("Reading PSD layers and generating masks…");
     try {
       const { readPsd } = await import("ag-psd");
@@ -829,7 +1050,7 @@ export default function PersonalizerHome() {
         maskFiles.push(
           new File(
             [await canvasBlob(maskCanvas)],
-            `psd-photo-mask-${index + 1}.png`,
+            `${assetPrefix}-mask-${index + 1}.png`,
             { type: "image/png" },
           ),
         );
@@ -897,15 +1118,13 @@ export default function PersonalizerHome() {
       };
       const form = new FormData();
       form.append("intent", "psdImport");
-      if (!selected)
-        throw new Error("Choose a product before importing a PSD.");
       form.append("productId", selected.id);
       form.append("config", JSON.stringify(imported));
       form.append(
         "overlayFile",
         new File(
           [await canvasBlob(overlayCanvas)],
-          `${file.name.replace(/\.psd$/i, "")}-overlay.png`,
+          `${assetPrefix}-overlay.png`,
           { type: "image/png" },
         ),
       );
@@ -928,7 +1147,7 @@ export default function PersonalizerHome() {
   };
 
   return (
-    <s-page heading="Cartwala Personalizer V5" inlineSize="large">
+    <s-page heading="Cartwala Personalizer V5.1" inlineSize="large">
       <s-button
         slot="primary-action"
         variant="primary"
@@ -1085,6 +1304,31 @@ export default function PersonalizerHome() {
           {(psdStatus || psdFetcher.state !== "idle") && (
             <s-paragraph>{psdStatus || "Finishing PSD import…"}</s-paragraph>
           )}
+          <restoreFetcher.Form
+            method="post"
+            onSubmit={(event) => {
+              if (
+                !window.confirm(
+                  "Restore the previous PSD template for this product? The current version will remain available as the rollback copy.",
+                )
+              )
+                event.preventDefault();
+            }}
+          >
+            <input type="hidden" name="intent" value="restorePsdRevision" />
+            <input type="hidden" name="productId" value={selected?.id || ""} />
+            <s-button
+              type="submit"
+              disabled={!selected || restoreFetcher.state !== "idle"}
+              loading={restoreFetcher.state !== "idle"}
+            >
+              Restore previous PSD template
+            </s-button>
+          </restoreFetcher.Form>
+          <s-paragraph>
+            The active template and one previous version are kept. Older
+            app-generated files receive a 30-day safety window before cleanup.
+          </s-paragraph>
         </s-stack>
       </s-section>
 
