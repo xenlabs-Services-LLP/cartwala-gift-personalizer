@@ -182,9 +182,9 @@ const selectionBox = fs.readFileSync(
   "extensions/cartwala-personalizer/assets/cartwala-selection-box.js",
   "utf8",
 );
-assert.match(selectionBox, /const photoWidth=vw\*zoom/);
-assert.match(selectionBox, /const photoHeight=vh\*zoom/);
-assert.doesNotMatch(selectionBox, /nw\*coverScale\*zoom/);
+assert.match(selectionBox, /const coverScale=Math\.max\(vw\/nw,vh\/nh\)/);
+assert.match(selectionBox, /const photoWidth=nw\*coverScale\*zoom/);
+assert.match(selectionBox, /const photoHeight=nh\*coverScale\*zoom/);
 
 // ---------------------------------------------------------------------------
 // Admin: config validation, PSD import, and Shopify Files upload now live in

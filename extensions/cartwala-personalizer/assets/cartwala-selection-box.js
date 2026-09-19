@@ -35,11 +35,13 @@
       const stageRect=stage.getBoundingClientRect();
       const viewportRect=viewport.getBoundingClientRect();
       const vw=viewport.clientWidth,vh=viewport.clientHeight;
-      if(!vw||!vh){box.hidden=true;return}
+      const nw=image.naturalWidth,nh=image.naturalHeight;
+      if(!vw||!vh||!nw||!nh){box.hidden=true;return}
+      const coverScale=Math.max(vw/nw,vh/nh);
       const zoom=Math.max(1,Number(image.dataset.cwScale)||1);
       const angle=(Number(image.dataset.cwRotation)||0)*Math.PI/180;
-      const photoWidth=vw*zoom;
-      const photoHeight=vh*zoom;
+      const photoWidth=nw*coverScale*zoom;
+      const photoHeight=nh*coverScale*zoom;
       const cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
       const frameWidth=photoWidth*cos+photoHeight*sin;
       const frameHeight=photoWidth*sin+photoHeight*cos;

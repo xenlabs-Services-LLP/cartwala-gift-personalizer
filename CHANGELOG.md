@@ -1,5 +1,10 @@
 # @shopify/shopify-app-template-react-router
 
+## Cartwala V5.1.4 full-photo selection boundary
+
+- The blue transform box now follows the uploaded photo's actual rendered width and height, including its natural aspect ratio, cover fit and customer zoom.
+- The mask continues to hide photo overflow, and existing drag, rotation, no-white-gap, preview and cart behavior remains unchanged.
+
 ## Cartwala V5.1.3 proportional editor canvas
 
 - Keep stage width proportional to its height limit so the overlay, photo masks and selection box share the same coordinate system on short desktop screens.
