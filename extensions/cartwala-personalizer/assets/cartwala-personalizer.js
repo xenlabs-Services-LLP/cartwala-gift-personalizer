@@ -167,6 +167,8 @@
         const config = normalize(raw);
         root.style.setProperty("--cw-accent", root.dataset.accent || "#ff6200");
         root.style.setProperty("--cw-ratio", config.ratio.replace(":", "/"));
+        const [canvasWidth, canvasHeight] = config.ratio.split(":").map(Number);
+        root.style.setProperty("--cw-stage-ratio", String(canvasWidth / canvasHeight || 1));
         config.fonts.forEach((font) => {
           const style = document.createElement("style");
           style.textContent = `@font-face{font-family:"${font.name.replace(/["\\]/g, "")}";src:url("${font.url.replace(/["\\]/g, "")}")}`;

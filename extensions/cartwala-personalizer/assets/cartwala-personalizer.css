@@ -214,7 +214,8 @@ body.cw-personalization-complete
   background: #ececec;
   touch-action: none;
   user-select: none;
-  width: min(100%, 760px);
+  width: min(100%, 760px, calc(70dvh * var(--cw-stage-ratio, 1)));
+  flex-shrink: 0;
   max-height: 70dvh;
   margin-inline: auto;
   border-radius: 0;
@@ -806,6 +807,7 @@ body.cw-personalization-complete
     max-height: none;
   }
   .cw-personalizer__stage {
+    width: min(100%, 760px, calc((95vh - 210px) * var(--cw-stage-ratio, 1)));
     max-height: calc(95vh - 210px);
   }
 }

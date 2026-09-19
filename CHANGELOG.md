@@ -1,5 +1,10 @@
 # @shopify/shopify-app-template-react-router
 
+## Cartwala V5.1.3 proportional editor canvas
+
+- Keep stage width proportional to its height limit so the overlay, photo masks and selection box share the same coordinate system on short desktop screens.
+- Confirmed the supplied pillow PSD has a 1254 x 1254 canvas and a 680 x 600 photo layer. No PSD re-import is required for this layout correction.
+
 ## Cartwala V5.1.2 PSD slot width correction
 
 - PSD import now trims transparent padding from PHOTO/UPLOAD layers even when Photoshop supplies a larger explicit outer layer box.
