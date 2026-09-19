@@ -723,6 +723,10 @@
           constrainPhoto(state);
           state.image.style.objectPosition = `calc(50% + ${state.x}px) calc(50% + ${state.y}px)`;
           state.image.style.transform = `scale(${state.scale}) rotate(${state.angle}deg)`;
+          state.image.dataset.cwX = String(state.x);
+          state.image.dataset.cwY = String(state.y);
+          state.image.dataset.cwScale = String(state.scale);
+          state.image.dataset.cwRotation = String(state.angle);
           state.zoom.value = String(Math.round(state.scale * 100));
           state.rotation.value = String(Math.round(state.angle));
         };

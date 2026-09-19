@@ -35,13 +35,18 @@
       const stageRect=stage.getBoundingClientRect();
       const viewportRect=viewport.getBoundingClientRect();
       const vw=viewport.clientWidth,vh=viewport.clientHeight;
-      if(!vw||!vh){box.hidden=true;return}
-      const visibleWidth=vw;
-      const visibleHeight=vh;
-      const frameWidth=visibleWidth;
-      const frameHeight=visibleHeight;
-      const centerX=viewportRect.left-stageRect.left+viewportRect.width/2;
-      const centerY=viewportRect.top-stageRect.top+viewportRect.height/2;
+      const nw=image.naturalWidth,nh=image.naturalHeight;
+      if(!vw||!vh||!nw||!nh){box.hidden=true;return}
+      const coverScale=Math.max(vw/nw,vh/nh);
+      const zoom=Math.max(1,Number(image.dataset.cwScale)||1);
+      const angle=(Number(image.dataset.cwRotation)||0)*Math.PI/180;
+      const photoWidth=nw*coverScale*zoom;
+      const photoHeight=nh*coverScale*zoom;
+      const cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
+      const frameWidth=photoWidth*cos+photoHeight*sin;
+      const frameHeight=photoWidth*sin+photoHeight*cos;
+      const centerX=viewportRect.left-stageRect.left+viewportRect.width/2+(Number(image.dataset.cwX)||0);
+      const centerY=viewportRect.top-stageRect.top+viewportRect.height/2+(Number(image.dataset.cwY)||0);
       box.style.left=`${centerX}px`;
       box.style.top=`${centerY}px`;
       box.style.width=`${frameWidth}px`;
