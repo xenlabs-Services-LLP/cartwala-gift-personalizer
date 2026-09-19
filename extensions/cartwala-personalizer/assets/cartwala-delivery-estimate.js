@@ -35,7 +35,7 @@
 
   const hideLegacyDeliveryText = (widget) => {
     const scope = widget.closest(".shopify-section") || document;
-    const legacyPattern = /Production:\s*\d+\s*day\(s\)\s*[·•|-]\s*Delivery:\s*\d+\s*day\(s\)/i;
+    const legacyPattern = /Production:\s*\d+\s*day\(s\)[\s\S]*?Delivery:\s*\d+\s*day\(s\)/i;
     const candidates = Array.from(scope.querySelectorAll("div, p, li, span")).filter((element) => {
       if (element.closest("[data-cw-delivery-estimate]")) return false;
       const text = element.textContent.replace(/\s+/g, " ").trim();
@@ -53,12 +53,13 @@
       container = parent;
     }
     container.hidden = true;
+    container.setAttribute("data-cw-legacy-delivery-hidden", "true");
+    container.style.setProperty("display", "none", "important");
   };
 
   const render = (widget) => {
-    if (widget.dataset.cwReady === "true") return;
-
     hideLegacyDeliveryText(widget);
+    if (widget.dataset.cwReady === "true") return;
 
     const today = new Date();
     today.setHours(12, 0, 0, 0);
@@ -93,8 +94,21 @@
 
   const init = () => document.querySelectorAll("[data-cw-delivery-estimate]").forEach(render);
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
-  else init();
+  const watchForLegacyText = () => {
+    const observer = new MutationObserver(init);
+    observer.observe(document.body, { childList: true, subtree: true });
+    window.setTimeout(() => observer.disconnect(), 5000);
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      init();
+      watchForLegacyText();
+    }, { once: true });
+  } else {
+    init();
+    watchForLegacyText();
+  }
 
   document.addEventListener("shopify:section:load", init);
 })();

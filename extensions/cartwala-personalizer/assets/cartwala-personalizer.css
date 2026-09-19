@@ -530,6 +530,10 @@ body.cw-personalization-complete
   gap: 8px;
 }
 
+[data-cw-legacy-delivery-hidden="true"] {
+  display: none !important;
+}
+
 .cw-delivery-estimate__step {
   display: flex;
   min-width: 0;
