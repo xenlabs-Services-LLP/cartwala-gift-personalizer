@@ -62,18 +62,27 @@
     aria-live="polite"
     {{ block.shopify_attributes }}
   >
-    <div class="cw-delivery-estimate__row">
-      <span class="cw-delivery-estimate__icon" aria-hidden="true">🛠️</span>
-      <span><strong>{{ 'personalizer.ready_to_dispatch' | t }}:</strong> <span data-cw-dispatch-dates></span></span>
+    <div class="cw-delivery-estimate__step">
+      <span class="cw-delivery-estimate__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2m-5 6 1.5 1.5L15 12"/></svg></span>
+      <strong>{{ 'personalizer.ordered' | t }}</strong>
+      <span class="cw-delivery-estimate__date" data-cw-ordered-date></span>
     </div>
-    <div class="cw-delivery-estimate__row cw-delivery-estimate__row--primary">
-      <span class="cw-delivery-estimate__icon" aria-hidden="true">🚚</span>
-      <span><strong>{{ 'personalizer.estimated_delivery' | t }}:</strong> <span data-cw-delivery-dates></span></span>
+    <span class="cw-delivery-estimate__line" aria-hidden="true"></span>
+    <div class="cw-delivery-estimate__step">
+      <span class="cw-delivery-estimate__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>
+      <strong>{{ 'personalizer.order_ready' | t }}</strong>
+      <span class="cw-delivery-estimate__date" data-cw-dispatch-dates></span>
+    </div>
+    <span class="cw-delivery-estimate__line" aria-hidden="true"></span>
+    <div class="cw-delivery-estimate__step">
+      <span class="cw-delivery-estimate__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg></span>
+      <strong>{{ 'personalizer.delivered' | t }}</strong>
+      <span class="cw-delivery-estimate__date" data-cw-delivery-dates></span>
     </div>
   </div>
   <script src="{{ 'cartwala-delivery-estimate.js' | asset_url }}" defer></script>
 {% endif %}
 
 {% schema %}
-{"name":"t:personalizer.block_name","target":"section","javascript":"cartwala-personalizer.js","stylesheet":"cartwala-personalizer.css","enabled_on":{"templates":["product"]},"settings":[{"type":"color","id":"accent_color","label":"t:personalizer.accent_color","default":"#ff6200"},{"type":"checkbox","id":"show_delivery_dates","label":"t:personalizer.show_delivery_dates","default":true},{"type":"range","id":"dispatch_start_days","label":"t:personalizer.dispatch_start_days","min":0,"max":14,"step":1,"default":1},{"type":"range","id":"dispatch_end_days","label":"t:personalizer.dispatch_end_days","min":0,"max":14,"step":1,"default":2},{"type":"range","id":"delivery_start_days","label":"t:personalizer.delivery_start_days","min":1,"max":30,"step":1,"default":8},{"type":"range","id":"delivery_end_days","label":"t:personalizer.delivery_end_days","min":1,"max":30,"step":1,"default":9}]}
+{"name":"t:personalizer.block_name","target":"section","javascript":"cartwala-personalizer.js","stylesheet":"cartwala-personalizer.css","enabled_on":{"templates":["product"]},"settings":[{"type":"color","id":"accent_color","label":"t:personalizer.accent_color","default":"#ff6200"},{"type":"checkbox","id":"show_delivery_dates","label":"t:personalizer.show_delivery_dates","default":true},{"type":"range","id":"dispatch_start_days","label":"t:personalizer.dispatch_start_days","min":0,"max":14,"step":1,"default":2},{"type":"range","id":"dispatch_end_days","label":"t:personalizer.dispatch_end_days","min":0,"max":14,"step":1,"default":3},{"type":"range","id":"delivery_start_days","label":"t:personalizer.delivery_start_days","min":1,"max":30,"step":1,"default":7},{"type":"range","id":"delivery_end_days","label":"t:personalizer.delivery_end_days","min":1,"max":30,"step":1,"default":8}]}
 {% endschema %}

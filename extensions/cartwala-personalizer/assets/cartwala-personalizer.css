@@ -519,39 +519,84 @@ body.cw-personalization-complete
   box-sizing: border-box;
   width: 100%;
   margin-top: 14px;
-  padding: 13px 15px;
-  border: 1px solid rgba(255, 98, 0, 0.28);
+  padding: 18px 16px;
+  border: 1px solid #e5e5e5;
   border-radius: 12px;
-  background: #fff8f3;
-  color: #2f2724;
-  font-size: 14px;
-  line-height: 1.45;
+  background: #fff;
+  color: #111;
+  display: grid;
+  grid-template-columns: minmax(78px, 1fr) minmax(24px, .65fr) minmax(94px, 1.2fr) minmax(24px, .65fr) minmax(94px, 1.2fr);
+  align-items: start;
+  gap: 8px;
 }
 
-.cw-delivery-estimate__row {
+.cw-delivery-estimate__step {
   display: flex;
+  min-width: 0;
+  flex-direction: column;
   align-items: center;
-  gap: 9px;
-}
-
-.cw-delivery-estimate__row + .cw-delivery-estimate__row {
-  margin-top: 7px;
-}
-
-.cw-delivery-estimate__row--primary {
-  color: #d94f00;
+  text-align: center;
+  gap: 7px;
+  font-size: 13px;
+  line-height: 1.25;
 }
 
 .cw-delivery-estimate__icon {
-  flex: 0 0 22px;
-  width: 22px;
-  text-align: center;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  color: #fff;
+  background: #111;
+  box-shadow: 0 5px 12px rgba(0,0,0,.18);
+}
+.cw-delivery-estimate__icon svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cw-delivery-estimate__line {
+  height: 3px;
+  margin-top: 23px;
+  background: #111;
+  border-radius: 9px;
+}
+.cw-delivery-estimate__date {
+  color: #444;
+  font-size: 12px;
+  text-decoration: underline dotted #888;
+  text-underline-offset: 4px;
 }
 
 @media (max-width: 749px) {
   .cw-delivery-estimate {
-    padding: 12px 13px;
-    font-size: 13px;
+    padding: 15px 9px;
+    grid-template-columns: minmax(62px, 1fr) minmax(15px, .4fr) minmax(82px, 1.15fr) minmax(15px, .4fr) minmax(82px, 1.15fr);
+    gap: 4px;
+  }
+  .cw-delivery-estimate__icon {
+    width: 40px;
+    height: 40px;
+  }
+  .cw-delivery-estimate__icon svg {
+    width: 21px;
+    height: 21px;
+  }
+  .cw-delivery-estimate__line {
+    margin-top: 19px;
+    height: 2px;
+  }
+  .cw-delivery-estimate__step {
+    font-size: 11px;
+    gap: 6px;
+  }
+  .cw-delivery-estimate__date {
+    font-size: 10px;
   }
 }
 .cw-personalizer__photo-selection {
