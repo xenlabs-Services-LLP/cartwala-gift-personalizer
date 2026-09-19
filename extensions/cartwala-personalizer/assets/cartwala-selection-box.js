@@ -38,17 +38,10 @@
       if(!vw||!vh){box.hidden=true;return}
       const visibleWidth=vw;
       const visibleHeight=vh;
-      let matrix;
-      try{matrix=new DOMMatrixReadOnly(getComputedStyle(image).transform)}catch(error){matrix=null}
-      const scale=matrix?Math.hypot(matrix.a,matrix.b):1;
-      const angle=matrix?Math.atan2(matrix.b,matrix.a):0;
-      const tx=matrix?matrix.e:0,ty=matrix?matrix.f:0;
-      const scaledWidth=visibleWidth*scale,scaledHeight=visibleHeight*scale;
-      const cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
-      const frameWidth=scaledWidth*cos+scaledHeight*sin;
-      const frameHeight=scaledWidth*sin+scaledHeight*cos;
-      const centerX=viewportRect.left-stageRect.left+viewportRect.width/2+tx;
-      const centerY=viewportRect.top-stageRect.top+viewportRect.height/2+ty;
+      const frameWidth=visibleWidth;
+      const frameHeight=visibleHeight;
+      const centerX=viewportRect.left-stageRect.left+viewportRect.width/2;
+      const centerY=viewportRect.top-stageRect.top+viewportRect.height/2;
       box.style.left=`${centerX}px`;
       box.style.top=`${centerY}px`;
       box.style.width=`${frameWidth}px`;

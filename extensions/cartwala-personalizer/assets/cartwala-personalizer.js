@@ -696,9 +696,24 @@
           state.y = Number.isFinite(Number(state.y)) ? Number(state.y) : 0;
           const viewportWidth = state.viewport.clientWidth;
           const viewportHeight = state.viewport.clientHeight;
-          if (!viewportWidth || !viewportHeight) return;
-          const maxX = Math.max(0, (viewportWidth * (state.scale - 1)) / 2);
-          const maxY = Math.max(0, (viewportHeight * (state.scale - 1)) / 2);
+          const imageWidth = state.image.naturalWidth;
+          const imageHeight = state.image.naturalHeight;
+          if (!viewportWidth || !viewportHeight || !imageWidth || !imageHeight)
+            return;
+          const coverScale = Math.max(
+            viewportWidth / imageWidth,
+            viewportHeight / imageHeight,
+          );
+          const coveredWidth = imageWidth * coverScale;
+          const coveredHeight = imageHeight * coverScale;
+          const maxX = Math.max(
+            0,
+            (coveredWidth * state.scale - viewportWidth) / 2,
+          );
+          const maxY = Math.max(
+            0,
+            (coveredHeight * state.scale - viewportHeight) / 2,
+          );
           state.x = clamp(state.x, -maxX, maxX, 0);
           state.y = clamp(state.y, -maxY, maxY, 0);
         };
@@ -706,7 +721,8 @@
           invalidate();
           state.scale = clamp(state.scale, 1, 5, 1);
           constrainPhoto(state);
-          state.image.style.transform = `translate(${state.x}px,${state.y}px) scale(${state.scale}) rotate(${state.angle}deg)`;
+          state.image.style.objectPosition = `calc(50% + ${state.x}px) calc(50% + ${state.y}px)`;
+          state.image.style.transform = `scale(${state.scale}) rotate(${state.angle}deg)`;
           state.zoom.value = String(Math.round(state.scale * 100));
           state.rotation.value = String(Math.round(state.angle));
         };
