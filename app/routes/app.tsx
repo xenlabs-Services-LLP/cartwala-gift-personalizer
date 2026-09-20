@@ -32,6 +32,7 @@ type Config = {
     width: number;
     height: number;
     alignment: "left" | "center" | "right";
+    fitToBox: boolean;
     fontSize: number;
     fontFamily: string;
     allowFontChoice: boolean;

@@ -189,6 +189,7 @@ const transformedBounds = (
 
 /** Returns the Photoshop paragraph box instead of the rendered glyph pixels. */
 export const psdTextBoxBounds = (layer: PsdCanvasLayer): PsdBounds => {
+  if (!psdTextIsBox(layer)) return psdLayerBounds(layer);
   const text = layer.text;
   const transform = text?.transform;
   const values = [text?.left, text?.top, text?.right, text?.bottom].map(Number);
@@ -203,6 +204,33 @@ export const psdTextBoxBounds = (layer: PsdCanvasLayer): PsdBounds => {
     return transformedBounds(transform, values[0], values[1], values[2], values[3]);
   }
   return psdLayerBounds(layer);
+};
+
+export const psdTextIsBox = (layer: PsdCanvasLayer): boolean => {
+  if (layer.text?.shapeType === "box") return true;
+  const bounds = layer.text?.boxBounds?.map(Number);
+  return Boolean(
+    bounds &&
+      bounds.length >= 4 &&
+      bounds.slice(0, 4).every(Number.isFinite) &&
+      (Math.abs(bounds[2] - bounds[0]) > 0.01 ||
+        Math.abs(bounds[3] - bounds[1]) > 0.01),
+  );
+};
+
+export const psdTextPixelFontSize = (
+  layer: PsdCanvasLayer,
+  resolutionPpi: number,
+): number => {
+  const style = layer.text?.style || layer.text?.styleRuns?.[0]?.style || {};
+  const pointSize = Number(style.fontSize);
+  if (!Number.isFinite(pointSize) || pointSize <= 0) return 0;
+  const transform = layer.text?.transform;
+  const verticalScale =
+    Array.isArray(transform) && transform.length >= 4
+      ? Math.hypot(Number(transform[2]) || 0, Number(transform[3]) || 0) || 1
+      : 1;
+  return pointSize * (Math.max(1, resolutionPpi) / 72) * verticalScale;
 };
 
 export const psdTextAlignment = (

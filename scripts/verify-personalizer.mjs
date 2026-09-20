@@ -75,14 +75,22 @@ assert.equal(textConfig.texts[0].allowColorChoice, false);
 assert.equal(textConfig.texts[0].width, 30);
 assert.equal(textConfig.texts[0].height, 12);
 assert.equal(textConfig.texts[0].alignment, "center");
+assert.equal(textConfig.texts[0].fitToBox, false);
 const boxedText = normalize({
   textFields: [
-    { width: 42, height: 9, alignment: "left", fontSize: 80 },
+    {
+      width: 42,
+      height: 9,
+      alignment: "left",
+      fitToBox: true,
+      fontSize: 80,
+    },
   ],
 }).texts[0];
 assert.equal(boxedText.width, 42);
 assert.equal(boxedText.height, 9);
 assert.equal(boxedText.alignment, "left");
+assert.equal(boxedText.fitToBox, true);
 const editableText = normalize({
   textFields: [
     {
@@ -143,6 +151,8 @@ for (const token of [
   "allowColorChoice",
   "availableWidth / Math.max(1, contentBounds.width)",
   "state.previewText.dataset.cwAlignment",
+  "state.previewText.dataset.cwFitToBox",
+  "state.field.fitToBox",
   "cw-personalizer__text-handle--rotate",
   "field?.movable === true",
   "const initializeMugPreview = (root) =>",
@@ -263,6 +273,9 @@ assert.match(
 assert.match(admin, /firstMetafieldsSetError\(json\)/);
 assert.match(admin, /psdTextBoxBounds/);
 assert.match(admin, /psdTextAlignment/);
+assert.match(admin, /psdTextIsBox/);
+assert.match(admin, /psdTextPixelFontSize/);
+assert.match(admin, /resolutionPpi/);
 // Unsaved-changes guard: closing the tab mid-template-build used to lose
 // everything silently.
 assert.match(admin, /addEventListener\("beforeunload", handler\)/);

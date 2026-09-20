@@ -48,6 +48,8 @@ import {
   psdLayerLabel,
   psdTextAlignment,
   psdTextBoxBounds,
+  psdTextIsBox,
+  psdTextPixelFontSize,
   type PsdCanvasLayer,
 } from "../lib/psd-import";
 
@@ -1285,7 +1287,18 @@ export default function PersonalizerHome() {
       const { readPsd } = await import("ag-psd");
       const psd = readPsd(await file.arrayBuffer(), {
         skipThumbnail: true,
-      }) as unknown as PsdCanvasLayer & { width: number; height: number };
+      }) as unknown as PsdCanvasLayer & {
+        width: number;
+        height: number;
+        imageResources?: {
+          resolutionInfo?: {
+            horizontalResolution?: number;
+            horizontalResolutionUnit?: "PPI" | "PPCM";
+            verticalResolution?: number;
+            verticalResolutionUnit?: "PPI" | "PPCM";
+          };
+        };
+      };
       if (!psd.width || !psd.height || !psd.children?.length)
         throw new Error("The PSD does not contain readable layers.");
       const layers = psdDrawableLayers(psd.children);
@@ -1414,11 +1427,24 @@ export default function PersonalizerHome() {
 
       const textFields = texts.map((layer, index): TextField => {
         const bounds = psdTextBoxBounds(layer);
+        const fitToBox = psdTextIsBox(layer);
         const style =
           layer.text?.style || layer.text?.styleRuns?.[0]?.style || {};
         const text = String(layer.text?.text || "")
           .replace(/\r/g, "\n")
           .trim();
+        const resolution = psd.imageResources?.resolutionInfo;
+        const rawPpi = Number(
+          resolution?.verticalResolution ||
+            resolution?.horizontalResolution ||
+            72,
+        );
+        const resolutionPpi =
+          resolution?.verticalResolutionUnit === "PPCM" ||
+          (!resolution?.verticalResolution &&
+            resolution?.horizontalResolutionUnit === "PPCM")
+            ? rawPpi * 2.54
+            : rawPpi;
         return {
           ...blankText(index),
           label: psdLayerLabel(String(layer.name || ""), `Text ${index + 1}`),
@@ -1446,8 +1472,9 @@ export default function PersonalizerHome() {
             12,
           ),
           alignment: psdTextAlignment(layer),
+          fitToBox,
           fontSize: clamp(
-            (Number(style.fontSize) * 1200) / psd.width,
+            (psdTextPixelFontSize(layer, resolutionPpi) * 1200) / psd.width,
             8,
             300,
             60,
@@ -1899,18 +1926,20 @@ export default function PersonalizerHome() {
                   color: field.color,
                   fontFamily: field.fontFamily,
                   fontSize: `${Math.max(10, field.fontSize / 3)}px`,
-                  width: `${field.width}%`,
-                  height: `${field.height}%`,
-                  textAlign: field.alignment,
+                  width: field.fitToBox ? `${field.width}%` : "max-content",
+                  height: field.fitToBox ? `${field.height}%` : "auto",
+                  textAlign: field.fitToBox ? field.alignment : "center",
                   display: "flex",
                   alignItems: "center",
                   justifyContent:
-                    field.alignment === "left"
+                    !field.fitToBox
+                      ? "center"
+                      : field.alignment === "left"
                       ? "flex-start"
                       : field.alignment === "right"
                         ? "flex-end"
                         : "center",
-                  overflow: "hidden",
+                  overflow: field.fitToBox ? "hidden" : "visible",
                   whiteSpace: "nowrap",
                   fontWeight: 700,
                   zIndex: 3,
@@ -2356,6 +2385,15 @@ export default function PersonalizerHome() {
                 onChange={(event) =>
                   updateText(field.id, {
                     required: switchChecked(event),
+                  })
+                }
+              />
+              <s-switch
+                label="Fit text inside Photoshop box"
+                checked={field.fitToBox}
+                onChange={(event) =>
+                  updateText(field.id, {
+                    fitToBox: switchChecked(event),
                   })
                 }
               />

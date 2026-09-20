@@ -97,6 +97,9 @@
           )
             ? String(layer?.dataset.cwAlignment || field.alignment)
             : "center",
+          b: String(
+            layer?.dataset.cwFitToBox ?? String(field.fitToBox === true),
+          ) === "true",
           z: number(layer?.dataset.cwFontSize, number(field.fontSize, 60)),
           c: String(layer?.dataset.cwColor || field.color || "#111111"),
           f: String(fontSelects[index]?.value || field.fontFamily || "Arial"),

@@ -38,6 +38,7 @@ export type TextField = {
   width: number;
   height: number;
   alignment: "left" | "center" | "right";
+  fitToBox: boolean;
   fontSize: number;
   fontFamily: string;
   allowFontChoice: boolean;
@@ -104,6 +105,7 @@ export const blankText = (index: number): TextField => ({
   width: 30,
   height: 12,
   alignment: "center",
+  fitToBox: false,
   fontSize: 60,
   fontFamily: "Arial",
   allowFontChoice: false,
@@ -267,6 +269,7 @@ export const normalizeConfig = (value: unknown): Config => {
         )
           ? (item.alignment as TextField["alignment"])
           : "center",
+        fitToBox: item.fitToBox === true,
         fontSize: clamp(item.fontSize, 8, 300, 60),
         fontFamily: String(item.fontFamily || "Arial")
           .trim()

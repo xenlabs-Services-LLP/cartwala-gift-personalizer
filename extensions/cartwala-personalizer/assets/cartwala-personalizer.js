@@ -91,6 +91,7 @@
           )
             ? String(field.alignment)
             : "center",
+          fitToBox: field?.fitToBox === true,
           fontSize: clamp(field?.fontSize, 8, 300, 60),
           fontFamily: String(field?.fontFamily || "Arial"),
           allowFontChoice: field?.allowFontChoice === true,
@@ -115,6 +116,7 @@
           width: 30,
           height: 12,
           alignment: "center",
+          fitToBox: false,
           fontSize: 60,
           fontFamily: "Arial",
           allowFontChoice: false,
@@ -971,11 +973,21 @@
           state.angle = clamp(state.angle, -180, 180, state.field.rotation);
           state.previewText.style.left = `${state.x}%`;
           state.previewText.style.top = `${state.y}%`;
-          state.previewText.style.width = `${state.width}%`;
-          state.previewText.style.height = `${state.height}%`;
-          state.previewText.style.textAlign = state.field.alignment;
-          state.previewText.style.justifyContent =
-            state.field.alignment === "left"
+          state.previewText.style.width = state.field.fitToBox
+            ? `${state.width}%`
+            : "max-content";
+          state.previewText.style.height = state.field.fitToBox
+            ? `${state.height}%`
+            : "auto";
+          state.previewText.style.overflow = state.field.fitToBox
+            ? "hidden"
+            : "visible";
+          state.previewText.style.textAlign = state.field.fitToBox
+            ? state.field.alignment
+            : "center";
+          state.previewText.style.justifyContent = !state.field.fitToBox
+            ? "center"
+            : state.field.alignment === "left"
               ? "flex-start"
               : state.field.alignment === "right"
                 ? "flex-end"
@@ -987,11 +999,13 @@
           const contentBounds = state.textContent.getBoundingClientRect();
           const availableWidth = Math.max(1, state.previewText.clientWidth - 6);
           const availableHeight = Math.max(1, state.previewText.clientHeight - 6);
-          const fit = Math.min(
-            1,
-            availableWidth / Math.max(1, contentBounds.width),
-            availableHeight / Math.max(1, contentBounds.height),
-          );
+          const fit = state.field.fitToBox
+            ? Math.min(
+                1,
+                availableWidth / Math.max(1, contentBounds.width),
+                availableHeight / Math.max(1, contentBounds.height),
+              )
+            : 1;
           const fittedSize = Math.max(1, nominalSize * fit);
           state.previewText.style.fontSize = `${fittedSize}px`;
           state.fittedFontSize =
@@ -1003,6 +1017,7 @@
           state.previewText.dataset.cwWidth = String(state.width);
           state.previewText.dataset.cwHeight = String(state.height);
           state.previewText.dataset.cwAlignment = state.field.alignment;
+          state.previewText.dataset.cwFitToBox = String(state.field.fitToBox);
           state.previewText.dataset.cwFontSize = String(state.fittedFontSize);
           state.previewText.dataset.cwRotation = String(state.angle);
           state.previewText.dataset.cwColor = state.color;
@@ -1525,6 +1540,7 @@
                   width: state.width,
                   height: state.height,
                   alignment: state.field.alignment,
+                  fitToBox: state.field.fitToBox,
                   fontSize: state.fittedFontSize,
                   rotation: state.angle,
                   color: state.color,
@@ -1551,13 +1567,24 @@
               const measuredWidth = Math.max(1, context.measureText(value).width);
               const fittedSize = Math.max(
                 1,
-                baseSize * Math.min(1, boxWidth / measuredWidth, boxHeight / (baseSize * 1.05)),
+                baseSize *
+                  (state.field.fitToBox
+                    ? Math.min(
+                        1,
+                        boxWidth / measuredWidth,
+                        boxHeight / (baseSize * 1.05),
+                      )
+                    : 1),
               );
-              context.textAlign = state.field.alignment;
+              context.textAlign = state.field.fitToBox
+                ? state.field.alignment
+                : "center";
               context.textBaseline = "middle";
               context.font = `700 ${fittedSize}px "${font}", sans-serif`;
               const textX =
-                state.field.alignment === "left"
+                !state.field.fitToBox
+                  ? 0
+                  : state.field.alignment === "left"
                   ? -boxWidth / 2
                   : state.field.alignment === "right"
                     ? boxWidth / 2
