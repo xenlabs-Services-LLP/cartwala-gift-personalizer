@@ -202,9 +202,10 @@
       [0.9, -1.135], [0.95, -1.12]], 3);
     const segments = mugModel === "love-handle"
       ? [
-          [[0.94, 0.61], [1.03, 1.04], [1.30, 0.59], [1.47, 0.59]],
-          [[1.47, 0.59], [1.64, 0.59], [2.16, 0.43], [1.84, 0.1]],
-          [[1.84, 0.1], [1.61, -0.16], [1.2, -0.4], [0.94, -0.52]],
+          [[0.94, 0.70], [1.18, 0.80], [1.25, 0.73], [1.34, 0.53]],
+          [[1.34, 0.53], [1.38, 0.44], [1.39, 0.44], [1.48, 0.50]],
+          [[1.48, 0.50], [1.88, 0.77], [2.08, 0.25], [1.78, -0.10]],
+          [[1.78, -0.10], [1.54, -0.38], [1.20, -0.61], [0.94, -0.61]],
         ]
       : [
           [[0.94, 0.69], [1.12, 0.69], [1.6, 0.77], [1.7, 0.41]],
@@ -259,7 +260,7 @@
       center: [(bounds[0] + bounds[2]) / 2, gallery ? 0 : (bounds[1] + bounds[3]) / 2],
       // Shared envelope keeps all three gallery views and mug models the same size.
       // The freely rotating dialog still fits its complete projected geometry.
-      scale: gallery ? Math.min(1.74 / 2.75, 1.94 * aspect / 3.15)
+      scale: gallery ? Math.min(1.74 / 2.75, 1.96 * aspect / 3.05)
         : Math.min(1.62 / (bounds[3] - bounds[1]), 1.78 * aspect / (bounds[2] - bounds[0])),
     };
   };
@@ -275,7 +276,7 @@
     scene.append(canvas, fallback);
     let gl;
     try { gl = canvas.getContext("webgl", { alpha: true, antialias: true }); } catch { gl = null; }
-    let program, buffer, indexBuffer, texture, locations;
+    let program, buffer, indexBuffer, texture, brandTexture, locations;
     let image = null;
     let latestState = null;
     let imageVersion = 0;
@@ -338,6 +339,7 @@
       const fragment = shader(gl.FRAGMENT_SHADER, `
         precision mediump float;
         uniform sampler2D uTexture;
+        uniform sampler2D uBrand;
         uniform vec3 uBody;
         uniform vec3 uInner;
         uniform vec3 uHandle;
@@ -349,7 +351,10 @@
         varying float vMaterial;
         void main() {
           vec3 colour = uBody;
-          if (vMaterial > 2.5) colour = vec3(0.94);
+          if (vMaterial > 2.5) {
+            vec4 brand = texture2D(uBrand, vec2(vPosition.x, -vPosition.z) / 1.5 + 0.5);
+            colour = mix(vec3(0.94), brand.rgb, brand.a);
+          }
           else if (vMaterial > 1.5) {
             // Trim embedded handle ends in local space, including when tilted.
             if (dot(vPosition.xz, vPosition.xz) < 1.0) discard;
@@ -395,6 +400,27 @@
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      const stamp = document.createElement("canvas");
+      stamp.width = stamp.height = 512;
+      const ink = stamp.getContext("2d");
+      ink.clearRect(0, 0, 512, 512);
+      ink.fillStyle = "#303030";
+      ink.font = "bold 72px Arial, sans-serif";
+      ink.textAlign = "center";
+      ink.textBaseline = "middle";
+      ink.fillText("Cartwala", 256, 256);
+      brandTexture = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, brandTexture);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, stamp);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.uniform1i(gl.getUniformLocation(program, "uBrand"), 1);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.enable(gl.DEPTH_TEST);
       textureReady = false;
       uploadTexture();
@@ -467,6 +493,7 @@
         gl.deleteBuffer(buffer);
         gl.deleteBuffer(indexBuffer);
         gl.deleteTexture(texture);
+        gl.deleteTexture(brandTexture);
         gl.deleteProgram(program);
       },
     };

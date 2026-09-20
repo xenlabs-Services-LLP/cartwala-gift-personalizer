@@ -65,6 +65,9 @@ for (const aspect of [0.35, 0.5, 0.8, 1, 1.85]) {
   }
 }
 assert.match(source, /vPosition = aPosition/);
+assert.match(source, /ink\.fillText\("Cartwala", 256, 256\)/);
+assert.match(source, /vMaterial > 2\.5\) \{\s+vec4 brand = texture2D\(uBrand/);
+assert.match(source, /deleteTexture\(brandTexture\)/);
 assert.match(source, /dot\(vPosition\.xz, vPosition\.xz\) < 1\.0\) discard/);
 assert.match(source, /Boolean\(scene\.closest\?\.\("\.cw-mug-preview__views"\)\)/);
 assert.match(source, /setHeated\(mugModel === "magic"\)/);
@@ -100,7 +103,7 @@ const context = {
   document: { createElement: (tag) => {
     const element = { tag, hidden: false, listeners: {}, setAttribute() {}, addEventListener(name, callback) { this.listeners[name] = callback; } };
     if (tag === "canvas") {
-      element.getContext = (type) => type === "webgl" ? (allowGL ? gl : null) : { drawImage() {} };
+      element.getContext = (type) => type === "webgl" ? (allowGL ? gl : null) : { drawImage() {}, clearRect() {}, fillText() {} };
       canvases.push(element);
     }
     return element;
@@ -125,7 +128,7 @@ assert.equal(scene.dataset.cwRenderState, "ready");
 assert.equal(uniform("uTextured"), 1);
 images[0].onload();
 assert.equal(scene.children[1].src, "latest-design", "Stale image loads must not replace the saved design");
-assert.equal(canvases[1].width, 1024, "Large print textures respect the device texture limit");
+assert.equal(canvases[2].width, 1024, "Large print textures respect the device texture limit");
 renderer.render({ ...state, heated: true });
 assert.equal(uniform("uReveal"), 1);
 renderer.render(state);
