@@ -1,5 +1,13 @@
 (()=>{
   if(window.cartwalaCartPreviewLoaded)return;window.cartwalaCartPreviewLoaded=true;
+  window.addEventListener('click',event=>{
+    const link=event.target.closest?.('a[href]');
+    if(!link?.closest('cart-drawer,#CartDrawer,#cart-drawer,[data-cart-drawer],.cart-drawer'))return;
+    const url=new URL(link.href,window.location.href);
+    const cartUrl=new URL((window.Shopify?.routes?.root||'/')+'cart',window.location.href);
+    if(url.origin!==cartUrl.origin||url.pathname.replace(/\/$/,'')!==cartUrl.pathname.replace(/\/$/,''))return;
+    event.stopImmediatePropagation();
+  },true);
   const rowSelector='[data-cart-line-key],[data-line-key],[data-cart-item],cart-drawer-item,.cart-item,.drawer__cart-item';
   const containerSelector='cart-drawer,#CartDrawer,[data-cart-drawer],#main-cart-items,form[action*="/cart"],.cart__items';
   const draftUrls=new Map();let timer;let running=false;let pending=false;
