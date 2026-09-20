@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
 import "./verify-cart-navigation.mjs";
+import "./verify-print-recovery.mjs";
 
 // ---------------------------------------------------------------------------
 // Storefront normalize() - extracted straight out of the shipped source (no

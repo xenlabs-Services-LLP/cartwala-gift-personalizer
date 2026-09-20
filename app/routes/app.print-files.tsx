@@ -102,6 +102,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 const attrMap = (a: Attribute[]) =>
   Object.fromEntries(a.map((x) => [x.key, x.value]));
 const numeric = (v: unknown, f: number) => {
+  if (v === null || v === undefined || v === "") return f;
   const n = Number(v);
   return Number.isFinite(n) ? n : f;
 };
@@ -115,8 +116,29 @@ function fallbackDesign(
   attributes: Record<string, string>,
 ): Design {
   const c = value && typeof value === "object" ? (value as any) : {};
-  const photos = Array.isArray(c.photoFields) ? c.photoFields : [],
-    texts = Array.isArray(c.textFields) ? c.textFields : [];
+  const photos = [...(Array.isArray(c.photoFields) ? c.photoFields : [])],
+    texts = [...(Array.isArray(c.textFields) ? c.textFields : [])];
+  const json = (v: string) => {
+    try {
+      return JSON.parse(v || "{}") || {};
+    } catch {
+      return {};
+    }
+  };
+  for (const [key, value] of Object.entries(attributes)) {
+    const label = key.replace(/^_/, "");
+    if (
+      /^https?:\/\//i.test(value) &&
+      attributes[`_${label} Position`] &&
+      !photos.some((f: any) => f.label === label)
+    )
+      photos.push({ label, x: 50, y: 50, width: 100, height: 100 });
+    if (key.startsWith("_") && key.endsWith(" Style")) {
+      const label = key.slice(1, -6);
+      if (!texts.some((f: any) => f.label === label))
+        texts.push({ label, ...json(value) });
+    }
+  }
   return {
     v: 0,
     r: typeof c.canvasRatio === "string" ? c.canvasRatio : "1:1",
@@ -139,7 +161,9 @@ function fallbackDesign(
         i: String(f.id ?? i),
         l: String(f.label || `Text ${i + 1}`),
         v: String(
-          attributes[String(f.label || `Text ${i + 1}`)] || "",
+          attributes[`_${String(f.label || `Text ${i + 1}`)}`] ||
+            attributes[String(f.label || `Text ${i + 1}`)] ||
+            "",
         ),
         x: numeric(f.x, 50),
         y: numeric(f.y, 50),
@@ -307,11 +331,7 @@ const textLayout = (
       1,
       baseSize *
         (text.b === true
-          ? Math.min(
-              1,
-              boxWidth / measuredWidth,
-              boxHeight / (baseSize * 1.05),
-            )
+          ? Math.min(1, boxWidth / measuredWidth, boxHeight / (baseSize * 1.05))
           : 1),
     ),
     alignment = ["left", "center", "right"].includes(String(text.q))
@@ -323,7 +343,12 @@ const textCanvas = (text: TextDesign, width: number, height: number) => {
   const c = makeCanvas(width, height),
     x = c.getContext("2d");
   if (!x) return c;
-  const { boxWidth, size, family, alignment } = textLayout(x, text, width, height);
+  const { boxWidth, size, family, alignment } = textLayout(
+    x,
+    text,
+    width,
+    height,
+  );
   x.save();
   x.translate((width * text.x) / 100, (height * text.y) / 100);
   x.rotate((numeric(text.a, 0) * Math.PI) / 180);
@@ -356,10 +381,13 @@ const psdTextLayer = (t: TextDesign, width: number, height: number) => {
           family: t.f || "Arial",
           alignment: "center" as const,
         },
-    measuredWidth = probe?.measureText(t.v).width || layout.size * t.v.length * 0.6,
+    measuredWidth =
+      probe?.measureText(t.v).width || layout.size * t.v.length * 0.6,
     tw = Math.max(
       4,
-      Math.ceil(t.b === true ? layout.boxWidth : measuredWidth + layout.size * 0.35),
+      Math.ceil(
+        t.b === true ? layout.boxWidth : measuredWidth + layout.size * 0.35,
+      ),
     ),
     th = Math.max(
       4,
@@ -379,10 +407,10 @@ const psdTextLayer = (t: TextDesign, width: number, height: number) => {
       t.b !== true
         ? canvas.width / 2
         : layout.alignment === "left"
-        ? 0
-        : layout.alignment === "right"
-          ? canvas.width
-          : canvas.width / 2,
+          ? 0
+          : layout.alignment === "right"
+            ? canvas.width
+            : canvas.width / 2,
       canvas.height / 2,
     );
   }
@@ -417,8 +445,12 @@ const psdTextLayer = (t: TextDesign, width: number, height: number) => {
   };
 };
 async function buildPrint(item: PrintItem) {
-  const { design, exact, attributes } = getDesign(item),
-    { width, height } = documentSize(design.r),
+  const { design, exact, attributes } = getDesign(item);
+  if (!exact && attributes["_Personalised Preview"]) {
+    const reference = await loadImage(attributes["_Personalised Preview"]);
+    design.r = `${reference.naturalWidth}:${reference.naturalHeight}`;
+  }
+  const { width, height } = documentSize(design.r),
     composite = makeCanvas(width, height),
     ctx = composite.getContext("2d");
   if (!ctx) throw new Error("Print canvas is unavailable.");
@@ -479,7 +511,7 @@ const downloadBlob = (blob: Blob, filename: string) => {
 };
 async function downloadPng(item: PrintItem) {
   const p = await buildPrint(item);
-  if (!p.photoLayers.length && p.attributes["_Personalised Preview"]) {
+  if (!p.exact && p.attributes["_Personalised Preview"]) {
     const r = await fetch(assetUrl(p.attributes["_Personalised Preview"]));
     if (!r.ok) throw new Error("Saved preview could not be downloaded.");
     downloadBlob(
@@ -494,6 +526,14 @@ async function downloadPng(item: PrintItem) {
   );
 }
 async function downloadPsd(item: PrintItem) {
+  const saved = getDesign(item);
+  if (
+    !saved.exact &&
+    !window.confirm(
+      "This order has no saved layer layout. Download a recovery PSD with the saved preview and separate source layers? Photo positions must be checked in Photoshop before printing.",
+    )
+  )
+    return;
   const p = await buildPrint(item);
   if (!p.photoLayers.length)
     throw new Error(
@@ -525,6 +565,23 @@ async function downloadPsd(item: PrintItem) {
     ...photoLayers,
     ...textLayers,
   ];
+  if (!p.exact && p.attributes["_Personalised Preview"]) {
+    const reference = await loadImage(p.attributes["_Personalised Preview"]);
+    const canvas = makeCanvas(p.width, p.height);
+    canvas.getContext("2d")?.drawImage(reference, 0, 0, p.width, p.height);
+    children.splice(
+      0,
+      children.length,
+      {
+        name: "Recovery layers - check layout before printing",
+        hidden: true,
+        children: [...children],
+      },
+      { name: "Saved preview reference (flattened)", canvas },
+    );
+    p.composite.getContext("2d")?.clearRect(0, 0, p.width, p.height);
+    p.composite.getContext("2d")?.drawImage(canvas, 0, 0);
+  }
   const bytes = writePsd(
     {
       width: p.width,
@@ -632,7 +689,7 @@ export default function PrintFilesPage() {
                     Qty {item.quantity} ·{" "}
                     {exact
                       ? "Layer data ready"
-                      : "Legacy order / default positions"}
+                      : "Recovery PSD only — check layout before printing"}
                     {!hasSource ? " · source photo missing" : ""}
                   </div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>

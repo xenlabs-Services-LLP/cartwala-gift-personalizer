@@ -31,19 +31,17 @@
     let photos = [];
     let texts = [];
     if (Array.isArray(input.photoFields))
-      photos = input.photoFields
-        .slice(0, MAX_FIELDS)
-        .map((field, index) => ({
-          id: String(field?.id || index),
-          label: String(field?.label || `Photo ${index + 1}`),
-          maskUrl: String(field?.maskUrl || ""),
-          x: clamp(field?.x, 0, 100, 50),
-          y: clamp(field?.y, 0, 100, 50),
-          width: clamp(field?.width, 2, 100, 24),
-          height: clamp(field?.height, 2, 100, 24),
-          rotationEnabled: field?.rotationEnabled === true,
-          required: field?.required !== false,
-        }));
+      photos = input.photoFields.slice(0, MAX_FIELDS).map((field, index) => ({
+        id: String(field?.id || index),
+        label: String(field?.label || `Photo ${index + 1}`),
+        maskUrl: String(field?.maskUrl || ""),
+        x: clamp(field?.x, 0, 100, 50),
+        y: clamp(field?.y, 0, 100, 50),
+        width: clamp(field?.width, 2, 100, 24),
+        height: clamp(field?.height, 2, 100, 24),
+        rotationEnabled: field?.rotationEnabled === true,
+        required: field?.required !== false,
+      }));
     else {
       const legacyType = String(input.customizationType || "photo");
       const count =
@@ -61,47 +59,45 @@
       }));
     }
     if (Array.isArray(input.textFields))
-      texts = input.textFields
-        .slice(0, MAX_FIELDS)
-        .map((field, index) => ({
-          id: String(field?.id || index),
-          label: String(field?.label || `Text ${index + 1}`),
-          placeholder: String(
-            field?.placeholder ||
-              field?.defaultValue ||
-              field?.label ||
-              `Text ${index + 1}`,
-          ).slice(0, 500),
-          defaultValue: Object.prototype.hasOwnProperty.call(
-            field || {},
-            "placeholder",
-          )
-            ? String(field?.defaultValue || "").slice(0, 500)
-            : "",
-          maxLength: clamp(field?.maxLength, 1, 500, 100),
-          color: /^#[0-9a-f]{6}$/i.test(String(field?.color))
-            ? String(field.color)
-            : "#111111",
-          x: clamp(field?.x, 0, 100, 50),
-          y: clamp(field?.y, 0, 100, 50),
-          width: clamp(field?.width, 2, 100, 30),
-          height: clamp(field?.height, 2, 100, 12),
-          alignment: ["left", "center", "right"].includes(
-            String(field?.alignment),
-          )
-            ? String(field.alignment)
-            : "center",
-          fitToBox: field?.fitToBox === true,
-          fontSize: clamp(field?.fontSize, 8, 300, 60),
-          fontFamily: String(field?.fontFamily || "Arial"),
-          allowFontChoice: field?.allowFontChoice === true,
-          movable: field?.movable === true,
-          scalable: field?.scalable === true,
-          rotatable: field?.rotatable === true,
-          allowColorChoice: field?.allowColorChoice === true,
-          rotation: clamp(field?.rotation, -180, 180, 0),
-          required: field?.required !== false,
-        }));
+      texts = input.textFields.slice(0, MAX_FIELDS).map((field, index) => ({
+        id: String(field?.id || index),
+        label: String(field?.label || `Text ${index + 1}`),
+        placeholder: String(
+          field?.placeholder ||
+            field?.defaultValue ||
+            field?.label ||
+            `Text ${index + 1}`,
+        ).slice(0, 500),
+        defaultValue: Object.prototype.hasOwnProperty.call(
+          field || {},
+          "placeholder",
+        )
+          ? String(field?.defaultValue || "").slice(0, 500)
+          : "",
+        maxLength: clamp(field?.maxLength, 1, 500, 100),
+        color: /^#[0-9a-f]{6}$/i.test(String(field?.color))
+          ? String(field.color)
+          : "#111111",
+        x: clamp(field?.x, 0, 100, 50),
+        y: clamp(field?.y, 0, 100, 50),
+        width: clamp(field?.width, 2, 100, 30),
+        height: clamp(field?.height, 2, 100, 12),
+        alignment: ["left", "center", "right"].includes(
+          String(field?.alignment),
+        )
+          ? String(field.alignment)
+          : "center",
+        fitToBox: field?.fitToBox === true,
+        fontSize: clamp(field?.fontSize, 8, 300, 60),
+        fontFamily: String(field?.fontFamily || "Arial"),
+        allowFontChoice: field?.allowFontChoice === true,
+        movable: field?.movable === true,
+        scalable: field?.scalable === true,
+        rotatable: field?.rotatable === true,
+        allowColorChoice: field?.allowColorChoice === true,
+        rotation: clamp(field?.rotation, -180, 180, 0),
+        required: field?.required !== false,
+      }));
     else if (String(input.customizationType || "").includes("text"))
       texts = [
         {
@@ -189,79 +185,205 @@
         const angle = u * Math.PI * 2;
         const cos = Math.cos(angle);
         const sin = Math.sin(angle);
-        return [radius * cos, height, radius * sin,
-          cos * dy / length, -dr / length, sin * dy / length,
-          u, (height + 1.1) / 2.2, material];
+        return [
+          radius * cos,
+          height,
+          radius * sin,
+          (cos * dy) / length,
+          -dr / length,
+          (sin * dy) / length,
+          u,
+          (height + 1.1) / 2.2,
+          material,
+        ];
       });
     };
-    lathe([[0.95, -1.12], [0.98, -1.1], [1, -1.04], [1, 1.1]], 0);
-    lathe([[1, 1.1], [0.995, 1.125], [0.976, 1.145], [0.95, 1.15],
-      [0.924, 1.145], [0.905, 1.125], [0.9, 1.1], [0.9, -0.91],
-      [0.87, -0.98], [0.8, -1.01], [0, -1.01]], 1);
-    lathe([[0, -1.105], [0.76, -1.105], [0.78, -1.135],
-      [0.9, -1.135], [0.95, -1.12]], 3);
-    const segments = mugModel === "love-handle"
-      ? [
-          [[0.94, 0.70], [1.18, 0.80], [1.25, 0.73], [1.34, 0.53]],
-          [[1.34, 0.53], [1.38, 0.44], [1.39, 0.44], [1.48, 0.50]],
-          [[1.48, 0.50], [1.88, 0.77], [2.08, 0.25], [1.78, -0.10]],
-          [[1.78, -0.10], [1.54, -0.38], [1.20, -0.61], [0.94, -0.61]],
-        ]
-      : [
-          [[0.94, 0.69], [1.12, 0.69], [1.6, 0.77], [1.7, 0.41]],
-          [[1.7, 0.41], [1.77, 0.14], [1.77, -0.14], [1.7, -0.41]],
-          [[1.7, -0.41], [1.6, -0.77], [1.12, -0.69], [0.94, -0.69]],
-        ];
+    lathe(
+      [
+        [0.95, -1.12],
+        [0.98, -1.1],
+        [1, -1.04],
+        [1, 1.1],
+      ],
+      0,
+    );
+    lathe(
+      [
+        [1, 1.1],
+        [0.995, 1.125],
+        [0.976, 1.145],
+        [0.95, 1.15],
+        [0.924, 1.145],
+        [0.905, 1.125],
+        [0.9, 1.1],
+        [0.9, -0.91],
+        [0.87, -0.98],
+        [0.8, -1.01],
+        [0, -1.01],
+      ],
+      1,
+    );
+    lathe(
+      [
+        [0, -1.105],
+        [0.76, -1.105],
+        [0.78, -1.135],
+        [0.9, -1.135],
+        [0.95, -1.12],
+      ],
+      3,
+    );
+    const segments =
+      mugModel === "love-handle"
+        ? [
+            [
+              [0.94, 0.7],
+              [1.18, 0.8],
+              [1.25, 0.73],
+              [1.34, 0.53],
+            ],
+            [
+              [1.34, 0.53],
+              [1.38, 0.44],
+              [1.39, 0.44],
+              [1.48, 0.5],
+            ],
+            [
+              [1.48, 0.5],
+              [1.88, 0.77],
+              [2.08, 0.25],
+              [1.78, -0.1],
+            ],
+            [
+              [1.78, -0.1],
+              [1.54, -0.38],
+              [1.2, -0.61],
+              [0.94, -0.61],
+            ],
+          ]
+        : [
+            [
+              [0.94, 0.69],
+              [1.12, 0.69],
+              [1.6, 0.77],
+              [1.7, 0.41],
+            ],
+            [
+              [1.7, 0.41],
+              [1.77, 0.14],
+              [1.77, -0.14],
+              [1.7, -0.41],
+            ],
+            [
+              [1.7, -0.41],
+              [1.6, -0.77],
+              [1.12, -0.69],
+              [0.94, -0.69],
+            ],
+          ];
     const tangents = segments.map(([a, b, c, d], index) => {
       const previous = segments[index - 1];
       const next = segments[index + 1];
-      const start = previous ? [b[0] - previous[2][0], b[1] - previous[2][1]] : [b[0] - a[0], b[1] - a[1]];
-      const end = next ? [next[1][0] - c[0], next[1][1] - c[1]] : [d[0] - c[0], d[1] - c[1]];
+      const start = previous
+        ? [b[0] - previous[2][0], b[1] - previous[2][1]]
+        : [b[0] - a[0], b[1] - a[1]];
+      const end = next
+        ? [next[1][0] - c[0], next[1][1] - c[1]]
+        : [d[0] - c[0], d[1] - c[1]];
       return { start, end };
     });
     segments.forEach(([a, b, c, d], index) => {
       surface(24, 16, (t, u) => {
         const s = 1 - t;
-        const x = s ** 3 * a[0] + 3 * s * s * t * b[0] + 3 * s * t * t * c[0] + t ** 3 * d[0];
-        const y = s ** 3 * a[1] + 3 * s * s * t * b[1] + 3 * s * t * t * c[1] + t ** 3 * d[1];
-        let dx = 3 * s * s * (b[0] - a[0]) + 6 * s * t * (c[0] - b[0]) + 3 * t * t * (d[0] - c[0]);
-        let dy = 3 * s * s * (b[1] - a[1]) + 6 * s * t * (c[1] - b[1]) + 3 * t * t * (d[1] - c[1]);
+        const x =
+          s ** 3 * a[0] +
+          3 * s * s * t * b[0] +
+          3 * s * t * t * c[0] +
+          t ** 3 * d[0];
+        const y =
+          s ** 3 * a[1] +
+          3 * s * s * t * b[1] +
+          3 * s * t * t * c[1] +
+          t ** 3 * d[1];
+        let dx =
+          3 * s * s * (b[0] - a[0]) +
+          6 * s * t * (c[0] - b[0]) +
+          3 * t * t * (d[0] - c[0]);
+        let dy =
+          3 * s * s * (b[1] - a[1]) +
+          6 * s * t * (c[1] - b[1]) +
+          3 * t * t * (d[1] - c[1]);
         if (t === 0) [dx, dy] = tangents[index].start;
         if (t === 1) [dx, dy] = tangents[index].end;
         const length = Math.hypot(dx, dy) || 1;
         const cos = Math.cos(u * Math.PI * 2);
         const sin = Math.sin(u * Math.PI * 2);
-        const nx = -dy / length * cos;
-        const ny = dx / length * cos;
-        return [x + nx * 0.115, y + ny * 0.115, sin * 0.115, nx, ny, sin, 0, 0, 2];
+        const nx = (-dy / length) * cos;
+        const ny = (dx / length) * cos;
+        return [
+          x + nx * 0.115,
+          y + ny * 0.115,
+          sin * 0.115,
+          nx,
+          ny,
+          sin,
+          0,
+          0,
+          2,
+        ];
       });
     });
-    return { vertices: new Float32Array(vertices), indices: new Uint16Array(indices) };
+    return {
+      vertices: new Float32Array(vertices),
+      indices: new Uint16Array(indices),
+    };
   };
 
   const mugRotationMatrix = (pitch, yaw) => {
-    const x = -pitch * Math.PI / 180;
-    const y = yaw * Math.PI / 180;
-    const cx = Math.cos(x), sx = Math.sin(x), cy = Math.cos(y), sy = Math.sin(y);
+    const x = (-pitch * Math.PI) / 180;
+    const y = (yaw * Math.PI) / 180;
+    const cx = Math.cos(x),
+      sx = Math.sin(x),
+      cy = Math.cos(y),
+      sy = Math.sin(y);
     return [cy, sx * sy, -cx * sy, 0, cx, sx, sy, -sx * cy, cx * cy];
   };
 
-  const mugFrame = (vertices, rotation, aspect, gallery = false, footprint = 3.05) => {
+  const mugFrame = (
+    vertices,
+    rotation,
+    aspect,
+    gallery = false,
+    footprint = 3.05,
+  ) => {
     const bounds = [Infinity, Infinity, -Infinity, -Infinity];
     for (let i = 0; i < vertices.length; i += 9) {
-      const x = rotation[0] * vertices[i] + rotation[3] * vertices[i + 1] + rotation[6] * vertices[i + 2];
-      const y = rotation[1] * vertices[i] + rotation[4] * vertices[i + 1] + rotation[7] * vertices[i + 2];
+      const x =
+        rotation[0] * vertices[i] +
+        rotation[3] * vertices[i + 1] +
+        rotation[6] * vertices[i + 2];
+      const y =
+        rotation[1] * vertices[i] +
+        rotation[4] * vertices[i + 1] +
+        rotation[7] * vertices[i + 2];
       bounds[0] = Math.min(bounds[0], x);
       bounds[1] = Math.min(bounds[1], y);
       bounds[2] = Math.max(bounds[2], x);
       bounds[3] = Math.max(bounds[3], y);
     }
     return {
-      center: [(bounds[0] + bounds[2]) / 2, gallery ? 0 : (bounds[1] + bounds[3]) / 2],
+      center: [
+        (bounds[0] + bounds[2]) / 2,
+        gallery ? 0 : (bounds[1] + bounds[3]) / 2,
+      ],
       // Shared envelope keeps all three gallery views and mug models the same size.
       // The freely rotating dialog still fits its complete projected geometry.
-      scale: gallery ? Math.min(1.74 / 2.75, 1.96 * aspect / footprint)
-        : Math.min(1.62 / (bounds[3] - bounds[1]), 1.78 * aspect / (bounds[2] - bounds[0])),
+      scale: gallery
+        ? Math.min(1.74 / 2.75, (1.96 * aspect) / footprint)
+        : Math.min(
+            1.62 / (bounds[3] - bounds[1]),
+            (1.78 * aspect) / (bounds[2] - bounds[0]),
+          ),
     };
   };
 
@@ -275,7 +397,11 @@
     fallback.hidden = true;
     scene.append(canvas, fallback);
     let gl;
-    try { gl = canvas.getContext("webgl", { alpha: true, antialias: true }); } catch { gl = null; }
+    try {
+      gl = canvas.getContext("webgl", { alpha: true, antialias: true });
+    } catch {
+      gl = null;
+    }
     let program, buffer, indexBuffer, texture, brandTexture, locations;
     let image = null;
     let latestState = null;
@@ -290,14 +416,26 @@
     const uploadTexture = () => {
       if (!image || !gl || gl.isContextLost()) return;
       const limit = Math.min(2048, gl.getParameter(gl.MAX_TEXTURE_SIZE));
-      const scale = Math.min(1, limit / Math.max(image.naturalWidth, image.naturalHeight));
+      const scale = Math.min(
+        1,
+        limit / Math.max(image.naturalWidth, image.naturalHeight),
+      );
       const source = document.createElement("canvas");
       source.width = Math.max(1, Math.round(image.naturalWidth * scale));
       source.height = Math.max(1, Math.round(image.naturalHeight * scale));
-      source.getContext("2d").drawImage(image, 0, 0, source.width, source.height);
+      source
+        .getContext("2d")
+        .drawImage(image, 0, 0, source.width, source.height);
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        source,
+      );
       textureReady = true;
       canvas.hidden = false;
       fallback.hidden = true;
@@ -316,7 +454,9 @@
         }
         return result;
       };
-      const vertex = shader(gl.VERTEX_SHADER, `
+      const vertex = shader(
+        gl.VERTEX_SHADER,
+        `
         attribute vec3 aPosition;
         attribute vec3 aNormal;
         attribute vec2 aUV;
@@ -335,8 +475,11 @@
           vPosition = aPosition;
           vUV = aUV;
           vMaterial = aMaterial;
-        }`);
-      const fragment = shader(gl.FRAGMENT_SHADER, `
+        }`,
+      );
+      const fragment = shader(
+        gl.FRAGMENT_SHADER,
+        `
         precision mediump float;
         uniform sampler2D uTexture;
         uniform sampler2D uBrand;
@@ -372,19 +515,26 @@
           float shine = pow(max(0.0, dot(normal, normalize(light + vec3(0.0, 0.0, 1.0)))), 65.0);
           float interior = vMaterial > 0.5 && vMaterial < 1.5 ? 0.88 : 1.0;
           gl_FragColor = vec4(colour * (0.64 + 0.36 * diffuse) * interior + vec3(0.14 * shine), 1.0);
-        }`);
+        }`,
+      );
       program = gl.createProgram();
       gl.attachShader(program, vertex);
       gl.attachShader(program, fragment);
       gl.linkProgram(program);
       gl.deleteShader(vertex);
       gl.deleteShader(fragment);
-      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS))
+        throw new Error(gl.getProgramInfoLog(program));
       gl.useProgram(program);
       buffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, geometry.vertices, gl.STATIC_DRAW);
-      [["aPosition", 3, 0], ["aNormal", 3, 12], ["aUV", 2, 24], ["aMaterial", 1, 32]].forEach(([name, size, offset]) => {
+      [
+        ["aPosition", 3, 0],
+        ["aNormal", 3, 12],
+        ["aUV", 2, 24],
+        ["aMaterial", 1, 32],
+      ].forEach(([name, size, offset]) => {
         const attribute = gl.getAttribLocation(program, name);
         gl.enableVertexAttribArray(attribute);
         gl.vertexAttribPointer(attribute, size, gl.FLOAT, false, 36, offset);
@@ -392,10 +542,31 @@
       indexBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, geometry.indices, gl.STATIC_DRAW);
-      locations = Object.fromEntries(["uRotation", "uCenter", "uScale", "uBody", "uInner", "uHandle", "uReveal", "uTextured"].map((key) => [key, gl.getUniformLocation(program, key)]));
+      locations = Object.fromEntries(
+        [
+          "uRotation",
+          "uCenter",
+          "uScale",
+          "uBody",
+          "uInner",
+          "uHandle",
+          "uReveal",
+          "uTextured",
+        ].map((key) => [key, gl.getUniformLocation(program, key)]),
+      );
       texture = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        1,
+        1,
+        0,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        new Uint8Array([255, 255, 255, 255]),
+      );
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -415,7 +586,14 @@
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, brandTexture);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, stamp);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        stamp,
+      );
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -429,7 +607,13 @@
     };
     const rgb = (hex) => {
       const value = hex.replace("#", "");
-      const full = value.length === 3 ? value.split("").map((c) => c + c).join("") : value;
+      const full =
+        value.length === 3
+          ? value
+              .split("")
+              .map((c) => c + c)
+              .join("")
+          : value;
       return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) / 255);
     };
     const render = (state = latestState) => {
@@ -438,32 +622,72 @@
       const { width, height } = scene.getBoundingClientRect();
       if (!width || !height) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const w = Math.round(width * dpr), h = Math.round(height * dpr);
-      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+      const w = Math.round(width * dpr),
+        h = Math.round(height * dpr);
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
       const rotation = mugRotationMatrix(state.rotationX, state.rotationY);
-      const frame = mugFrame(geometry.vertices, rotation, width / height, Boolean(scene.closest?.(".cw-mug-preview__views")), Number(scene.dataset.cwRotationY) === 90 ? 2.05 : 3.05);
+      const frame = mugFrame(
+        geometry.vertices,
+        rotation,
+        width / height,
+        Boolean(scene.closest?.(".cw-mug-preview__views")),
+        Number(scene.dataset.cwRotationY) === 90 ? 2.05 : 3.05,
+      );
       gl.viewport(0, 0, w, h);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       gl.useProgram(program);
       gl.uniformMatrix3fv(locations.uRotation, false, rotation);
       gl.uniform2fv(locations.uCenter, frame.center);
-      gl.uniform2f(locations.uScale, frame.scale / (width / height), frame.scale);
-      gl.uniform3fv(locations.uBody, rgb(mugModel === "magic" && !state.heated ? "#171717" : "#ffffff"));
+      gl.uniform2f(
+        locations.uScale,
+        frame.scale / (width / height),
+        frame.scale,
+      );
+      gl.uniform3fv(
+        locations.uBody,
+        rgb(mugModel === "magic" && !state.heated ? "#171717" : "#ffffff"),
+      );
       gl.uniform3fv(locations.uInner, rgb(state.innerColour));
       gl.uniform3fv(locations.uHandle, rgb(state.handleColour));
-      gl.uniform1f(locations.uReveal, mugModel !== "magic" || state.heated ? 1 : 0);
+      gl.uniform1f(
+        locations.uReveal,
+        mugModel !== "magic" || state.heated ? 1 : 0,
+      );
       gl.uniform1f(locations.uTextured, textureReady ? 1 : 0);
-      gl.drawElements(gl.TRIANGLES, geometry.indices.length, gl.UNSIGNED_SHORT, 0);
+      gl.drawElements(
+        gl.TRIANGLES,
+        geometry.indices.length,
+        gl.UNSIGNED_SHORT,
+        0,
+      );
     };
-    try { setup(); } catch (error) { program = null; console.warn("Cartwala mug preview:", error); showFallback(); }
+    try {
+      setup();
+    } catch (error) {
+      program = null;
+      console.warn("Cartwala mug preview:", error);
+      showFallback();
+    }
     if (!gl) showFallback();
     const observer = new ResizeObserver(() => render());
     observer.observe(scene);
-    canvas.addEventListener("webglcontextlost", (event) => { event.preventDefault(); showFallback(); });
+    canvas.addEventListener("webglcontextlost", (event) => {
+      event.preventDefault();
+      showFallback();
+    });
     canvas.addEventListener("webglcontextrestored", () => {
       if (disposed) return;
-      try { setup(); render(); } catch { program = null; showFallback(); }
+      try {
+        setup();
+        render();
+      } catch {
+        program = null;
+        showFallback();
+      }
     });
     return {
       render,
@@ -476,9 +700,13 @@
           image = next;
           fallback.src = url;
           try {
-            if (gl && program && !gl.isContextLost()) { uploadTexture(); render(); }
-            else showFallback();
-          } catch { showFallback(); }
+            if (gl && program && !gl.isContextLost()) {
+              uploadTexture();
+              render();
+            } else showFallback();
+          } catch {
+            showFallback();
+          }
         };
         next.onerror = () => {
           if (disposed || version !== imageVersion) return;
@@ -510,12 +738,15 @@
     const stage = root.querySelector("[data-cw-mug-stage]");
     const open = preview.querySelector("[data-cw-mug-open]");
     const close = mugDialog?.querySelector("[data-cw-mug-close]");
-    const magicToggles = Array.from(root.querySelectorAll("[data-cw-magic-toggle]"));
+    const magicToggles = Array.from(
+      root.querySelectorAll("[data-cw-magic-toggle]"),
+    );
     let heated = false;
     const sceneElements = Array.from(
       root.querySelectorAll("[data-cw-mug-scene]"),
     );
-    if (!mugDialog || !stage || !open || !close || !sceneElements.length) return;
+    if (!mugDialog || !stage || !open || !close || !sceneElements.length)
+      return;
 
     const mountPreviewInGallery = () => {
       if (preview.dataset.cwGalleryMounted === "true") return;
@@ -525,7 +756,10 @@
           "[data-gallery-main] img,.product__media img,[data-product-media] img,.product-gallery img,.product__media-item img,.slider-mobile-gutter img",
         ),
       );
-      const image = images.find((candidate) => !preview.contains(candidate) && candidate.offsetParent !== null);
+      const image = images.find(
+        (candidate) =>
+          !preview.contains(candidate) && candidate.offsetParent !== null,
+      );
       if (!image) return;
       const host =
         image.closest(
@@ -546,7 +780,12 @@
       scene.dataset.cwMugModel = mugModel;
       return {
         scene,
-        renderer: createMugRenderer(scene, mugModel, geometry, preview.dataset.cwRenderFallback || ""),
+        renderer: createMugRenderer(
+          scene,
+          mugModel,
+          geometry,
+          preview.dataset.cwRenderFallback || "",
+        ),
         rotationX: Number(scene.dataset.cwRotationX ?? -18),
         rotationY: Number(scene.dataset.cwRotationY ?? 90),
         handleColour: "#ffffff",
@@ -569,7 +808,9 @@
       purple: "#8756c7",
     };
     const colourFromName = (value) => {
-      const normalized = String(value || "").trim().toLowerCase();
+      const normalized = String(value || "")
+        .trim()
+        .toLowerCase();
       if (/^#[0-9a-f]{3,8}$/i.test(normalized)) return normalized;
       return colourMap[normalized] || "#ffffff";
     };
@@ -595,15 +836,15 @@
       });
       if (!colourControl) return "";
       if (colourControl.tagName === "SELECT") {
-        return colourControl.selectedOptions[0]?.textContent || colourControl.value;
+        return (
+          colourControl.selectedOptions[0]?.textContent || colourControl.value
+        );
       }
       return colourControl.value || colourControl.dataset.value || "White";
     };
     const applyColour = () => {
       const selectedColour = selectedColourName();
-      const optionColour = selectedColour
-        ? colourFromName(selectedColour)
-        : "";
+      const optionColour = selectedColour ? colourFromName(selectedColour) : "";
       const handleColour =
         optionColour ||
         (mugModel === "magic"
@@ -635,7 +876,9 @@
       preview.classList.toggle("is-magic-heated", heated);
       mugDialog.classList.toggle("is-magic-heated", heated);
       magicToggles.forEach((toggle) => {
-        toggle.textContent = heated ? toggle.dataset.hotLabel : toggle.dataset.coldLabel;
+        toggle.textContent = heated
+          ? toggle.dataset.hotLabel
+          : toggle.dataset.coldLabel;
         toggle.setAttribute("aria-pressed", String(heated));
       });
       render();
@@ -667,18 +910,25 @@
 
     open.addEventListener("click", openMugDialog);
     close.addEventListener("click", closeMugDialog);
-    magicToggles.forEach((toggle) => toggle.addEventListener("click", () => setHeated(!heated)));
+    magicToggles.forEach((toggle) =>
+      toggle.addEventListener("click", () => setHeated(!heated)),
+    );
     preview.addEventListener("click", (event) => event.stopPropagation());
     mugDialog.addEventListener("click", (event) => {
       if (event.target === mugDialog) closeMugDialog();
     });
     stage.addEventListener("keydown", (event) => {
-      if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+      if (
+        !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)
+      )
+        return;
       event.preventDefault();
       if (event.key === "ArrowLeft") interactive.rotationY -= 12;
       if (event.key === "ArrowRight") interactive.rotationY += 12;
-      if (event.key === "ArrowUp") interactive.rotationX = Math.max(-110, interactive.rotationX - 8);
-      if (event.key === "ArrowDown") interactive.rotationX = Math.min(110, interactive.rotationX + 8);
+      if (event.key === "ArrowUp")
+        interactive.rotationX = Math.max(-110, interactive.rotationX - 8);
+      if (event.key === "ArrowDown")
+        interactive.rotationX = Math.min(110, interactive.rotationX + 8);
       renderScene(interactive);
     });
     stage.addEventListener("pointerdown", (event) => {
@@ -693,7 +943,8 @@
     });
     stage.addEventListener("pointermove", (event) => {
       if (!dragging) return;
-      interactive.rotationY = rotationStartY + (event.clientX - pointerStartX) * 0.75;
+      interactive.rotationY =
+        rotationStartY + (event.clientX - pointerStartX) * 0.75;
       interactive.rotationX = Math.max(
         -110,
         Math.min(110, rotationStartX - (event.clientY - pointerStartY) * 0.55),
@@ -703,20 +954,25 @@
     const stopDragging = (event) => {
       if (!dragging) return;
       dragging = false;
-      if (stage.hasPointerCapture?.(event.pointerId)) stage.releasePointerCapture(event.pointerId);
+      if (stage.hasPointerCapture?.(event.pointerId))
+        stage.releasePointerCapture(event.pointerId);
       stage.classList.remove("is-dragging");
     };
     stage.addEventListener("pointerup", stopDragging);
     stage.addEventListener("pointercancel", stopDragging);
     stage.addEventListener("lostpointercapture", stopDragging);
     const section = root.closest(".shopify-section");
-    section?.addEventListener("shopify:section:unload", () => {
-      scenes.forEach(({ renderer }) => renderer.dispose());
-      document.removeEventListener("change", applyColour);
-      document.removeEventListener("variant:change", applyColour);
-      document.removeEventListener("product:variant-change", applyColour);
-      if (!root.contains(preview)) preview.remove();
-    }, { once: true });
+    section?.addEventListener(
+      "shopify:section:unload",
+      () => {
+        scenes.forEach(({ renderer }) => renderer.dispose());
+        document.removeEventListener("change", applyColour);
+        document.removeEventListener("variant:change", applyColour);
+        document.removeEventListener("product:variant-change", applyColour);
+        if (!root.contains(preview)) preview.remove();
+      },
+      { once: true },
+    );
     document.addEventListener("change", applyColour);
     document.addEventListener("variant:change", applyColour);
     document.addEventListener("product:variant-change", applyColour);
@@ -760,7 +1016,10 @@
         root.style.setProperty("--cw-accent", root.dataset.accent || "#ff6200");
         root.style.setProperty("--cw-ratio", config.ratio.replace(":", "/"));
         const [canvasWidth, canvasHeight] = config.ratio.split(":").map(Number);
-        root.style.setProperty("--cw-stage-ratio", String(canvasWidth / canvasHeight || 1));
+        root.style.setProperty(
+          "--cw-stage-ratio",
+          String(canvasWidth / canvasHeight || 1),
+        );
         config.fonts.forEach((font) => {
           const style = document.createElement("style");
           const name = font.name.replace(/["\\]/g, "");
@@ -1309,7 +1568,10 @@
           state.previewText.style.color = state.color;
           const contentBounds = state.textContent.getBoundingClientRect();
           const availableWidth = Math.max(1, state.previewText.clientWidth - 6);
-          const availableHeight = Math.max(1, state.previewText.clientHeight - 6);
+          const availableHeight = Math.max(
+            1,
+            state.previewText.clientHeight - 6,
+          );
           const fit = state.field.fitToBox
             ? Math.min(
                 1,
@@ -1875,7 +2137,10 @@
                 ((state.fittedFontSize || state.fontSize) * dimensions.width) /
                 1200;
               context.font = `700 ${baseSize}px "${font}", sans-serif`;
-              const measuredWidth = Math.max(1, context.measureText(value).width);
+              const measuredWidth = Math.max(
+                1,
+                context.measureText(value).width,
+              );
               const fittedSize = Math.max(
                 1,
                 baseSize *
@@ -1892,10 +2157,9 @@
                 : "center";
               context.textBaseline = "middle";
               context.font = `700 ${fittedSize}px "${font}", sans-serif`;
-              const textX =
-                !state.field.fitToBox
-                  ? 0
-                  : state.field.alignment === "left"
+              const textX = !state.field.fitToBox
+                ? 0
+                : state.field.alignment === "left"
                   ? -boxWidth / 2
                   : state.field.alignment === "right"
                     ? boxWidth / 2
@@ -1935,7 +2199,49 @@
               }),
             );
             putText(productForm, "_Cartwala Design ID", designId);
-            persist(blob).catch((error) =>
+            const printDesign = {
+              v: 1,
+              r: config.ratio,
+              o: root.dataset.overlay || "",
+              p: photoStates
+                .filter((s) => s.file)
+                .map((s) => ({
+                  i: s.field.id,
+                  l: s.field.label,
+                  x: s.field.x,
+                  y: s.field.y,
+                  w: s.field.width,
+                  h: s.field.height,
+                  m: s.field.maskUrl,
+                  ox: s.x / stage.clientWidth,
+                  oy: s.y / stage.clientHeight,
+                  s: s.scale,
+                  a: s.angle,
+                })),
+              t: textStates
+                .filter((s) => s.input.value.trim())
+                .map((s) => ({
+                  i: s.field.id,
+                  l: s.field.label,
+                  v: s.input.value.trim(),
+                  x: s.x,
+                  y: s.y,
+                  w: s.width,
+                  h: s.height,
+                  q: s.field.alignment,
+                  b: s.field.fitToBox,
+                  z: s.fittedFontSize || s.fontSize,
+                  c: s.color,
+                  f: s.fontSelect?.value || s.field.fontFamily,
+                  a: s.angle,
+                })),
+            };
+            putText(
+              productForm,
+              "_Cartwala Design JSON",
+              JSON.stringify(printDesign),
+            );
+            persist(blob, printDesign).catch((error) =>
               console.warn("Cartwala local draft save skipped", error),
             );
             showProductPreview(previewUrl);
@@ -2001,12 +2307,12 @@
           }
         });
         database.catch(() => {});
-        const persist = async (blob) => {
-          const db = await database;
+        const persist = async (blob, printDesign) => {
           const record = {
             designId,
             updated: Date.now(),
             blob,
+            printDesign,
             photos: photoStates.map((s) => ({
               file: s.file,
               x: s.x / stage.clientWidth,
@@ -2026,6 +2332,7 @@
             files: fileStates.map((s) => s.file),
             links: linkStates.map((s) => s.input.value),
           };
+          const db = await database;
           await new Promise((resolve, reject) => {
             const tx = db.transaction("drafts", "readwrite");
             const store = tx.objectStore("drafts");
@@ -2145,6 +2452,12 @@
             );
             if (productForm && isReady()) {
               stagedFiles.clear();
+              if (record.printDesign)
+                putText(
+                  productForm,
+                  "_Cartwala Design JSON",
+                  JSON.stringify(record.printDesign),
+                );
               photoStates.forEach((s, i) => {
                 putFile(productForm, s.field.label, s.file);
                 putText(
