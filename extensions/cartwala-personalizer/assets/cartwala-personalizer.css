@@ -1080,7 +1080,7 @@ body.cw-personalization-complete
   position: absolute;
   left: 50%;
   width: 216px;
-  height: 25px;
+  height: 216px;
   border-radius: 50%;
   transform: translateX(-50%) rotateX(90deg);
   transform-origin: center center;
@@ -1089,13 +1089,15 @@ body.cw-personalization-complete
   box-shadow: inset 0 0 8px #0002;
 }
 .cw-mug-preview__rim {
-  top: -5px;
+  /* A full horizontal disc keeps the lip attached to the cylindrical panels
+     while the parent scene pitches into top and bottom views. */
+  top: -101px;
   background: radial-gradient(ellipse, var(--cw-mug-rim-colour) 0 53%, #fff 57% 65%, var(--cw-mug-rim-colour) 69% 82%, #c9c9c9 86% 100%);
 }
 .cw-mug-preview__base {
-  top: 216px;
+  top: 130px;
   width: 202px;
-  height: 27px;
+  height: 202px;
   transform: translateX(-50%) rotateX(90deg);
   background: radial-gradient(ellipse, #f8f8f8 0 55%, #fff 58% 75%, #c9c9c9 79% 100%);
   box-shadow: inset 0 -3px 7px #0002, 0 5px 8px #0002;
