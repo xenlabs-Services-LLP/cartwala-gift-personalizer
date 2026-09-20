@@ -273,9 +273,8 @@ assert.match(
 assert.match(admin, /firstMetafieldsSetError\(json\)/);
 assert.match(admin, /psdTextBoxBounds/);
 assert.match(admin, /psdTextAlignment/);
-assert.match(admin, /psdTextIsBox/);
 assert.match(admin, /psdTextPixelFontSize/);
-assert.match(admin, /resolutionPpi/);
+assert.doesNotMatch(admin, /resolutionPpi/);
 // Unsaved-changes guard: closing the tab mid-template-build used to lose
 // everything silently.
 assert.match(admin, /addEventListener\("beforeunload", handler\)/);
@@ -363,7 +362,10 @@ assert.match(assetRegistry, /previous: PersonalizerAssetVersion \| null/);
 assert.match(assetRegistry, /export const RETIRED_ASSET_DAYS = 30/);
 
 const psdImport = fs.readFileSync("app/lib/psd-import.ts", "utf8");
-assert.match(psdImport, /verticalScale > 0 \? verticalScale : Math\.max\(1, resolutionPpi\) \/ 72/);
+assert.match(psdImport, /psdTextIsBox/);
+assert.match(psdImport, /verticalScale > 0 \? verticalScale : 1/);
+assert.match(psdImport, /text\?\.boxBounds\?\.slice\(0, 4\)/);
+assert.match(psdImport, /export const psdFontDisplayName/);
 assert.match(psdImport, /Number\(transform\[4\]\) \+ textLeft/);
 assert.match(psdImport, /const psdLayerAlphaBounds/);
 assert.match(psdImport, /if \(alphaUsesDocumentCoordinates\) return alpha/);
