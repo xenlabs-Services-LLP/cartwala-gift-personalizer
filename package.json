@@ -19,7 +19,7 @@
     "graphql-codegen": "graphql-codegen",
     "vite": "vite",
     "typecheck": "react-router typegen && tsc --noEmit",
-    "qa": "node scripts/verify-personalizer.mjs && node --check extensions/cartwala-personalizer/assets/cartwala-personalizer.js && node --check extensions/cartwala-personalizer/assets/cartwala-cart-preview.js && node --check extensions/cartwala-personalizer/assets/cartwala-selection-box.js",
+    "qa": "node scripts/verify-personalizer.mjs && node scripts/verify-mug-preview.mjs && node --check extensions/cartwala-personalizer/assets/cartwala-personalizer.js && node --check extensions/cartwala-personalizer/assets/cartwala-cart-preview.js && node --check extensions/cartwala-personalizer/assets/cartwala-selection-box.js",
     "verify": "npm run lint && npm run typecheck && npm run qa && npm run build"
   },
   "type": "module",

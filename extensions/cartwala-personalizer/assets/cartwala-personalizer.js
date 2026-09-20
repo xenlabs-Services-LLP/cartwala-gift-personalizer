@@ -161,6 +161,307 @@
     return { photos, texts, files, links, fonts, ratio };
   };
 
+  const createMugGeometry = (mugModel) => {
+    const vertices = [];
+    const indices = [];
+    const surface = (rows, columns, point) => {
+      const offset = vertices.length / 9;
+      for (let row = 0; row <= rows; row += 1) {
+        for (let column = 0; column <= columns; column += 1) {
+          vertices.push(...point(row / rows, column / columns));
+          if (row < rows && column < columns) {
+            const a = offset + row * (columns + 1) + column;
+            const b = a + columns + 1;
+            indices.push(a, b, a + 1, a + 1, b, b + 1);
+          }
+        }
+      }
+    };
+    const lathe = (profile, material) => {
+      surface(profile.length - 1, 160, (v, u) => {
+        const index = Math.round(v * (profile.length - 1));
+        const [radius, height] = profile[index];
+        const before = profile[Math.max(0, index - 1)];
+        const after = profile[Math.min(profile.length - 1, index + 1)];
+        const dr = after[0] - before[0];
+        const dy = after[1] - before[1];
+        const length = Math.hypot(dr, dy) || 1;
+        const angle = u * Math.PI * 2;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        return [radius * cos, height, radius * sin,
+          cos * dy / length, -dr / length, sin * dy / length,
+          u, (height + 1.1) / 2.2, material];
+      });
+    };
+    lathe([[0.95, -1.12], [0.98, -1.1], [1, -1.04], [1, 1.1]], 0);
+    lathe([[1, 1.1], [0.995, 1.125], [0.976, 1.145], [0.95, 1.15],
+      [0.924, 1.145], [0.905, 1.125], [0.9, 1.1], [0.9, -0.91],
+      [0.87, -0.98], [0.8, -1.01], [0, -1.01]], 1);
+    lathe([[0, -1.105], [0.76, -1.105], [0.78, -1.135],
+      [0.9, -1.135], [0.95, -1.12]], 3);
+    const segments = mugModel === "love-handle"
+      ? [
+          [[0.94, 0.61], [1.03, 1.04], [1.45, 1.03], [1.47, 0.59]],
+          [[1.47, 0.59], [1.88, 0.89], [2.16, 0.43], [1.84, 0.1]],
+          [[1.84, 0.1], [1.61, -0.16], [1.2, -0.4], [0.94, -0.52]],
+        ]
+      : [
+          [[0.94, 0.69], [1.12, 0.69], [1.6, 0.77], [1.7, 0.41]],
+          [[1.7, 0.41], [1.77, 0.14], [1.77, -0.14], [1.7, -0.41]],
+          [[1.7, -0.41], [1.6, -0.77], [1.12, -0.69], [0.94, -0.69]],
+        ];
+    const tangents = segments.map(([a, b, c, d], index) => {
+      const previous = segments[index - 1];
+      const next = segments[index + 1];
+      const start = previous ? [b[0] - previous[2][0], b[1] - previous[2][1]] : [b[0] - a[0], b[1] - a[1]];
+      const end = next ? [next[1][0] - c[0], next[1][1] - c[1]] : [d[0] - c[0], d[1] - c[1]];
+      return { start, end };
+    });
+    segments.forEach(([a, b, c, d], index) => {
+      surface(24, 16, (t, u) => {
+        const s = 1 - t;
+        const x = s ** 3 * a[0] + 3 * s * s * t * b[0] + 3 * s * t * t * c[0] + t ** 3 * d[0];
+        const y = s ** 3 * a[1] + 3 * s * s * t * b[1] + 3 * s * t * t * c[1] + t ** 3 * d[1];
+        let dx = 3 * s * s * (b[0] - a[0]) + 6 * s * t * (c[0] - b[0]) + 3 * t * t * (d[0] - c[0]);
+        let dy = 3 * s * s * (b[1] - a[1]) + 6 * s * t * (c[1] - b[1]) + 3 * t * t * (d[1] - c[1]);
+        if (t === 0) [dx, dy] = tangents[index].start;
+        if (t === 1) [dx, dy] = tangents[index].end;
+        const length = Math.hypot(dx, dy) || 1;
+        const cos = Math.cos(u * Math.PI * 2);
+        const sin = Math.sin(u * Math.PI * 2);
+        const nx = -dy / length * cos;
+        const ny = dx / length * cos;
+        return [x + nx * 0.115, y + ny * 0.115, sin * 0.115, nx, ny, sin, 0, 0, 2];
+      });
+    });
+    return { vertices: new Float32Array(vertices), indices: new Uint16Array(indices) };
+  };
+
+  const mugRotationMatrix = (pitch, yaw) => {
+    const x = -pitch * Math.PI / 180;
+    const y = yaw * Math.PI / 180;
+    const cx = Math.cos(x), sx = Math.sin(x), cy = Math.cos(y), sy = Math.sin(y);
+    return [cy, sx * sy, -cx * sy, 0, cx, sx, sy, -sx * cy, cx * cy];
+  };
+
+  const mugFrame = (vertices, rotation, aspect) => {
+    const bounds = [Infinity, Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < vertices.length; i += 9) {
+      const x = rotation[0] * vertices[i] + rotation[3] * vertices[i + 1] + rotation[6] * vertices[i + 2];
+      const y = rotation[1] * vertices[i] + rotation[4] * vertices[i + 1] + rotation[7] * vertices[i + 2];
+      bounds[0] = Math.min(bounds[0], x);
+      bounds[1] = Math.min(bounds[1], y);
+      bounds[2] = Math.max(bounds[2], x);
+      bounds[3] = Math.max(bounds[3], y);
+    }
+    return {
+      center: [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2],
+      scale: Math.min(1.62 / (bounds[3] - bounds[1]), 1.78 * aspect / (bounds[2] - bounds[0])),
+    };
+  };
+
+  const createMugRenderer = (scene, mugModel, geometry, fallbackLabel) => {
+    const canvas = document.createElement("canvas");
+    canvas.className = "cw-mug-preview__canvas";
+    canvas.setAttribute("aria-hidden", "true");
+    const fallback = document.createElement("img");
+    fallback.className = "cw-mug-preview__fallback";
+    fallback.alt = fallbackLabel;
+    fallback.hidden = true;
+    scene.append(canvas, fallback);
+    let gl;
+    try { gl = canvas.getContext("webgl", { alpha: true, antialias: true }); } catch { gl = null; }
+    let program, buffer, indexBuffer, texture, locations;
+    let image = null;
+    let latestState = null;
+    let imageVersion = 0;
+    let textureReady = false;
+    let disposed = false;
+    const showFallback = () => {
+      canvas.hidden = true;
+      fallback.hidden = !image;
+      scene.dataset.cwRenderState = "fallback";
+    };
+    const uploadTexture = () => {
+      if (!image || !gl || gl.isContextLost()) return;
+      const limit = Math.min(2048, gl.getParameter(gl.MAX_TEXTURE_SIZE));
+      const scale = Math.min(1, limit / Math.max(image.naturalWidth, image.naturalHeight));
+      const source = document.createElement("canvas");
+      source.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      source.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      source.getContext("2d").drawImage(image, 0, 0, source.width, source.height);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+      textureReady = true;
+      canvas.hidden = false;
+      fallback.hidden = true;
+      scene.dataset.cwRenderState = "ready";
+    };
+    const setup = () => {
+      if (!gl) return;
+      const shader = (type, code) => {
+        const result = gl.createShader(type);
+        gl.shaderSource(result, code);
+        gl.compileShader(result);
+        if (!gl.getShaderParameter(result, gl.COMPILE_STATUS)) {
+          const message = gl.getShaderInfoLog(result);
+          gl.deleteShader(result);
+          throw new Error(message);
+        }
+        return result;
+      };
+      const vertex = shader(gl.VERTEX_SHADER, `
+        attribute vec3 aPosition;
+        attribute vec3 aNormal;
+        attribute vec2 aUV;
+        attribute float aMaterial;
+        uniform mat3 uRotation;
+        uniform vec2 uCenter;
+        uniform vec2 uScale;
+        varying vec3 vNormal;
+        varying vec2 vUV;
+        varying float vMaterial;
+        void main() {
+          vec3 p = uRotation * aPosition;
+          gl_Position = vec4((p.xy - uCenter) * uScale, -p.z / 8.0, 1.0);
+          vNormal = uRotation * aNormal;
+          vUV = aUV;
+          vMaterial = aMaterial;
+        }`);
+      const fragment = shader(gl.FRAGMENT_SHADER, `
+        precision mediump float;
+        uniform sampler2D uTexture;
+        uniform vec3 uBody;
+        uniform vec3 uInner;
+        uniform vec3 uHandle;
+        uniform float uReveal;
+        uniform float uTextured;
+        varying vec3 vNormal;
+        varying vec2 vUV;
+        varying float vMaterial;
+        void main() {
+          vec3 colour = uBody;
+          if (vMaterial > 2.5) colour = vec3(0.94);
+          else if (vMaterial > 1.5) colour = uHandle;
+          else if (vMaterial > 0.5) colour = uInner;
+          else if (vUV.x > 0.075 && vUV.x < 0.925 && vUV.y > 0.018 && vUV.y < 0.982) {
+            vec2 uv = vec2((0.925 - vUV.x) / 0.85, (vUV.y - 0.018) / 0.964);
+            vec4 art = texture2D(uTexture, uv);
+            colour = mix(uBody, mix(vec3(1.0), art.rgb, art.a), uReveal * uTextured);
+          }
+          vec3 normal = normalize(vNormal);
+          vec3 light = normalize(vec3(-0.6, 1.1, 1.8));
+          float diffuse = max(0.0, dot(normal, light));
+          float shine = pow(max(0.0, dot(normal, normalize(light + vec3(0.0, 0.0, 1.0)))), 65.0);
+          float interior = vMaterial > 0.5 && vMaterial < 1.5 ? 0.88 : 1.0;
+          gl_FragColor = vec4(colour * (0.64 + 0.36 * diffuse) * interior + vec3(0.14 * shine), 1.0);
+        }`);
+      program = gl.createProgram();
+      gl.attachShader(program, vertex);
+      gl.attachShader(program, fragment);
+      gl.linkProgram(program);
+      gl.deleteShader(vertex);
+      gl.deleteShader(fragment);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
+      gl.useProgram(program);
+      buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, geometry.vertices, gl.STATIC_DRAW);
+      [["aPosition", 3, 0], ["aNormal", 3, 12], ["aUV", 2, 24], ["aMaterial", 1, 32]].forEach(([name, size, offset]) => {
+        const attribute = gl.getAttribLocation(program, name);
+        gl.enableVertexAttribArray(attribute);
+        gl.vertexAttribPointer(attribute, size, gl.FLOAT, false, 36, offset);
+      });
+      indexBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, geometry.indices, gl.STATIC_DRAW);
+      locations = Object.fromEntries(["uRotation", "uCenter", "uScale", "uBody", "uInner", "uHandle", "uReveal", "uTextured"].map((key) => [key, gl.getUniformLocation(program, key)]));
+      texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.enable(gl.DEPTH_TEST);
+      textureReady = false;
+      uploadTexture();
+    };
+    const rgb = (hex) => {
+      const value = hex.replace("#", "");
+      const full = value.length === 3 ? value.split("").map((c) => c + c).join("") : value;
+      return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) / 255);
+    };
+    const render = (state = latestState) => {
+      latestState = state;
+      if (disposed || !state || !gl || !program || gl.isContextLost()) return;
+      const { width, height } = scene.getBoundingClientRect();
+      if (!width || !height) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.round(width * dpr), h = Math.round(height * dpr);
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+      const rotation = mugRotationMatrix(state.rotationX, state.rotationY);
+      const frame = mugFrame(geometry.vertices, rotation, width / height);
+      gl.viewport(0, 0, w, h);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.useProgram(program);
+      gl.uniformMatrix3fv(locations.uRotation, false, rotation);
+      gl.uniform2fv(locations.uCenter, frame.center);
+      gl.uniform2f(locations.uScale, frame.scale / (width / height), frame.scale);
+      gl.uniform3fv(locations.uBody, rgb(mugModel === "magic" && !state.heated ? "#171717" : "#ffffff"));
+      gl.uniform3fv(locations.uInner, rgb(state.innerColour));
+      gl.uniform3fv(locations.uHandle, rgb(state.handleColour));
+      gl.uniform1f(locations.uReveal, mugModel !== "magic" || state.heated ? 1 : 0);
+      gl.uniform1f(locations.uTextured, textureReady ? 1 : 0);
+      gl.drawElements(gl.TRIANGLES, geometry.indices.length, gl.UNSIGNED_SHORT, 0);
+    };
+    try { setup(); } catch (error) { program = null; console.warn("Cartwala mug preview:", error); showFallback(); }
+    if (!gl) showFallback();
+    const observer = new ResizeObserver(() => render());
+    observer.observe(scene);
+    canvas.addEventListener("webglcontextlost", (event) => { event.preventDefault(); showFallback(); });
+    canvas.addEventListener("webglcontextrestored", () => {
+      if (disposed) return;
+      try { setup(); render(); } catch { program = null; showFallback(); }
+    });
+    return {
+      render,
+      setTexture: (url) => {
+        const version = ++imageVersion;
+        const next = new Image();
+        next.crossOrigin = "anonymous";
+        next.onload = () => {
+          if (disposed || version !== imageVersion) return;
+          image = next;
+          fallback.src = url;
+          try {
+            if (gl && program && !gl.isContextLost()) { uploadTexture(); render(); }
+            else showFallback();
+          } catch { showFallback(); }
+        };
+        next.onerror = () => {
+          if (disposed || version !== imageVersion) return;
+          image = next;
+          fallback.src = url;
+          showFallback();
+        };
+        next.src = url;
+      },
+      dispose: () => {
+        disposed = true;
+        observer.disconnect();
+        if (!gl) return;
+        gl.deleteBuffer(buffer);
+        gl.deleteBuffer(indexBuffer);
+        gl.deleteTexture(texture);
+        gl.deleteProgram(program);
+      },
+    };
+  };
+
   const initializeMugPreview = (root) => {
     const preview = root.querySelector("[data-cw-mug-preview]");
     if (!preview || preview.dataset.cwMugReady === "true") return;
@@ -170,7 +471,8 @@
     const stage = root.querySelector("[data-cw-mug-stage]");
     const open = preview.querySelector("[data-cw-mug-open]");
     const close = mugDialog?.querySelector("[data-cw-mug-close]");
-    const magicToggle = preview.querySelector("[data-cw-magic-toggle]");
+    const magicToggles = Array.from(root.querySelectorAll("[data-cw-magic-toggle]"));
+    let heated = false;
     const sceneElements = Array.from(
       root.querySelectorAll("[data-cw-mug-scene]"),
     );
@@ -178,13 +480,13 @@
 
     const mountPreviewInGallery = () => {
       if (preview.dataset.cwGalleryMounted === "true") return;
-      const scope = root.closest(".shopify-section") || document;
+      const scope = root.closest("main") || document;
       const images = Array.from(
         scope.querySelectorAll(
           "[data-gallery-main] img,.product__media img,[data-product-media] img,.product-gallery img,.product__media-item img,.slider-mobile-gutter img",
         ),
       );
-      const image = images.find((candidate) => candidate.offsetParent !== null) || images[0];
+      const image = images.find((candidate) => !preview.contains(candidate) && candidate.offsetParent !== null);
       if (!image) return;
       const host =
         image.closest(
@@ -192,55 +494,24 @@
         ) || image.parentElement;
       if (!host) return;
       host.classList.add("cw-mug-gallery-host");
+      host.querySelectorAll("[data-cw-mug-preview]").forEach((existing) => {
+        if (existing !== preview) existing.hidden = true;
+      });
       preview.classList.add("cw-mug-preview--gallery");
       host.appendChild(preview);
       preview.dataset.cwGalleryMounted = "true";
     };
 
-    const panelCount = 56;
-    const panelWidth = 11.5;
-    const handleGapStart = 10;
-    const handleGapEnd = 18;
-    const printablePanelCount = panelCount - (handleGapEnd - handleGapStart + 1);
-    const radius = (panelCount * panelWidth) / (2 * Math.PI);
+    const geometry = createMugGeometry(mugModel);
     const scenes = sceneElements.map((scene) => {
       scene.dataset.cwMugModel = mugModel;
-      const handle = document.createElement("div");
-      const body = document.createElement("div");
-      const rim = document.createElement("div");
-      const base = document.createElement("div");
-      handle.className = "cw-mug-preview__handle";
-      if (mugModel === "love-handle") {
-        handle.innerHTML =
-          '<svg viewBox="0 0 120 112" aria-hidden="true" focusable="false"><path d="M60 103C48 91 12 65 12 35C12 10 43 3 60 25C77 3 108 10 108 35C108 65 72 91 60 103Z"/></svg>';
-      }
-      body.className = "cw-mug-preview__body";
-      rim.className = "cw-mug-preview__rim";
-      base.className = "cw-mug-preview__base";
-      scene.append(handle, body, rim, base);
-      const panels = Array.from({ length: panelCount }, (_, index) => {
-        const panel = document.createElement("span");
-        const angle = (360 / panelCount) * index;
-        const handleGap = index >= handleGapStart && index <= handleGapEnd;
-        const textureIndex =
-          index > handleGapEnd
-            ? index - handleGapEnd - 1
-            : panelCount - handleGapEnd - 1 + index;
-        panel.className = "cw-mug-preview__panel";
-        panel.classList.toggle("is-handle-gap", handleGap);
-        panel.style.setProperty("--cw-panel-angle", `${angle}deg`);
-        panel.style.setProperty("--cw-panel-radius", `${radius}px`);
-        panel.style.setProperty("--cw-panel-width", `${panelWidth + 0.5}px`);
-        panel.style.backgroundSize = `${printablePanelCount * panelWidth}px 100%`;
-        panel.style.backgroundPosition = `${-textureIndex * panelWidth}px 0`;
-        body.appendChild(panel);
-        return { panel, angle, handleGap };
-      });
       return {
         scene,
-        panels,
-        rotationX: Number(scene.dataset.cwRotationX || -5),
-        rotationY: Number(scene.dataset.cwRotationY || 0),
+        renderer: createMugRenderer(scene, mugModel, geometry, preview.dataset.cwRenderFallback || ""),
+        rotationX: Number(scene.dataset.cwRotationX ?? -18),
+        rotationY: Number(scene.dataset.cwRotationY ?? 90),
+        handleColour: "#ffffff",
+        innerColour: "#ffffff",
       };
     });
     const interactive = scenes.find(({ scene }) => stage.contains(scene));
@@ -294,7 +565,6 @@
       const optionColour = selectedColour
         ? colourFromName(selectedColour)
         : "";
-      const bodyColour = mugModel === "magic" ? "#171717" : "#ffffff";
       const handleColour =
         optionColour ||
         (mugModel === "magic"
@@ -304,10 +574,10 @@
             : "#ffffff");
       const rimColour =
         optionColour || (mugModel === "red" ? "#d92f3f" : "#ffffff");
-      scenes.forEach(({ scene }) => {
-        scene.style.setProperty("--cw-mug-body-colour", bodyColour);
-        scene.style.setProperty("--cw-mug-handle-colour", handleColour);
-        scene.style.setProperty("--cw-mug-rim-colour", rimColour);
+      scenes.forEach((model) => {
+        model.handleColour = handleColour;
+        model.innerColour = rimColour;
+        renderScene(model);
       });
     };
 
@@ -317,28 +587,26 @@
     let rotationStartY = interactive.rotationY;
     let dragging = false;
     const renderScene = (model) => {
-      model.scene.style.setProperty("--cw-mug-rotation-x", `${model.rotationX}deg`);
-      model.scene.style.setProperty("--cw-mug-rotation-y", `${model.rotationY}deg`);
-      model.panels.forEach(({ panel, angle }) => {
-        const facing = Math.cos(((angle + model.rotationY) * Math.PI) / 180);
-        panel.style.setProperty(
-          "--cw-panel-light",
-          String(Math.max(0.58, Math.min(1.08, 0.82 + facing * 0.24))),
-        );
-      });
+      model.renderer.render({ ...model, heated });
     };
     const render = () => scenes.forEach(renderScene);
+    const setHeated = (value) => {
+      heated = value;
+      root.classList.toggle("is-magic-heated", heated);
+      preview.classList.toggle("is-magic-heated", heated);
+      mugDialog.classList.toggle("is-magic-heated", heated);
+      magicToggles.forEach((toggle) => {
+        toggle.textContent = heated ? toggle.dataset.hotLabel : toggle.dataset.coldLabel;
+        toggle.setAttribute("aria-pressed", String(heated));
+      });
+      render();
+    };
     const applyTexture = (url) => {
       if (typeof url !== "string" || !url) return;
-      const safeUrl = url.replace(/["\\\n\r]/g, "");
-      scenes.forEach(({ panels }) => {
-        panels.forEach(({ panel, handleGap }) => {
-          panel.style.backgroundImage = handleGap ? "none" : `url("${safeUrl}")`;
-        });
-      });
+      scenes.forEach(({ renderer }) => renderer.setTexture(url));
       mountPreviewInGallery();
       preview.hidden = false;
-      render();
+      setHeated(mugModel === "magic");
     };
 
     const openMugDialog = () => {
@@ -348,6 +616,7 @@
       } else {
         mugDialog.setAttribute("open", "");
       }
+      requestAnimationFrame(() => renderScene(interactive));
     };
     const closeMugDialog = () => {
       if (typeof mugDialog.close === "function" && mugDialog.open) {
@@ -359,14 +628,8 @@
 
     open.addEventListener("click", openMugDialog);
     close.addEventListener("click", closeMugDialog);
-    magicToggle?.addEventListener("click", () => {
-      const heated = root.classList.toggle("is-magic-heated");
-      preview.classList.toggle("is-magic-heated", heated);
-      magicToggle.textContent = heated
-        ? magicToggle.dataset.hotLabel
-        : magicToggle.dataset.coldLabel;
-      magicToggle.setAttribute("aria-pressed", String(heated));
-    });
+    magicToggles.forEach((toggle) => toggle.addEventListener("click", () => setHeated(!heated)));
+    preview.addEventListener("click", (event) => event.stopPropagation());
     mugDialog.addEventListener("click", (event) => {
       if (event.target === mugDialog) closeMugDialog();
     });
@@ -375,11 +638,12 @@
       event.preventDefault();
       if (event.key === "ArrowLeft") interactive.rotationY -= 12;
       if (event.key === "ArrowRight") interactive.rotationY += 12;
-      if (event.key === "ArrowUp") interactive.rotationX = Math.max(-82, interactive.rotationX - 8);
-      if (event.key === "ArrowDown") interactive.rotationX = Math.min(82, interactive.rotationX + 8);
+      if (event.key === "ArrowUp") interactive.rotationX = Math.max(-110, interactive.rotationX - 8);
+      if (event.key === "ArrowDown") interactive.rotationX = Math.min(110, interactive.rotationX + 8);
       renderScene(interactive);
     });
     stage.addEventListener("pointerdown", (event) => {
+      if (!event.isPrimary || event.button !== 0) return;
       dragging = true;
       pointerStartX = event.clientX;
       pointerStartY = event.clientY;
@@ -392,21 +656,29 @@
       if (!dragging) return;
       interactive.rotationY = rotationStartY + (event.clientX - pointerStartX) * 0.75;
       interactive.rotationX = Math.max(
-        -82,
-        Math.min(82, rotationStartX - (event.clientY - pointerStartY) * 0.55),
+        -110,
+        Math.min(110, rotationStartX - (event.clientY - pointerStartY) * 0.55),
       );
       renderScene(interactive);
     });
     const stopDragging = (event) => {
       if (!dragging) return;
       dragging = false;
-      stage.releasePointerCapture?.(event.pointerId);
+      if (stage.hasPointerCapture?.(event.pointerId)) stage.releasePointerCapture(event.pointerId);
       stage.classList.remove("is-dragging");
     };
     stage.addEventListener("pointerup", stopDragging);
     stage.addEventListener("pointercancel", stopDragging);
+    stage.addEventListener("lostpointercapture", stopDragging);
+    const section = root.closest(".shopify-section");
+    section?.addEventListener("shopify:section:unload", () => {
+      scenes.forEach(({ renderer }) => renderer.dispose());
+      document.removeEventListener("change", applyColour);
+      document.removeEventListener("variant:change", applyColour);
+      document.removeEventListener("product:variant-change", applyColour);
+      if (!root.contains(preview)) preview.remove();
+    }, { once: true });
     document.addEventListener("change", applyColour);
-    document.addEventListener("click", () => setTimeout(applyColour));
     document.addEventListener("variant:change", applyColour);
     document.addEventListener("product:variant-change", applyColour);
     root.addEventListener("cartwala:preview-ready", (event) => {

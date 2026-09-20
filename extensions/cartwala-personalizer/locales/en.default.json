@@ -45,6 +45,7 @@
     "open_3d": "Open interactive 3D mug preview",
     "modal_title": "Custom photo mug 3D",
     "stage_label": "Rotatable preview of your personalised mug",
+    "render_fallback": "3D is unavailable on this device. Your saved print design is shown instead.",
     "rotate_left": "Rotate mug left",
     "rotate_right": "Rotate mug right"
   },
