@@ -226,11 +226,16 @@ export const psdTextPixelFontSize = (
   const pointSize = Number(style.fontSize);
   if (!Number.isFinite(pointSize) || pointSize <= 0) return 0;
   const transform = layer.text?.transform;
-  const verticalScale =
-    Array.isArray(transform) && transform.length >= 4
-      ? Math.hypot(Number(transform[2]) || 0, Number(transform[3]) || 0) || 1
-      : 1;
-  return pointSize * (Math.max(1, resolutionPpi) / 72) * verticalScale;
+  const hasTransform =
+    Array.isArray(transform) &&
+    transform.length >= 4 &&
+    transform.slice(0, 4).every((value) => Number.isFinite(Number(value)));
+  const verticalScale = hasTransform
+    ? Math.hypot(Number(transform[2]), Number(transform[3]))
+    : 0;
+  const pixelScale =
+    verticalScale > 0 ? verticalScale : Math.max(1, resolutionPpi) / 72;
+  return pointSize * pixelScale;
 };
 
 export const psdTextAlignment = (
