@@ -984,8 +984,8 @@ body.cw-personalization-complete
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: end;
-  gap: 4px;
   margin: 10px auto 0;
+  gap: clamp(10px, 2vw, 18px);
   width: 100%;
   padding-bottom: 58px;
 }
@@ -1177,7 +1177,7 @@ body.cw-personalization-complete
     font-size: 21px;
   }
   .cw-mug-preview__views {
-    gap: 0;
+    gap: 8px;
   }
   .cw-mug-preview__view-stage {
     height: 160px;

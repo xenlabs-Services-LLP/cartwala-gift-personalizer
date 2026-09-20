@@ -46,6 +46,27 @@ for (const model of ["white", "magic", "red", "love-handle"]) {
   }
 }
 assert.notDeepEqual(createMugGeometry("white").vertices, createMugGeometry("love-handle").vertices);
+for (const aspect of [0.35, 0.5, 0.8, 1, 1.85]) {
+  let sharedScale;
+  for (const model of ["white", "magic", "red", "love-handle"]) {
+    const mesh = createMugGeometry(model);
+    for (const yaw of [170, 90, 10]) {
+      const rotation = mugRotationMatrix(-18, yaw);
+      const frame = mugFrame(mesh.vertices, rotation, aspect, true);
+      sharedScale ??= frame.scale;
+      assert.equal(frame.scale, sharedScale, "All gallery models and views must use an identical scale");
+      assert.equal(frame.center[1], 0, "Gallery bodies must share their vertical baseline");
+      for (let i = 0; i < mesh.vertices.length; i += 9) {
+        const x = (rotation[0] * mesh.vertices[i] + rotation[3] * mesh.vertices[i + 1] + rotation[6] * mesh.vertices[i + 2] - frame.center[0]) * frame.scale / aspect;
+        const y = (rotation[1] * mesh.vertices[i] + rotation[4] * mesh.vertices[i + 1] + rotation[7] * mesh.vertices[i + 2]) * frame.scale;
+        assert.ok(Math.abs(x) < 0.9 && Math.abs(y) < 0.85, "Each complete mug must fit its own gallery column with spacing");
+      }
+    }
+  }
+}
+assert.match(source, /vPosition = aPosition/);
+assert.match(source, /dot\(vPosition\.xz, vPosition\.xz\) < 1\.0\) discard/);
+assert.match(source, /Boolean\(scene\.closest\?\.\("\.cw-mug-preview__views"\)\)/);
 assert.match(source, /setHeated\(mugModel === "magic"\)/);
 assert.match(source, /magicToggles\.forEach/);
 assert.match(source, /version !== imageVersion/);

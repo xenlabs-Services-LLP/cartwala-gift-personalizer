@@ -245,7 +245,7 @@
     return [cy, sx * sy, -cx * sy, 0, cx, sx, sy, -sx * cy, cx * cy];
   };
 
-  const mugFrame = (vertices, rotation, aspect) => {
+  const mugFrame = (vertices, rotation, aspect, gallery = false) => {
     const bounds = [Infinity, Infinity, -Infinity, -Infinity];
     for (let i = 0; i < vertices.length; i += 9) {
       const x = rotation[0] * vertices[i] + rotation[3] * vertices[i + 1] + rotation[6] * vertices[i + 2];
@@ -256,8 +256,11 @@
       bounds[3] = Math.max(bounds[3], y);
     }
     return {
-      center: [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2],
-      scale: Math.min(1.62 / (bounds[3] - bounds[1]), 1.78 * aspect / (bounds[2] - bounds[0])),
+      center: [(bounds[0] + bounds[2]) / 2, gallery ? 0 : (bounds[1] + bounds[3]) / 2],
+      // Shared envelope keeps all three gallery views and mug models the same size.
+      // The freely rotating dialog still fits its complete projected geometry.
+      scale: gallery ? Math.min(1.62 / 2.75, 1.68 * aspect / 3.15)
+        : Math.min(1.62 / (bounds[3] - bounds[1]), 1.78 * aspect / (bounds[2] - bounds[0])),
     };
   };
 
@@ -321,12 +324,14 @@
         uniform vec2 uCenter;
         uniform vec2 uScale;
         varying vec3 vNormal;
+        varying vec3 vPosition;
         varying vec2 vUV;
         varying float vMaterial;
         void main() {
           vec3 p = uRotation * aPosition;
           gl_Position = vec4((p.xy - uCenter) * uScale, -p.z / 8.0, 1.0);
           vNormal = uRotation * aNormal;
+          vPosition = aPosition;
           vUV = aUV;
           vMaterial = aMaterial;
         }`);
@@ -339,12 +344,17 @@
         uniform float uReveal;
         uniform float uTextured;
         varying vec3 vNormal;
+        varying vec3 vPosition;
         varying vec2 vUV;
         varying float vMaterial;
         void main() {
           vec3 colour = uBody;
           if (vMaterial > 2.5) colour = vec3(0.94);
-          else if (vMaterial > 1.5) colour = uHandle;
+          else if (vMaterial > 1.5) {
+            // Trim embedded handle ends in local space, including when tilted.
+            if (dot(vPosition.xz, vPosition.xz) < 1.0) discard;
+            colour = uHandle;
+          }
           else if (vMaterial > 0.5) colour = uInner;
           else if (vUV.x > 0.075 && vUV.x < 0.925 && vUV.y > 0.018 && vUV.y < 0.982) {
             vec2 uv = vec2((0.925 - vUV.x) / 0.85, (vUV.y - 0.018) / 0.964);
@@ -403,7 +413,7 @@
       const w = Math.round(width * dpr), h = Math.round(height * dpr);
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
       const rotation = mugRotationMatrix(state.rotationX, state.rotationY);
-      const frame = mugFrame(geometry.vertices, rotation, width / height);
+      const frame = mugFrame(geometry.vertices, rotation, width / height, Boolean(scene.closest?.(".cw-mug-preview__views")));
       gl.viewport(0, 0, w, h);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
