@@ -202,8 +202,8 @@
       [0.9, -1.135], [0.95, -1.12]], 3);
     const segments = mugModel === "love-handle"
       ? [
-          [[0.94, 0.61], [1.03, 1.04], [1.45, 1.03], [1.47, 0.59]],
-          [[1.47, 0.59], [1.88, 0.89], [2.16, 0.43], [1.84, 0.1]],
+          [[0.94, 0.61], [1.03, 1.04], [1.30, 0.59], [1.47, 0.59]],
+          [[1.47, 0.59], [1.64, 0.59], [2.16, 0.43], [1.84, 0.1]],
           [[1.84, 0.1], [1.61, -0.16], [1.2, -0.4], [0.94, -0.52]],
         ]
       : [
@@ -259,7 +259,7 @@
       center: [(bounds[0] + bounds[2]) / 2, gallery ? 0 : (bounds[1] + bounds[3]) / 2],
       // Shared envelope keeps all three gallery views and mug models the same size.
       // The freely rotating dialog still fits its complete projected geometry.
-      scale: gallery ? Math.min(1.62 / 2.75, 1.68 * aspect / 3.15)
+      scale: gallery ? Math.min(1.74 / 2.75, 1.94 * aspect / 3.15)
         : Math.min(1.62 / (bounds[3] - bounds[1]), 1.78 * aspect / (bounds[2] - bounds[0])),
     };
   };
