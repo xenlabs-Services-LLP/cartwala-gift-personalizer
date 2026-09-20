@@ -246,7 +246,7 @@
     return [cy, sx * sy, -cx * sy, 0, cx, sx, sy, -sx * cy, cx * cy];
   };
 
-  const mugFrame = (vertices, rotation, aspect, gallery = false) => {
+  const mugFrame = (vertices, rotation, aspect, gallery = false, footprint = 3.05) => {
     const bounds = [Infinity, Infinity, -Infinity, -Infinity];
     for (let i = 0; i < vertices.length; i += 9) {
       const x = rotation[0] * vertices[i] + rotation[3] * vertices[i + 1] + rotation[6] * vertices[i + 2];
@@ -260,7 +260,7 @@
       center: [(bounds[0] + bounds[2]) / 2, gallery ? 0 : (bounds[1] + bounds[3]) / 2],
       // Shared envelope keeps all three gallery views and mug models the same size.
       // The freely rotating dialog still fits its complete projected geometry.
-      scale: gallery ? Math.min(1.74 / 2.75, 1.96 * aspect / 3.05)
+      scale: gallery ? Math.min(1.74 / 2.75, 1.96 * aspect / footprint)
         : Math.min(1.62 / (bounds[3] - bounds[1]), 1.78 * aspect / (bounds[2] - bounds[0])),
     };
   };
@@ -352,7 +352,7 @@
         void main() {
           vec3 colour = uBody;
           if (vMaterial > 2.5) {
-            vec4 brand = texture2D(uBrand, vec2(vPosition.x, -vPosition.z) / 1.5 + 0.5);
+            vec4 brand = texture2D(uBrand, vPosition.xz / 1.5 + 0.5);
             colour = mix(vec3(0.94), brand.rgb, brand.a);
           }
           else if (vMaterial > 1.5) {
@@ -404,11 +404,13 @@
       stamp.width = stamp.height = 512;
       const ink = stamp.getContext("2d");
       ink.clearRect(0, 0, 512, 512);
-      ink.fillStyle = "#303030";
-      ink.font = "bold 72px Arial, sans-serif";
+      ink.fillStyle = "#777777";
+      ink.font = "56px Arial, sans-serif";
       ink.textAlign = "center";
       ink.textBaseline = "middle";
-      ink.fillText("Cartwala", 256, 256);
+      ink.fillText("Cartwala", 256, 216);
+      ink.font = "72px Arial, sans-serif";
+      ink.fillText("Preview", 256, 288);
       brandTexture = gl.createTexture();
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, brandTexture);
@@ -439,7 +441,7 @@
       const w = Math.round(width * dpr), h = Math.round(height * dpr);
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
       const rotation = mugRotationMatrix(state.rotationX, state.rotationY);
-      const frame = mugFrame(geometry.vertices, rotation, width / height, Boolean(scene.closest?.(".cw-mug-preview__views")));
+      const frame = mugFrame(geometry.vertices, rotation, width / height, Boolean(scene.closest?.(".cw-mug-preview__views")), Number(scene.dataset.cwRotationY) === 90 ? 2.05 : 3.05);
       gl.viewport(0, 0, w, h);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

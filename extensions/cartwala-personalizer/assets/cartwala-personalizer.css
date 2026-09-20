@@ -952,6 +952,13 @@ body.cw-personalization-complete
   max-width: none;
   margin: 0;
   box-sizing: border-box;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: none;
+  padding-top: 40px;
+}
+.cw-mug-preview--gallery .cw-mug-preview__heading {
+  display: none;
 }
 .cw-mug-preview__heading {
   display: flex;
@@ -982,7 +989,7 @@ body.cw-personalization-complete
 }
 .cw-mug-preview__views {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 3.05fr) minmax(0, 2.05fr) minmax(0, 3.05fr);
   align-items: end;
   margin: 10px auto 0;
   gap: 4px;
