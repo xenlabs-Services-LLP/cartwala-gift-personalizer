@@ -35,28 +35,10 @@
     assign active_category = 'other'
   endif
 
-  assign normal_image = block.settings.normal_mug_image
-  assign magic_image = block.settings.magic_mug_image
-  assign love_handle_image = block.settings.love_handle_mug_image
-  assign inner_red_image = block.settings.inner_red_mug_image
   assign normal_mug_alt = 'mug_gallery.normal_mugs' | t
   assign magic_mug_alt = 'mug_gallery.magic_mugs' | t
   assign love_handle_mug_alt = 'mug_gallery.love_handle_mugs' | t
   assign inner_red_mug_alt = 'mug_gallery.inner_red_mugs' | t
-  for mug_product in collection.products
-    if normal_image == blank and mug_product.tags contains 'cw-mug-model-white'
-      assign normal_image = mug_product.featured_image
-    endif
-    if magic_image == blank and mug_product.tags contains 'cw-mug-model-magic'
-      assign magic_image = mug_product.featured_image
-    endif
-    if love_handle_image == blank and mug_product.tags contains 'cw-mug-model-love-handle'
-      assign love_handle_image = mug_product.featured_image
-    endif
-    if inner_red_image == blank and mug_product.tags contains 'cw-mug-model-red'
-      assign inner_red_image = mug_product.featured_image
-    endif
-  endfor
 %}
 
 {{ 'cartwala-mug-gallery.css' | asset_url | stylesheet_tag }}
@@ -83,42 +65,26 @@
     <div class="cw-mug-types" aria-label="{{ 'mug_gallery.mug_types_label' | t | escape }}">
       <a class="cw-mug-type-card" href="{{ collection.url }}/cw-mug-model-white">
         <div class="cw-mug-type-card__image">
-          {% if normal_image %}
-            {{ normal_image | image_url: width: 900 | image_tag: loading: 'eager', widths: '240,360,540,720,900', sizes: '(min-width: 990px) 25vw, 50vw', alt: normal_mug_alt }}
-          {% else %}
-            <img src="{{ 'cartwala-mug-normal.jpg' | asset_url }}" alt="{{ normal_mug_alt | escape }}" width="1254" height="1254" loading="eager">
-          {% endif %}
+          <img src="{{ 'cartwala-mug-normal.jpg' | asset_url }}" alt="{{ normal_mug_alt | escape }}" width="1254" height="1254" loading="eager">
         </div>
         <div class="cw-mug-type-card__content"><h2>{{ 'mug_gallery.normal_mugs' | t }}</h2><p><s>{{ 45000 | money }}</s><strong>{{ 25000 | money }}</strong></p><span>{{ 'mug_gallery.view_designs' | t }} →</span></div>
       </a>
       <a class="cw-mug-type-card cw-mug-type-card--magic" href="{{ collection.url }}/cw-mug-model-magic">
         <div class="cw-mug-type-card__image">
-          {% if magic_image %}
-            {{ magic_image | image_url: width: 900 | image_tag: loading: 'eager', widths: '240,360,540,720,900', sizes: '(min-width: 990px) 25vw, 50vw', alt: magic_mug_alt }}
-          {% else %}
-            <img src="{{ 'cartwala-mug-magic.jpg' | asset_url }}" alt="{{ magic_mug_alt | escape }}" width="1254" height="1254" loading="eager">
-          {% endif %}
+          <img src="{{ 'cartwala-mug-magic.jpg' | asset_url }}" alt="{{ magic_mug_alt | escape }}" width="1254" height="1254" loading="eager">
           <span class="cw-mug-type-card__effect">{{ 'mug_gallery.hot_water_reveal' | t }}</span>
         </div>
         <div class="cw-mug-type-card__content"><h2>{{ 'mug_gallery.magic_mugs' | t }}</h2><p><s>{{ 80000 | money }}</s><strong>{{ 40000 | money }}</strong></p><span>{{ 'mug_gallery.view_designs' | t }} →</span></div>
       </a>
       <a class="cw-mug-type-card" href="{{ collection.url }}/cw-mug-model-love-handle">
         <div class="cw-mug-type-card__image">
-          {% if love_handle_image %}
-            {{ love_handle_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '240,360,540,720,900', sizes: '(min-width: 990px) 25vw, 50vw', alt: love_handle_mug_alt }}
-          {% else %}
-            <img src="{{ 'cartwala-mug-love-handle.jpg' | asset_url }}" alt="{{ love_handle_mug_alt | escape }}" width="1254" height="1254" loading="lazy">
-          {% endif %}
+          <img src="{{ 'cartwala-mug-love-handle.jpg' | asset_url }}" alt="{{ love_handle_mug_alt | escape }}" width="1254" height="1254" loading="lazy">
         </div>
         <div class="cw-mug-type-card__content"><h2>{{ 'mug_gallery.love_handle_mugs' | t }}</h2><p><s>{{ 70000 | money }}</s><strong>{{ 30000 | money }}</strong></p><span>{{ 'mug_gallery.view_designs' | t }} →</span></div>
       </a>
       <a class="cw-mug-type-card" href="{{ collection.url }}/cw-mug-model-red">
         <div class="cw-mug-type-card__image">
-          {% if inner_red_image %}
-            {{ inner_red_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '240,360,540,720,900', sizes: '(min-width: 990px) 25vw, 50vw', alt: inner_red_mug_alt }}
-          {% else %}
-            <img src="{{ 'cartwala-mug-inner-red.jpg' | asset_url }}" alt="{{ inner_red_mug_alt | escape }}" width="1254" height="1254" loading="lazy">
-          {% endif %}
+          <img src="{{ 'cartwala-mug-inner-red.jpg' | asset_url }}" alt="{{ inner_red_mug_alt | escape }}" width="1254" height="1254" loading="lazy">
         </div>
         <div class="cw-mug-type-card__content"><h2>{{ 'mug_gallery.inner_red_mugs' | t }}</h2><p><s>{{ 70000 | money }}</s><strong>{{ 30000 | money }}</strong></p><span>{{ 'mug_gallery.view_designs' | t }} →</span></div>
       </a>
