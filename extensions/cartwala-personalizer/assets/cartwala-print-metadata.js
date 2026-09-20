@@ -39,6 +39,11 @@
       area.querySelector('form[action*="/cart/add"]') ||
       document.querySelector('form[action*="/cart/add"]');
     if (!form) return false;
+    if (
+      form.querySelector('input[name="properties[_Cartwala Design JSON]"]')
+        ?.value
+    )
+      return true;
     const config = parseConfig(root);
     const photoFields = Array.isArray(config.photoFields)
       ? config.photoFields
@@ -97,9 +102,10 @@
           )
             ? String(layer?.dataset.cwAlignment || field.alignment)
             : "center",
-          b: String(
-            layer?.dataset.cwFitToBox ?? String(field.fitToBox === true),
-          ) === "true",
+          b:
+            String(
+              layer?.dataset.cwFitToBox ?? String(field.fitToBox === true),
+            ) === "true",
           z: number(layer?.dataset.cwFontSize, number(field.fontSize, 60)),
           c: String(layer?.dataset.cwColor || field.color || "#111111"),
           f: String(fontSelects[index]?.value || field.fontFamily || "Arial"),
