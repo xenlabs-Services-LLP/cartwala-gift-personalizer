@@ -53,9 +53,9 @@
         {% if mug_model == 'magic' %}
           <button class="cw-mug-preview__heat" type="button" data-cw-magic-toggle data-cold-label="{{ 'mug_preview.pour_hot_water' | t | escape }}" data-hot-label="{{ 'mug_preview.cool_magic_mug' | t | escape }}" aria-pressed="false">{{ 'mug_preview.pour_hot_water' | t }}</button>
         {% endif %}
-        <button class="cw-mug-preview__open-3d" type="button" data-cw-mug-open aria-label="{{ 'mug_preview.open_3d' | t | escape }}"><span aria-hidden="true">↻</span><strong>3D</strong></button>
+        <button class="cw-mug-preview__open-3d" type="button" data-cw-mug-open commandfor="cw-mug-dialog-{{ block.id }}" command="show-modal" onclick="var dialog=this.closest('[data-cw-personalizer]').querySelector('[data-cw-mug-dialog]');setTimeout(function(){if(dialog&&!dialog.open){if(typeof dialog.showModal==='function'){dialog.showModal();}else{dialog.setAttribute('open','');}}});" aria-label="{{ 'mug_preview.open_3d' | t | escape }}"><span aria-hidden="true">↻</span><strong>3D</strong></button>
       </section>
-      <dialog class="cw-mug-modal cw-mug-modal--{{ mug_model }}" data-cw-mug-dialog aria-labelledby="cw-mug-modal-title-{{ block.id }}">
+      <dialog id="cw-mug-dialog-{{ block.id }}" class="cw-mug-modal cw-mug-modal--{{ mug_model }}" data-cw-mug-dialog aria-labelledby="cw-mug-modal-title-{{ block.id }}">
         <div class="cw-mug-modal__panel">
           <header><h2 id="cw-mug-modal-title-{{ block.id }}">{{ 'mug_preview.modal_title' | t }}</h2><button type="button" data-cw-mug-close aria-label="{{ 'personalizer.close' | t | escape }}">×</button></header>
           <div class="cw-mug-modal__stage" data-cw-mug-stage tabindex="0" role="img" aria-label="{{ 'mug_preview.stage_label' | t | escape }}"><div class="cw-mug-preview__scene" data-cw-mug-scene data-cw-rotation-y="-18" data-cw-rotation-x="-8"></div></div>
