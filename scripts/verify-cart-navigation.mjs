@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const source=fs.readFileSync('extensions/cartwala-personalizer/assets/cartwala-cart-preview.js','utf8');
+const start=source.indexOf("  window.addEventListener('click'");
+const end=source.indexOf('  const rowSelector',start);
+let handler;
+const window={location:{href:'https://cartwala.in/products/mug'},Shopify:{routes:{root:'/'}},addEventListener(name,fn,capture){assert.equal(name,'click');assert.equal(capture,true);handler=fn;}};
+vm.runInNewContext(source.slice(start,end),{window,URL});
+const test=(href,drawer,expected,extra={})=>{
+  let stopped=false;
+  const link={href,closest:()=>drawer?{}:null};
+  handler({target:{closest:()=>link},stopImmediatePropagation(){stopped=true;},preventDefault(){assert.fail('Native navigation must remain enabled');},...extra});
+  assert.equal(stopped,expected);
+};
+test('/cart',true,true);
+test('/cart?preview_theme_id=123',true,true);
+test('/cart',false,false);
+test('/checkout',true,false);
+test('/cart/change',true,false);
+test('https://example.com/cart',true,false);
+test('/cart',true,true,{ctrlKey:true});
+test('/cart',true,true,{metaKey:true});
+window.Shopify.routes.root='/te/';
+test('/te/cart',true,true);
+test('/cart',true,false);
+console.log('Cart navigation passed: drawer link, native modifiers, locale, header and checkout isolation.');
