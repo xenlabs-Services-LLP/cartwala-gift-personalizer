@@ -43,12 +43,12 @@
     {% endif %}
     <button class="cw-personalizer__open" type="button" data-cw-open>{{ 'personalizer.customize' | t }}</button>
     {% if mug_product %}
-      <section class="cw-mug-preview cw-mug-preview--{{ mug_model }}" data-cw-mug-preview hidden>
+      <section class="cw-mug-preview cw-mug-preview--{{ mug_model }}" data-cw-mug-preview data-cw-render-fallback="{{ 'mug_preview.render_fallback' | t | escape }}" hidden>
         <header class="cw-mug-preview__heading"><div><p>{{ 'mug_preview.eyebrow' | t }}</p><h2>{{ 'mug_preview.views_title' | t }}</h2></div><span>{{ 'mug_preview.live' | t }}</span></header>
         <div class="cw-mug-preview__views" role="group" aria-label="{{ 'mug_preview.views_label' | t | escape }}">
-          <figure class="cw-mug-preview__view"><div class="cw-mug-preview__view-stage"><div class="cw-mug-preview__scene" data-cw-mug-scene data-cw-rotation-y="-112" data-cw-rotation-x="-5"></div></div><figcaption>{{ 'mug_preview.left_view' | t }}</figcaption></figure>
-          <figure class="cw-mug-preview__view"><div class="cw-mug-preview__view-stage"><div class="cw-mug-preview__scene" data-cw-mug-scene data-cw-rotation-y="0" data-cw-rotation-x="-5"></div></div><figcaption>{{ 'mug_preview.front_view' | t }}</figcaption></figure>
-          <figure class="cw-mug-preview__view"><div class="cw-mug-preview__view-stage"><div class="cw-mug-preview__scene" data-cw-mug-scene data-cw-rotation-y="112" data-cw-rotation-x="-5"></div></div><figcaption>{{ 'mug_preview.right_view' | t }}</figcaption></figure>
+          <figure class="cw-mug-preview__view"><div class="cw-mug-preview__view-stage"><div class="cw-mug-preview__scene" data-cw-mug-scene data-cw-rotation-y="170" data-cw-rotation-x="-18"></div></div><figcaption>{{ 'mug_preview.left_view' | t }}</figcaption></figure>
+          <figure class="cw-mug-preview__view"><div class="cw-mug-preview__view-stage"><div class="cw-mug-preview__scene" data-cw-mug-scene data-cw-rotation-y="90" data-cw-rotation-x="-18"></div></div><figcaption>{{ 'mug_preview.front_view' | t }}</figcaption></figure>
+          <figure class="cw-mug-preview__view"><div class="cw-mug-preview__view-stage"><div class="cw-mug-preview__scene" data-cw-mug-scene data-cw-rotation-y="10" data-cw-rotation-x="-18"></div></div><figcaption>{{ 'mug_preview.right_view' | t }}</figcaption></figure>
         </div>
         {% if mug_model == 'magic' %}
           <button class="cw-mug-preview__heat" type="button" data-cw-magic-toggle data-cold-label="{{ 'mug_preview.pour_hot_water' | t | escape }}" data-hot-label="{{ 'mug_preview.cool_magic_mug' | t | escape }}" aria-pressed="false">{{ 'mug_preview.pour_hot_water' | t }}</button>
@@ -58,7 +58,10 @@
       <dialog id="cw-mug-dialog-{{ block.id }}" class="cw-mug-modal cw-mug-modal--{{ mug_model }}" data-cw-mug-dialog aria-labelledby="cw-mug-modal-title-{{ block.id }}">
         <div class="cw-mug-modal__panel">
           <header><h2 id="cw-mug-modal-title-{{ block.id }}">{{ 'mug_preview.modal_title' | t }}</h2><button type="button" data-cw-mug-close aria-label="{{ 'personalizer.close' | t | escape }}">×</button></header>
-          <div class="cw-mug-modal__stage" data-cw-mug-stage tabindex="0" role="img" aria-label="{{ 'mug_preview.stage_label' | t | escape }}"><div class="cw-mug-preview__scene" data-cw-mug-scene data-cw-rotation-y="-18" data-cw-rotation-x="-8"></div></div>
+          <div class="cw-mug-modal__stage" data-cw-mug-stage tabindex="0" role="img" aria-label="{{ 'mug_preview.stage_label' | t | escape }}"><div class="cw-mug-preview__scene" data-cw-mug-scene data-cw-rotation-y="25" data-cw-rotation-x="-22"></div></div>
+          {% if mug_model == 'magic' %}
+            <button class="cw-mug-preview__heat" type="button" data-cw-magic-toggle data-cold-label="{{ 'mug_preview.pour_hot_water' | t | escape }}" data-hot-label="{{ 'mug_preview.cool_magic_mug' | t | escape }}" aria-pressed="false">{{ 'mug_preview.pour_hot_water' | t }}</button>
+          {% endif %}
           <p>{{ 'mug_preview.free_drag_help' | t }}</p>
         </div>
       </dialog>

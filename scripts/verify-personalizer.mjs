@@ -157,7 +157,7 @@ for (const token of [
   "field?.movable === true",
   "const initializeMugPreview = (root) =>",
   "cartwala:preview-ready",
-  "const panelCount = 56",
+  "const createMugGeometry = (mugModel) =>",
 ])
   assert.ok(
     storefront.includes(token),
@@ -190,11 +190,12 @@ const storefrontCss = fs.readFileSync(
 assert.match(storefrontCss, /--cw-slot-icon/);
 assert.match(storefrontCss, /min-width: 0/);
 assert.doesNotMatch(storefrontCss, /min-width:min\(190px,85%\)/);
-assert.match(storefrontCss, /\.cw-mug-preview__panel/);
-assert.match(storefrontCss, /perspective: 900px/);
+assert.match(storefrontCss, /\.cw-mug-preview__canvas/);
+assert.doesNotMatch(storefrontCss, /\.cw-mug-preview__panel/);
 assert.match(storefrontCss, /\.cw-mug-gallery-host > :not\(\.cw-mug-preview\)/);
-assert.match(storefrontCss, /--cw-mug-handle-colour/);
-assert.match(storefrontCss, /--cw-mug-rim-colour/);
+assert.match(storefront, /gl\.enable\(gl\.DEPTH_TEST\)/);
+assert.match(storefront, /uHandle/);
+assert.match(storefront, /uInner/);
 assert.match(storefrontCss, /\.cw-personalizer__text-content[\s\S]*white-space: pre/);
 assert.doesNotMatch(
   storefrontCss,
@@ -211,6 +212,7 @@ const personalizerBlock = fs.readFileSync(
 );
 assert.match(personalizerBlock, /product\.tags contains 'cw-mug'/);
 assert.match(personalizerBlock, /data-cw-mug-preview/);
+assert.equal((personalizerBlock.match(/data-cw-magic-toggle/g) || []).length, 2);
 assert.match(personalizerBlock, /document\.getElementById\('cw-mug-dialog-/);
 
 const mugGallery = fs.readFileSync(
