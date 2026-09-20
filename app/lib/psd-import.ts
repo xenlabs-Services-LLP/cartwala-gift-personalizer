@@ -75,13 +75,23 @@ export const fontMatchKey = (value: unknown): string =>
     .replace(/(?:regular|normal|book|roman)$/i, "")
     .replace(/[^a-z0-9]/g, "");
 
+export const psdFontDisplayName = (value: unknown): string =>
+  String(value || "Arial")
+    .trim()
+    .replace(/[-_]+/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ") || "Arial";
+
 export const matchUploadedFont = (
   photoshopFont: unknown,
   uploadedFonts: Array<{ name: string }>,
 ): string => {
   const original = String(photoshopFont || "Arial").trim() || "Arial";
   const key = fontMatchKey(original);
-  return uploadedFonts.find((font) => fontMatchKey(font.name) === key)?.name || original;
+  return (
+    uploadedFonts.find((font) => fontMatchKey(font.name) === key)?.name ||
+    psdFontDisplayName(original)
+  );
 };
 
 /**
@@ -192,7 +202,16 @@ export const psdTextBoxBounds = (layer: PsdCanvasLayer): PsdBounds => {
   if (!psdTextIsBox(layer)) return psdLayerBounds(layer);
   const text = layer.text;
   const transform = text?.transform;
-  const values = [text?.left, text?.top, text?.right, text?.bottom].map(Number);
+  const boxBounds = text?.boxBounds?.slice(0, 4).map(Number);
+  const legacyBounds = [text?.left, text?.top, text?.right, text?.bottom].map(Number);
+  const values =
+    boxBounds &&
+    boxBounds.length === 4 &&
+    boxBounds.every(Number.isFinite) &&
+    boxBounds[2] > boxBounds[0] &&
+    boxBounds[3] > boxBounds[1]
+      ? boxBounds
+      : legacyBounds;
   if (
     Array.isArray(transform) &&
     transform.length >= 6 &&
@@ -220,7 +239,6 @@ export const psdTextIsBox = (layer: PsdCanvasLayer): boolean => {
 
 export const psdTextPixelFontSize = (
   layer: PsdCanvasLayer,
-  resolutionPpi: number,
 ): number => {
   const style = layer.text?.style || layer.text?.styleRuns?.[0]?.style || {};
   const pointSize = Number(style.fontSize);
@@ -233,8 +251,7 @@ export const psdTextPixelFontSize = (
   const verticalScale = hasTransform
     ? Math.hypot(Number(transform[2]), Number(transform[3]))
     : 0;
-  const pixelScale =
-    verticalScale > 0 ? verticalScale : Math.max(1, resolutionPpi) / 72;
+  const pixelScale = verticalScale > 0 ? verticalScale : 1;
   return pointSize * pixelScale;
 };
 
