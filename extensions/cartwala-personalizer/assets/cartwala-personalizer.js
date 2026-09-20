@@ -284,8 +284,24 @@
       render();
     };
 
-    open.addEventListener("click", () => mugDialog.showModal());
-    close.addEventListener("click", () => mugDialog.close());
+    const openMugDialog = () => {
+      if (mugDialog.open) return;
+      if (typeof mugDialog.showModal === "function") {
+        mugDialog.showModal();
+      } else {
+        mugDialog.setAttribute("open", "");
+      }
+    };
+    const closeMugDialog = () => {
+      if (typeof mugDialog.close === "function" && mugDialog.open) {
+        mugDialog.close();
+      } else {
+        mugDialog.removeAttribute("open");
+      }
+    };
+
+    open.addEventListener("click", openMugDialog);
+    close.addEventListener("click", closeMugDialog);
     magicToggle?.addEventListener("click", () => {
       const heated = root.classList.toggle("is-magic-heated");
       magicToggle.textContent = heated
@@ -294,7 +310,7 @@
       magicToggle.setAttribute("aria-pressed", String(heated));
     });
     mugDialog.addEventListener("click", (event) => {
-      if (event.target === mugDialog) mugDialog.close();
+      if (event.target === mugDialog) closeMugDialog();
     });
     stage.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
@@ -1746,4 +1762,16 @@
     });
   initialize();
   document.addEventListener("shopify:section:load", initialize);
+  document.addEventListener("click", (event) => {
+    const openButton = event.target.closest?.("[data-cw-mug-open]");
+    if (!openButton) return;
+    const root = openButton.closest("[data-cw-personalizer]");
+    const mugDialog = root?.querySelector("[data-cw-mug-dialog]");
+    if (!mugDialog || mugDialog.open) return;
+    if (typeof mugDialog.showModal === "function") {
+      mugDialog.showModal();
+    } else {
+      mugDialog.setAttribute("open", "");
+    }
+  });
 })();
