@@ -12,7 +12,7 @@ const templateId = "cw-bd-001";
 const targets = [
   {
     handle: "personalized-normal-white-photo-mug-11oz",
-    title: "Personalized Birthday Photo Mug – Normal White 11 Oz",
+    title: "Personalized Birthday Photo Mug – Normal White",
     modelTag: "cw-mug-model-white",
     image: "CW-BD-001-normal-mockup.png",
     price: "250.00",
@@ -21,7 +21,7 @@ const targets = [
   },
   {
     handle: "personalized-magic-mug-hot-water-reveal-11oz",
-    title: "Personalized Birthday Magic Mug – Hot Water Reveal 11 Oz",
+    title: "Personalized Birthday Magic Mug – Hot Water Reveal",
     modelTag: "cw-mug-model-magic",
     image: "CW-BD-001-magic-mockup.png",
     price: "400.00",
@@ -30,7 +30,7 @@ const targets = [
   },
   {
     handle: "personalized-white-love-handle-mug-11oz",
-    title: "Personalized Birthday White Love Handle Mug – 11 Oz",
+    title: "Personalized Birthday White Love Handle Mug",
     modelTag: "cw-mug-model-love-handle",
     image: "CW-BD-001-love-mockup.png",
     price: "300.00",
@@ -39,7 +39,7 @@ const targets = [
   },
   {
     handle: "personalized-inner-colour-red-mug-11oz",
-    title: "Personalized Birthday Inner Colour Red Mug – 11 Oz",
+    title: "Personalized Birthday Inner Colour Red Mug",
     modelTag: "cw-mug-model-red",
     image: "CW-BD-001-red-mockup.png",
     price: "300.00",
