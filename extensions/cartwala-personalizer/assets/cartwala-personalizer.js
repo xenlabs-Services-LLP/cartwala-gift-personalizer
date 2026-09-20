@@ -1762,16 +1762,20 @@
     });
   initialize();
   document.addEventListener("shopify:section:load", initialize);
-  document.addEventListener("click", (event) => {
-    const openButton = event.target.closest?.("[data-cw-mug-open]");
-    if (!openButton) return;
-    const root = openButton.closest("[data-cw-personalizer]");
-    const mugDialog = root?.querySelector("[data-cw-mug-dialog]");
-    if (!mugDialog || mugDialog.open) return;
-    if (typeof mugDialog.showModal === "function") {
-      mugDialog.showModal();
-    } else {
-      mugDialog.setAttribute("open", "");
-    }
-  });
+  document.addEventListener(
+    "click",
+    (event) => {
+      const openButton = event.target.closest?.("[data-cw-mug-open]");
+      if (!openButton) return;
+      const root = openButton.closest("[data-cw-personalizer]");
+      const mugDialog = root?.querySelector("[data-cw-mug-dialog]");
+      if (!mugDialog || mugDialog.open) return;
+      if (typeof mugDialog.showModal === "function") {
+        mugDialog.showModal();
+      } else {
+        mugDialog.setAttribute("open", "");
+      }
+    },
+    true,
+  );
 })();
