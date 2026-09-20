@@ -52,12 +52,14 @@ for (const aspect of [0.35, 0.5, 0.8, 1, 1.85]) {
     const mesh = createMugGeometry(model);
     for (const yaw of [170, 90, 10]) {
       const rotation = mugRotationMatrix(-18, yaw);
-      const frame = mugFrame(mesh.vertices, rotation, aspect, true);
+      const footprint = yaw === 90 ? 2.05 : 3.05;
+      const viewAspect = aspect * footprint / 3.05;
+      const frame = mugFrame(mesh.vertices, rotation, viewAspect, true, footprint);
       sharedScale ??= frame.scale;
-      assert.equal(frame.scale, sharedScale, "All gallery models and views must use an identical scale");
+      assert.ok(Math.abs(frame.scale - sharedScale) < 1e-10, "All gallery models and views must use an identical scale");
       assert.equal(frame.center[1], 0, "Gallery bodies must share their vertical baseline");
       for (let i = 0; i < mesh.vertices.length; i += 9) {
-        const x = (rotation[0] * mesh.vertices[i] + rotation[3] * mesh.vertices[i + 1] + rotation[6] * mesh.vertices[i + 2] - frame.center[0]) * frame.scale / aspect;
+        const x = (rotation[0] * mesh.vertices[i] + rotation[3] * mesh.vertices[i + 1] + rotation[6] * mesh.vertices[i + 2] - frame.center[0]) * frame.scale / viewAspect;
         const y = (rotation[1] * mesh.vertices[i] + rotation[4] * mesh.vertices[i + 1] + rotation[7] * mesh.vertices[i + 2]) * frame.scale;
         assert.ok(Math.abs(x) < 0.98 && Math.abs(y) < 0.9, "Each complete mug must fit its own gallery column with spacing");
       }
@@ -65,7 +67,9 @@ for (const aspect of [0.35, 0.5, 0.8, 1, 1.85]) {
   }
 }
 assert.match(source, /vPosition = aPosition/);
-assert.match(source, /ink\.fillText\("Cartwala", 256, 256\)/);
+assert.match(source, /ink\.fillText\("Cartwala", 256, 216\)/);
+assert.match(source, /ink\.fillText\("Preview", 256, 288\)/);
+assert.match(source, /texture2D\(uBrand, vPosition\.xz \/ 1\.5/);
 assert.match(source, /vMaterial > 2\.5\) \{\s+vec4 brand = texture2D\(uBrand/);
 assert.match(source, /deleteTexture\(brandTexture\)/);
 assert.match(source, /dot\(vPosition\.xz, vPosition\.xz\) < 1\.0\) discard/);
