@@ -58,6 +58,18 @@ async function main() {
     if (!response.ok || json.errors?.length) throw new Error(json.errors?.map((error) => error.message).join("; ") || `Shopify HTTP ${response.status}`);
     return json.data;
   };
+  const publishToOnlineStore = async (productId) => {
+    const legacyId = productId.split("/").pop();
+    const response = await fetch(`https://${session.shop}/admin/api/2025-10/products/${legacyId}.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": session.accessToken },
+      body: JSON.stringify({ product: { id: Number(legacyId), published_at: new Date().toISOString(), published_scope: "web", status: "active" } }),
+    });
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`Could not publish product ${legacyId}: Shopify HTTP ${response.status} ${detail}`);
+    }
+  };
 
   const collectionData = await gql(`query CollectionByHandle($query:String!){collections(first:5,query:$query){nodes{id handle products(first:250){nodes{id}}}}}`, { query: `handle:${mugCollectionHandle}` });
   const collection = collectionData.collections.nodes.find((item) => item.handle === mugCollectionHandle);
@@ -131,6 +143,8 @@ async function main() {
     const error = added.collectionAddProducts.userErrors?.[0];
     if (error) throw new Error(`Collection: ${error.message}`);
   }
+
+  for (const { product } of allProducts) await publishToOnlineStore(product.id);
 
   const catalogAlreadyReady = allProducts.every(({ design, model, product }) =>
     product.personalizer?.jsonValue?.enabled === true
@@ -222,3 +236,4 @@ main().catch((error) => {
   console.error(`Birthday catalog upload failed: ${error.stack || error.message}`);
   process.exitCode = 1;
 }).finally(async () => prisma.$disconnect());
+
