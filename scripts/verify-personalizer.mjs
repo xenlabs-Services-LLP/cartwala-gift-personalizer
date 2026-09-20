@@ -68,7 +68,8 @@ const textConfig = normalize({
   ],
 });
 assert.equal(textConfig.ratio, "1080:1350");
-assert.equal(textConfig.texts[0].defaultValue, "Your Name");
+assert.equal(textConfig.texts[0].placeholder, "Your Name");
+assert.equal(textConfig.texts[0].defaultValue, "");
 assert.equal(textConfig.texts[0].movable, false);
 assert.equal(textConfig.texts[0].allowColorChoice, false);
 const editableText = normalize({
@@ -273,6 +274,19 @@ assert.match(admin, /Date\.parse\(retired\.deleteAfter\) > Date\.now\(\)/);
 assert.match(admin, /intent === "restorePsdRevision"/);
 assert.match(admin, /Previous PSD template restored safely/);
 assert.match(admin, /Restore previous PSD template/);
+assert.match(admin, /placeholder: \(text \|\| "Your Text"\)/);
+assert.match(admin, /matchUploadedFont/);
+assert.match(admin, /Upload the missing font file/);
+
+assert.match(storefront, /state\.field\.placeholder \|\| state\.field\.label/);
+assert.match(storefront, /classList\.toggle\(\s*"is-placeholder"/);
+assert.match(storefront, /font-display:swap/);
+
+const printMetadata = fs.readFileSync(
+  "extensions/cartwala-personalizer/assets/cartwala-print-metadata.js",
+  "utf8",
+);
+assert.doesNotMatch(printMetadata, /field\.defaultValue/);
 
 const liquid = fs.readFileSync(
   "extensions/cartwala-personalizer/blocks/personalizer.liquid",

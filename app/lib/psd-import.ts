@@ -65,6 +65,21 @@ const psdLayerAlphaBounds = (layer: PsdCanvasLayer): PsdBounds | null => {
 export const psdLayerLabel = (name: string, fallback: string): string =>
   name.replace(/^(PHOTO|UPLOAD|TEXT)[\s_-]*/i, "").replace(/[_-]+/g, " ").trim() || fallback;
 
+export const fontMatchKey = (value: unknown): string =>
+  String(value || "")
+    .toLowerCase()
+    .replace(/(?:regular|normal|book|roman)$/i, "")
+    .replace(/[^a-z0-9]/g, "");
+
+export const matchUploadedFont = (
+  photoshopFont: unknown,
+  uploadedFonts: Array<{ name: string }>,
+): string => {
+  const original = String(photoshopFont || "Arial").trim() || "Arial";
+  const key = fontMatchKey(original);
+  return uploadedFonts.find((font) => fontMatchKey(font.name) === key)?.name || original;
+};
+
 /**
  * Resolves a layer's bounds in document pixel space, handling the case
  * (common for Photoshop text layers) where the layer's own left/top/right/

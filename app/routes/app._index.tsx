@@ -40,6 +40,8 @@ import {
   canvasBlob,
   canvasHasPixels,
   drawPsdLayer,
+  fontMatchKey,
+  matchUploadedFont,
   psdColor,
   psdDrawableLayers,
   psdLayerBounds,
@@ -291,6 +293,9 @@ async function handlePsdImport(
   const uploadedIds: string[] = [];
   let committed = false;
   try {
+    const importWarning = String(data.get("fontWarning") || "")
+      .trim()
+      .slice(0, 1000);
     const productId = String(data.get("productId") || "");
     if (!productId.startsWith("gid://shopify/Product/"))
       throw new Error("Choose a valid product before importing a PSD.");
@@ -358,7 +363,7 @@ async function handlePsdImport(
 
     // Retired revisions get a 30-day safety window for old orders. Cleanup is
     // best-effort and never blocks or modifies the active/previous templates.
-    let warning: string | undefined;
+    let warning: string | undefined = importWarning || undefined;
     const retainedRetired: PersonalizerAssetRegistry["retired"] = [];
     for (const retired of oldRegistry.retired) {
       if (Date.parse(retired.deleteAfter) > Date.now()) {
@@ -881,10 +886,24 @@ export default function PersonalizerHome() {
 
   useEffect(() => {
     if (fontFetcher.data?.fontUpload) {
-      setConfig((current) => ({
-        ...current,
-        customFonts: [...current.customFonts, fontFetcher.data!.fontUpload!],
-      }));
+      const uploaded = fontFetcher.data.fontUpload;
+      setConfig((current) => {
+        const uploadedKey = fontMatchKey(uploaded.name);
+        return {
+          ...current,
+          customFonts: [
+            ...current.customFonts.filter(
+              (font) => fontMatchKey(font.name) !== uploadedKey,
+            ),
+            uploaded,
+          ],
+          textFields: current.textFields.map((field) =>
+            fontMatchKey(field.fontFamily) === uploadedKey
+              ? { ...field, fontFamily: uploaded.name }
+              : field,
+          ),
+        };
+      });
       setFontKey((value) => value + 1);
       shopify.toast.show("Font uploaded. Save the product configuration.");
     }
@@ -1401,7 +1420,8 @@ export default function PersonalizerHome() {
         return {
           ...blankText(index),
           label: psdLayerLabel(String(layer.name || ""), `Text ${index + 1}`),
-          defaultValue: text.slice(0, 500),
+          placeholder: (text || "Your Text").slice(0, 500),
+          defaultValue: "",
           maxLength: clamp(Math.max(30, text.length * 2), 1, 500, 100),
           color: psdColor(style.fillColor),
           x: clamp(((bounds.left + bounds.right) * 50) / psd.width, 0, 100, 50),
@@ -1417,7 +1437,10 @@ export default function PersonalizerHome() {
             300,
             60,
           ),
-          fontFamily: String(style.font?.name || "Arial").slice(0, 100),
+          fontFamily: matchUploadedFont(
+            String(style.font?.name || "Arial").slice(0, 100),
+            config.customFonts,
+          ),
         };
       });
       const imported: Config = {
@@ -1432,6 +1455,30 @@ export default function PersonalizerHome() {
       form.append("intent", "psdImport");
       form.append("productId", selected.id);
       form.append("config", JSON.stringify(imported));
+      const knownFontKeys = new Set(
+        [...systemFonts, ...config.customFonts.map((font) => font.name)].map(
+          fontMatchKey,
+        ),
+      );
+      const missingFonts = [
+        ...new Set(
+          textFields
+            .map((field) => field.fontFamily)
+            .filter((font) => {
+              if (knownFontKeys.has(fontMatchKey(font))) return false;
+              try {
+                return !document.fonts?.check(`16px "${font.replace(/["\\]/g, "")}"`);
+              } catch {
+                return true;
+              }
+            }),
+        ),
+      ];
+      if (missingFonts.length)
+        form.append(
+          "fontWarning",
+          `PSD imported. Upload the missing font file${missingFonts.length > 1 ? "s" : ""}: ${missingFonts.join(", ")}. Once uploaded, matching text layers will use it automatically.`,
+        );
       form.append(
         "overlayFile",
         new File(
@@ -1841,7 +1888,7 @@ export default function PersonalizerHome() {
                   zIndex: 3,
                 }}
               >
-                {field.defaultValue || field.label}
+                {field.placeholder || field.defaultValue || field.label}
               </div>
             ))}
             {config.overlayUrl && (
@@ -2101,11 +2148,11 @@ export default function PersonalizerHome() {
                 }
               />
               <s-text-field
-                label="Default text from PSD"
-                value={field.defaultValue}
+                label="Preview placeholder from PSD"
+                value={field.placeholder}
                 onInput={(event) =>
                   updateText(field.id, {
-                    defaultValue: event.currentTarget.value,
+                    placeholder: event.currentTarget.value,
                   })
                 }
               />

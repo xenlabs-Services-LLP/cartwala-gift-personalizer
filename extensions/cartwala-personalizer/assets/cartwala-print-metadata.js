@@ -87,7 +87,7 @@
         return {
           i: String(field.id ?? index),
           l: String(field.label || `Text ${index + 1}`),
-          v: String(inputs[index]?.value || field.defaultValue || ""),
+          v: String(inputs[index]?.value || ""),
           x: number(layer?.dataset.cwX, number(field.x, 50)),
           y: number(layer?.dataset.cwY, number(field.y, 50)),
           z: number(layer?.dataset.cwFontSize, number(field.fontSize, 60)),

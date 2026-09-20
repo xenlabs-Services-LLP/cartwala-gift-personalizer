@@ -29,6 +29,7 @@ export type PhotoField = {
 export type TextField = {
   id: string;
   label: string;
+  placeholder: string;
   defaultValue: string;
   maxLength: number;
   color: string;
@@ -91,6 +92,7 @@ export const blankPhoto = (index: number): PhotoField => ({
 export const blankText = (index: number): TextField => ({
   id: uid(),
   label: `Text ${index + 1}`,
+  placeholder: "Your Text",
   defaultValue: "",
   maxLength: 100,
   color: "#111111",
@@ -231,12 +233,21 @@ export const normalizeConfig = (value: unknown): Config => {
     textFields = input.textFields.slice(0, MAX_FIELDS).map((field, index) => {
       const item =
         field && typeof field === "object" ? (field as Partial<TextField>) : {};
+      const label = String(item.label || `Text ${index + 1}`)
+        .trim()
+        .slice(0, 80);
+      const hasPlaceholder = Object.prototype.hasOwnProperty.call(
+        item,
+        "placeholder",
+      );
+      const legacyDefault = String(item.defaultValue || "").slice(0, 500);
       return {
         id: safeId(item.id),
-        label: String(item.label || `Text ${index + 1}`)
-          .trim()
-          .slice(0, 80),
-        defaultValue: String(item.defaultValue || "").slice(0, 500),
+        label,
+        placeholder: String(
+          item.placeholder || legacyDefault || label || "Your Text",
+        ).slice(0, 500),
+        defaultValue: hasPlaceholder ? legacyDefault : "",
         maxLength: clamp(item.maxLength, 1, 500, 100),
         color: /^#[0-9a-f]{6}$/i.test(String(item.color))
           ? String(item.color)

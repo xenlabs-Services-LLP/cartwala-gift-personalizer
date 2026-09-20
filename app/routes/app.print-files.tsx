@@ -135,9 +135,7 @@ function fallbackDesign(
         i: String(f.id ?? i),
         l: String(f.label || `Text ${i + 1}`),
         v: String(
-          attributes[String(f.label || `Text ${i + 1}`)] ||
-            f.defaultValue ||
-            "",
+          attributes[String(f.label || `Text ${i + 1}`)] || "",
         ),
         x: numeric(f.x, 50),
         y: numeric(f.y, 50),

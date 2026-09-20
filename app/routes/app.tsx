@@ -23,6 +23,8 @@ type Config = {
   textFields: Array<{
     id: string;
     label: string;
+    placeholder: string;
+    defaultValue: string;
     maxLength: number;
     color: string;
     x: number;

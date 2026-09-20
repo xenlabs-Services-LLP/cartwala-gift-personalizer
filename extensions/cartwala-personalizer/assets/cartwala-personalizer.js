@@ -66,7 +66,18 @@
         .map((field, index) => ({
           id: String(field?.id || index),
           label: String(field?.label || `Text ${index + 1}`),
-          defaultValue: String(field?.defaultValue || "").slice(0, 500),
+          placeholder: String(
+            field?.placeholder ||
+              field?.defaultValue ||
+              field?.label ||
+              `Text ${index + 1}`,
+          ).slice(0, 500),
+          defaultValue: Object.prototype.hasOwnProperty.call(
+            field || {},
+            "placeholder",
+          )
+            ? String(field?.defaultValue || "").slice(0, 500)
+            : "",
           maxLength: clamp(field?.maxLength, 1, 500, 100),
           color: /^#[0-9a-f]{6}$/i.test(String(field?.color))
             ? String(field.color)
@@ -88,6 +99,8 @@
         {
           id: "0",
           label: String(input.textLabel || "Text 1"),
+          placeholder: String(input.textLabel || "Your Text"),
+          defaultValue: "",
           maxLength: clamp(input.textMaxLength, 1, 500, 100),
           color: String(input.textColor || "#111111"),
           x: 50,
@@ -427,8 +440,15 @@
         root.style.setProperty("--cw-stage-ratio", String(canvasWidth / canvasHeight || 1));
         config.fonts.forEach((font) => {
           const style = document.createElement("style");
-          style.textContent = `@font-face{font-family:"${font.name.replace(/["\\]/g, "")}";src:url("${font.url.replace(/["\\]/g, "")}")}`;
+          const name = font.name.replace(/["\\]/g, "");
+          const url = font.url.replace(/["\\]/g, "");
+          style.textContent = `@font-face{font-family:"${name}";src:local("${name}"),url("${url}");font-display:swap}`;
           document.head.appendChild(style);
+          document.fonts
+            ?.load(`16px "${name}"`)
+            .catch((error) =>
+              console.warn("Cartwala custom font could not be loaded", error),
+            );
         });
         if (root.dataset.overlay) overlay.src = root.dataset.overlay;
         else overlay.hidden = true;
@@ -847,6 +867,7 @@
           input.type = "text";
           input.maxLength = field.maxLength;
           input.value = field.defaultValue || "";
+          input.placeholder = field.placeholder || field.label || "Your Text";
           input.className = "cw-personalizer__text-input";
           card.append(title, input);
           let fontSelect = null;
@@ -1083,8 +1104,16 @@
         textStates.forEach((state) => {
           const refresh = () => {
             invalidate();
-            state.textContent.textContent = state.input.value;
-            state.previewText.hidden = !state.input.value;
+            const customerValue = state.input.value;
+            const previewValue = customerValue.trim()
+              ? customerValue
+              : state.field.placeholder || state.field.label || "Your Text";
+            state.textContent.textContent = previewValue;
+            state.previewText.hidden = !previewValue;
+            state.previewText.classList.toggle(
+              "is-placeholder",
+              !customerValue.trim(),
+            );
             const font = state.fontSelect?.value || state.field.fontFamily;
             state.previewText.style.fontFamily = font;
             if (state.colorInput) state.color = state.colorInput.value;
