@@ -313,10 +313,8 @@
     margin: auto;
   }
   .cw-mug-types {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
-    width: min(100%, 520px);
-    margin-inline: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
   .cw-mug-type-card {
     border-radius: 15px;
