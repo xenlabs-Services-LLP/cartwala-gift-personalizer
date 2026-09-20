@@ -80,6 +80,13 @@ async function main() {
 
   const templateTag = `cw-mug-template-${templateId}`;
   if (products.every(({ product }) => product.tags.includes(templateTag) && product.personalizer?.jsonValue?.enabled === true)) {
+    for (const { target, product } of products) {
+      if (product.title !== target.title) {
+        const renamed = await gql(`mutation RenameProduct($product:ProductUpdateInput!){productUpdate(product:$product){product{id title} userErrors{message}}}`, { product: { id: product.id, title: target.title } });
+        const renameError = renamed.productUpdate.userErrors?.[0]?.message;
+        if (renameError) throw new Error(renameError);
+      }
+    }
     console.log(`Birthday sample ${templateId} is already uploaded.`);
     return;
   }
