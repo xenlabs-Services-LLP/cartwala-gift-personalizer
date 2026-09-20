@@ -105,7 +105,7 @@
         <div class="cw-mug-gallery__grid">
           {% for product in collection.products %}
             <article class="cw-mug-card">
-              <a class="cw-mug-card__image" href="{{ product.url | within: collection }}" aria-label="{{ product.title | escape }}">
+              <a class="cw-mug-card__image" href="{{ product.url }}" aria-label="{{ product.title | escape }}">
                 {% if product.featured_image %}
                   {{ product.featured_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '240,360,540,720,900', sizes: '(min-width: 990px) 25vw, (min-width: 600px) 33vw, 50vw', alt: product.featured_image.alt | default: product.title }}
                 {% else %}
@@ -114,9 +114,9 @@
                 {% if product.compare_at_price_max > product.price %}<span class="cw-mug-card__sale">{{ 'mug_gallery.sale' | t }}</span>{% endif %}
               </a>
               <div class="cw-mug-card__content">
-                <h2><a href="{{ product.url | within: collection }}">{{ product.title | escape }}</a></h2>
+                <h2><a href="{{ product.url }}">{{ product.title | escape }}</a></h2>
                 <p class="cw-mug-card__price"><strong>{{ product.price | money }}</strong>{% if product.compare_at_price_max > product.price %}<s>{{ product.compare_at_price_max | money }}</s>{% endif %}</p>
-                <a class="cw-mug-card__start" href="{{ product.url | within: collection }}">{{ 'mug_gallery.start_design' | t }}</a>
+                <a class="cw-mug-card__start" href="{{ product.url }}">{{ 'mug_gallery.start_design' | t }}</a>
               </div>
             </article>
           {% endfor %}
