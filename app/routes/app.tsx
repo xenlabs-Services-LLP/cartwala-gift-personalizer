@@ -29,6 +29,9 @@ type Config = {
     color: string;
     x: number;
     y: number;
+    width: number;
+    height: number;
+    alignment: "left" | "center" | "right";
     fontSize: number;
     fontFamily: string;
     allowFontChoice: boolean;

@@ -268,13 +268,15 @@ body.cw-personalization-complete
 .cw-personalizer__text-preview {
   position: absolute;
   z-index: 1;
-  max-width: 80%;
+  box-sizing: border-box;
   transform: translate(-50%, -50%);
   transform-origin: center;
   font-weight: 700;
   line-height: 1.05;
   text-align: center;
-  overflow-wrap: anywhere;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
   pointer-events: none;
   text-shadow: 0 1px 2px #fff8;
   white-space: nowrap;
@@ -288,6 +290,9 @@ body.cw-personalization-complete
 }
 .cw-personalizer__text-content {
   pointer-events: none;
+  display: inline-block;
+  flex: 0 0 auto;
+  white-space: pre;
 }
 .cw-personalizer__text-handle {
   position: absolute;

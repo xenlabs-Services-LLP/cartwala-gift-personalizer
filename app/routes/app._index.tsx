@@ -46,6 +46,8 @@ import {
   psdDrawableLayers,
   psdLayerBounds,
   psdLayerLabel,
+  psdTextAlignment,
+  psdTextBoxBounds,
   type PsdCanvasLayer,
 } from "../lib/psd-import";
 
@@ -1411,7 +1413,7 @@ export default function PersonalizerHome() {
       }
 
       const textFields = texts.map((layer, index): TextField => {
-        const bounds = psdLayerBounds(layer);
+        const bounds = psdTextBoxBounds(layer);
         const style =
           layer.text?.style || layer.text?.styleRuns?.[0]?.style || {};
         const text = String(layer.text?.text || "")
@@ -1431,6 +1433,19 @@ export default function PersonalizerHome() {
             100,
             50,
           ),
+          width: clamp(
+            ((bounds.right - bounds.left) * 100) / psd.width,
+            2,
+            100,
+            30,
+          ),
+          height: clamp(
+            ((bounds.bottom - bounds.top) * 100) / psd.height,
+            2,
+            100,
+            12,
+          ),
+          alignment: psdTextAlignment(layer),
           fontSize: clamp(
             (Number(style.fontSize) * 1200) / psd.width,
             8,
@@ -1884,6 +1899,19 @@ export default function PersonalizerHome() {
                   color: field.color,
                   fontFamily: field.fontFamily,
                   fontSize: `${Math.max(10, field.fontSize / 3)}px`,
+                  width: `${field.width}%`,
+                  height: `${field.height}%`,
+                  textAlign: field.alignment,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent:
+                    field.alignment === "left"
+                      ? "flex-start"
+                      : field.alignment === "right"
+                        ? "flex-end"
+                        : "center",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
                   fontWeight: 700,
                   zIndex: 3,
                 }}
@@ -2217,7 +2245,7 @@ export default function PersonalizerHome() {
                 }
               />
             </s-grid>
-            <s-grid gridTemplateColumns="1fr 1fr 1fr" gap="base">
+            <s-grid gridTemplateColumns="1fr 1fr 1fr 1fr 1fr" gap="base">
               <s-number-field
                 label="Horizontal position (%)"
                 min={0}
@@ -2252,6 +2280,40 @@ export default function PersonalizerHome() {
                   )
                 }
               />
+              <s-number-field
+                label="Text box width (%)"
+                min={2}
+                max={100}
+                value={String(field.width)}
+                onInput={(event) =>
+                  updateClampedNumber(
+                    "textFields",
+                    field.id,
+                    "width",
+                    2,
+                    100,
+                    field.width,
+                    event.currentTarget.value,
+                  )
+                }
+              />
+              <s-number-field
+                label="Text box height (%)"
+                min={2}
+                max={100}
+                value={String(field.height)}
+                onInput={(event) =>
+                  updateClampedNumber(
+                    "textFields",
+                    field.id,
+                    "height",
+                    2,
+                    100,
+                    field.height,
+                    event.currentTarget.value,
+                  )
+                }
+              />
               <s-select
                 label="Default font"
                 value={field.fontFamily}
@@ -2274,6 +2336,19 @@ export default function PersonalizerHome() {
                 ))}
               </s-select>
             </s-grid>
+            <s-select
+              label="Text alignment from Photoshop"
+              value={field.alignment}
+              onChange={(event) =>
+                updateText(field.id, {
+                  alignment: event.currentTarget.value as TextField["alignment"],
+                })
+              }
+            >
+              <s-option value="left">Left</s-option>
+              <s-option value="center">Center</s-option>
+              <s-option value="right">Right</s-option>
+            </s-select>
             <s-stack direction="inline" gap="base">
               <s-switch
                 label="Required"

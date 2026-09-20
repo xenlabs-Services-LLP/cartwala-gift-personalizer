@@ -90,6 +90,13 @@
           v: String(inputs[index]?.value || ""),
           x: number(layer?.dataset.cwX, number(field.x, 50)),
           y: number(layer?.dataset.cwY, number(field.y, 50)),
+          w: number(layer?.dataset.cwWidth, number(field.width, 30)),
+          h: number(layer?.dataset.cwHeight, number(field.height, 12)),
+          q: ["left", "center", "right"].includes(
+            String(layer?.dataset.cwAlignment || field.alignment),
+          )
+            ? String(layer?.dataset.cwAlignment || field.alignment)
+            : "center",
           z: number(layer?.dataset.cwFontSize, number(field.fontSize, 60)),
           c: String(layer?.dataset.cwColor || field.color || "#111111"),
           f: String(fontSelects[index]?.value || field.fontFamily || "Arial"),

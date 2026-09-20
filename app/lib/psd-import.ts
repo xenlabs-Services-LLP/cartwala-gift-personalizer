@@ -26,8 +26,12 @@ export type PsdCanvasLayer = {
     left?: number;
     bottom?: number;
     right?: number;
+    shapeType?: "point" | "box";
+    boxBounds?: number[];
     style?: { fontSize?: number; font?: { name?: string }; fillColor?: unknown };
     styleRuns?: Array<{ style?: { fontSize?: number; font?: { name?: string }; fillColor?: unknown } }>;
+    paragraphStyle?: { justification?: string };
+    paragraphStyleRuns?: Array<{ style?: { justification?: string } }>;
   };
 };
 
@@ -159,6 +163,59 @@ export const psdLayerBounds = (layer: PsdCanvasLayer): PsdBounds => {
     right: Math.max(...childBounds.map((bounds) => bounds.right)),
     bottom: Math.max(...childBounds.map((bounds) => bounds.bottom)),
   };
+};
+
+const transformedBounds = (
+  transform: number[],
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+): PsdBounds => {
+  const [a, b, c, d, tx, ty] = transform.map(Number);
+  const points = [
+    [left, top],
+    [right, top],
+    [left, bottom],
+    [right, bottom],
+  ].map(([x, y]) => ({ x: a * x + c * y + tx, y: b * x + d * y + ty }));
+  return {
+    left: Math.min(...points.map((point) => point.x)),
+    top: Math.min(...points.map((point) => point.y)),
+    right: Math.max(...points.map((point) => point.x)),
+    bottom: Math.max(...points.map((point) => point.y)),
+  };
+};
+
+/** Returns the Photoshop paragraph box instead of the rendered glyph pixels. */
+export const psdTextBoxBounds = (layer: PsdCanvasLayer): PsdBounds => {
+  const text = layer.text;
+  const transform = text?.transform;
+  const values = [text?.left, text?.top, text?.right, text?.bottom].map(Number);
+  if (
+    Array.isArray(transform) &&
+    transform.length >= 6 &&
+    transform.slice(0, 6).every((value) => Number.isFinite(Number(value))) &&
+    values.every(Number.isFinite) &&
+    values[2] > values[0] &&
+    values[3] > values[1]
+  ) {
+    return transformedBounds(transform, values[0], values[1], values[2], values[3]);
+  }
+  return psdLayerBounds(layer);
+};
+
+export const psdTextAlignment = (
+  layer: PsdCanvasLayer,
+): "left" | "center" | "right" => {
+  const value = String(
+    layer.text?.paragraphStyle?.justification ||
+      layer.text?.paragraphStyleRuns?.[0]?.style?.justification ||
+      "center",
+  ).toLowerCase();
+  if (value.includes("right")) return "right";
+  if (value.includes("left")) return "left";
+  return "center";
 };
 
 const toHex = (channels: number[]): string =>

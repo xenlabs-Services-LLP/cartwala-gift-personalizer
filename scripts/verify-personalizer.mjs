@@ -72,6 +72,17 @@ assert.equal(textConfig.texts[0].placeholder, "Your Name");
 assert.equal(textConfig.texts[0].defaultValue, "");
 assert.equal(textConfig.texts[0].movable, false);
 assert.equal(textConfig.texts[0].allowColorChoice, false);
+assert.equal(textConfig.texts[0].width, 30);
+assert.equal(textConfig.texts[0].height, 12);
+assert.equal(textConfig.texts[0].alignment, "center");
+const boxedText = normalize({
+  textFields: [
+    { width: 42, height: 9, alignment: "left", fontSize: 80 },
+  ],
+}).texts[0];
+assert.equal(boxedText.width, 42);
+assert.equal(boxedText.height, 9);
+assert.equal(boxedText.alignment, "left");
 const editableText = normalize({
   textFields: [
     {
@@ -130,6 +141,8 @@ for (const token of [
   "cart-drawer,cart-icon-bubble",
   "showCartPreview(previewUrl, designId)",
   "allowColorChoice",
+  "availableWidth / Math.max(1, contentBounds.width)",
+  "state.previewText.dataset.cwAlignment",
   "cw-personalizer__text-handle--rotate",
   "field?.movable === true",
   "const initializeMugPreview = (root) =>",
@@ -172,6 +185,7 @@ assert.match(storefrontCss, /perspective: 900px/);
 assert.match(storefrontCss, /\.cw-mug-gallery-host > :not\(\.cw-mug-preview\)/);
 assert.match(storefrontCss, /--cw-mug-handle-colour/);
 assert.match(storefrontCss, /--cw-mug-rim-colour/);
+assert.match(storefrontCss, /\.cw-personalizer__text-content[\s\S]*white-space: pre/);
 assert.doesNotMatch(
   storefrontCss,
   /\.cw-mug-preview__rim[\s\S]{0,500}translateZ\(/,
@@ -247,6 +261,8 @@ assert.match(
   /form\.set\("config", JSON\.stringify\(configRef\.current\)\)/,
 );
 assert.match(admin, /firstMetafieldsSetError\(json\)/);
+assert.match(admin, /psdTextBoxBounds/);
+assert.match(admin, /psdTextAlignment/);
 // Unsaved-changes guard: closing the tab mid-template-build used to lose
 // everything silently.
 assert.match(admin, /addEventListener\("beforeunload", handler\)/);

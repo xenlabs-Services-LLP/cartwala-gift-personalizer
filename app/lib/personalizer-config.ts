@@ -35,6 +35,9 @@ export type TextField = {
   color: string;
   x: number;
   y: number;
+  width: number;
+  height: number;
+  alignment: "left" | "center" | "right";
   fontSize: number;
   fontFamily: string;
   allowFontChoice: boolean;
@@ -98,6 +101,9 @@ export const blankText = (index: number): TextField => ({
   color: "#111111",
   x: 50,
   y: 50,
+  width: 30,
+  height: 12,
+  alignment: "center",
   fontSize: 60,
   fontFamily: "Arial",
   allowFontChoice: false,
@@ -254,6 +260,13 @@ export const normalizeConfig = (value: unknown): Config => {
           : "#111111",
         x: clamp(item.x, 0, 100, 50),
         y: clamp(item.y, 0, 100, 50),
+        width: clamp(item.width, 2, 100, 30),
+        height: clamp(item.height, 2, 100, 12),
+        alignment: ["left", "center", "right"].includes(
+          String(item.alignment),
+        )
+          ? (item.alignment as TextField["alignment"])
+          : "center",
         fontSize: clamp(item.fontSize, 8, 300, 60),
         fontFamily: String(item.fontFamily || "Arial")
           .trim()

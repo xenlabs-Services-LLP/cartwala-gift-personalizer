@@ -84,6 +84,13 @@
             : "#111111",
           x: clamp(field?.x, 0, 100, 50),
           y: clamp(field?.y, 0, 100, 50),
+          width: clamp(field?.width, 2, 100, 30),
+          height: clamp(field?.height, 2, 100, 12),
+          alignment: ["left", "center", "right"].includes(
+            String(field?.alignment),
+          )
+            ? String(field.alignment)
+            : "center",
           fontSize: clamp(field?.fontSize, 8, 300, 60),
           fontFamily: String(field?.fontFamily || "Arial"),
           allowFontChoice: field?.allowFontChoice === true,
@@ -105,6 +112,9 @@
           color: String(input.textColor || "#111111"),
           x: 50,
           y: 50,
+          width: 30,
+          height: 12,
+          alignment: "center",
           fontSize: 60,
           fontFamily: "Arial",
           allowFontChoice: false,
@@ -910,7 +920,10 @@
             rotateHandle,
             x: field.x,
             y: field.y,
+            width: field.width,
+            height: field.height,
             fontSize: field.fontSize,
+            fittedFontSize: field.fontSize,
             angle: field.rotation,
             color: field.color,
           };
@@ -958,12 +971,39 @@
           state.angle = clamp(state.angle, -180, 180, state.field.rotation);
           state.previewText.style.left = `${state.x}%`;
           state.previewText.style.top = `${state.y}%`;
-          state.previewText.style.fontSize = `${(state.fontSize * stage.clientWidth) / 1200}px`;
+          state.previewText.style.width = `${state.width}%`;
+          state.previewText.style.height = `${state.height}%`;
+          state.previewText.style.textAlign = state.field.alignment;
+          state.previewText.style.justifyContent =
+            state.field.alignment === "left"
+              ? "flex-start"
+              : state.field.alignment === "right"
+                ? "flex-end"
+                : "center";
+          const nominalSize = (state.fontSize * stage.clientWidth) / 1200;
+          state.previewText.style.fontSize = `${nominalSize}px`;
           state.previewText.style.transform = `translate(-50%,-50%) rotate(${state.angle}deg)`;
           state.previewText.style.color = state.color;
+          const contentBounds = state.textContent.getBoundingClientRect();
+          const availableWidth = Math.max(1, state.previewText.clientWidth - 6);
+          const availableHeight = Math.max(1, state.previewText.clientHeight - 6);
+          const fit = Math.min(
+            1,
+            availableWidth / Math.max(1, contentBounds.width),
+            availableHeight / Math.max(1, contentBounds.height),
+          );
+          const fittedSize = Math.max(1, nominalSize * fit);
+          state.previewText.style.fontSize = `${fittedSize}px`;
+          state.fittedFontSize =
+            stage.clientWidth > 0
+              ? (fittedSize * 1200) / stage.clientWidth
+              : state.fontSize;
           state.previewText.dataset.cwX = String(state.x);
           state.previewText.dataset.cwY = String(state.y);
-          state.previewText.dataset.cwFontSize = String(state.fontSize);
+          state.previewText.dataset.cwWidth = String(state.width);
+          state.previewText.dataset.cwHeight = String(state.height);
+          state.previewText.dataset.cwAlignment = state.field.alignment;
+          state.previewText.dataset.cwFontSize = String(state.fittedFontSize);
           state.previewText.dataset.cwRotation = String(state.angle);
           state.previewText.dataset.cwColor = state.color;
         };
@@ -1118,6 +1158,10 @@
             state.previewText.style.fontFamily = font;
             if (state.colorInput) state.color = state.colorInput.value;
             renderTextState(state);
+            document.fonts
+              ?.load(`${state.fontSize}px "${font}"`)
+              .then(() => renderTextState(state))
+              .catch(() => undefined);
             updateReady();
           };
           state.input.addEventListener("input", refresh);
@@ -1478,7 +1522,10 @@
                 JSON.stringify({
                   x: state.x,
                   y: state.y,
-                  fontSize: state.fontSize,
+                  width: state.width,
+                  height: state.height,
+                  alignment: state.field.alignment,
+                  fontSize: state.fittedFontSize,
                   rotation: state.angle,
                   color: state.color,
                 }),
@@ -1495,10 +1542,27 @@
               );
               context.rotate((state.angle * Math.PI) / 180);
               context.fillStyle = state.color;
-              context.textAlign = "center";
+              const boxWidth = (dimensions.width * state.width) / 100;
+              const boxHeight = (dimensions.height * state.height) / 100;
+              const baseSize =
+                ((state.fittedFontSize || state.fontSize) * dimensions.width) /
+                1200;
+              context.font = `700 ${baseSize}px "${font}", sans-serif`;
+              const measuredWidth = Math.max(1, context.measureText(value).width);
+              const fittedSize = Math.max(
+                1,
+                baseSize * Math.min(1, boxWidth / measuredWidth, boxHeight / (baseSize * 1.05)),
+              );
+              context.textAlign = state.field.alignment;
               context.textBaseline = "middle";
-              context.font = `700 ${(state.fontSize * dimensions.width) / 1200}px "${font}", sans-serif`;
-              context.fillText(value, 0, 0, dimensions.width * 0.9);
+              context.font = `700 ${fittedSize}px "${font}", sans-serif`;
+              const textX =
+                state.field.alignment === "left"
+                  ? -boxWidth / 2
+                  : state.field.alignment === "right"
+                    ? boxWidth / 2
+                    : 0;
+              context.fillText(value, textX, 0);
               context.restore();
             }
             fileStates.forEach((state) =>

@@ -35,6 +35,9 @@ type TextDesign = {
   v: string;
   x: number;
   y: number;
+  w: number;
+  h: number;
+  q: "left" | "center" | "right";
   z: number;
   c: string;
   f: string;
@@ -139,6 +142,11 @@ function fallbackDesign(
         ),
         x: numeric(f.x, 50),
         y: numeric(f.y, 50),
+        w: numeric(f.width, 30),
+        h: numeric(f.height, 12),
+        q: ["left", "center", "right"].includes(String(f.alignment))
+          ? f.alignment
+          : "center",
         z: numeric(f.fontSize, 60),
         c: String(f.color || "#111111"),
         f: String(
@@ -281,44 +289,79 @@ const hexColor = (v: string) => {
     b: parseInt(h.slice(4, 6), 16),
   };
 };
+const textLayout = (
+  context: CanvasRenderingContext2D,
+  text: TextDesign,
+  width: number,
+  height: number,
+) => {
+  const boxWidth = (width * numeric(text.w, 30)) / 100,
+    boxHeight = (height * numeric(text.h, 12)) / 100,
+    baseSize = (numeric(text.z, 60) * width) / 1200,
+    family = text.f || "Arial";
+  context.font = `700 ${baseSize}px "${family}", sans-serif`;
+  const measuredWidth = Math.max(1, context.measureText(text.v).width),
+    size = Math.max(
+      1,
+      baseSize *
+        Math.min(1, boxWidth / measuredWidth, boxHeight / (baseSize * 1.05)),
+    ),
+    alignment = ["left", "center", "right"].includes(String(text.q))
+      ? text.q
+      : "center";
+  return { boxWidth, boxHeight, size, family, alignment };
+};
 const textCanvas = (text: TextDesign, width: number, height: number) => {
   const c = makeCanvas(width, height),
     x = c.getContext("2d");
   if (!x) return c;
-  const size = (text.z * width) / 1200;
+  const { boxWidth, size, family, alignment } = textLayout(x, text, width, height);
   x.save();
   x.translate((width * text.x) / 100, (height * text.y) / 100);
   x.rotate((numeric(text.a, 0) * Math.PI) / 180);
   x.fillStyle = text.c || "#111111";
-  x.textAlign = "center";
+  x.textAlign = alignment;
   x.textBaseline = "middle";
-  x.font = `700 ${size}px "${text.f || "Arial"}", sans-serif`;
-  x.fillText(text.v, 0, 0, width * 0.9);
+  x.font = `700 ${size}px "${family}", sans-serif`;
+  x.fillText(
+    text.v,
+    alignment === "left" ? -boxWidth / 2 : alignment === "right" ? boxWidth / 2 : 0,
+    0,
+  );
   x.restore();
   return c;
 };
 const psdTextLayer = (t: TextDesign, width: number, height: number) => {
-  const size = (t.z * width) / 1200,
-    probe = document.createElement("canvas").getContext("2d");
-  if (probe) probe.font = `700 ${size}px "${t.f || "Arial"}", sans-serif`;
-  const tw = Math.max(
-      4,
-      Math.ceil(
-        (probe?.measureText(t.v).width || size * t.v.length * 0.6) +
-          size * 0.35,
-      ),
-    ),
-    th = Math.max(4, Math.ceil(size * 1.45)),
+  const probe = document.createElement("canvas").getContext("2d"),
+    layout = probe
+      ? textLayout(probe, t, width, height)
+      : {
+          boxWidth: (width * numeric(t.w, 30)) / 100,
+          boxHeight: (height * numeric(t.h, 12)) / 100,
+          size: (numeric(t.z, 60) * width) / 1200,
+          family: t.f || "Arial",
+          alignment: "center" as const,
+        },
+    tw = Math.max(4, Math.ceil(layout.boxWidth)),
+    th = Math.max(4, Math.ceil(layout.boxHeight)),
     left = Math.max(0, Math.round((width * t.x) / 100 - tw / 2)),
     top = Math.max(0, Math.round((height * t.y) / 100 - th / 2)),
     canvas = makeCanvas(Math.min(tw, width - left), Math.min(th, height - top)),
     c = canvas.getContext("2d");
   if (c) {
     c.fillStyle = t.c || "#111111";
-    c.textAlign = "center";
+    c.textAlign = layout.alignment;
     c.textBaseline = "middle";
-    c.font = `700 ${size}px "${t.f || "Arial"}", sans-serif`;
-    c.fillText(t.v, canvas.width / 2, canvas.height / 2);
+    c.font = `700 ${layout.size}px "${layout.family}", sans-serif`;
+    c.fillText(
+      t.v,
+      layout.alignment === "left"
+        ? 0
+        : layout.alignment === "right"
+          ? canvas.width
+          : canvas.width / 2,
+      canvas.height / 2,
+    );
   }
   return {
     name: t.l || "Text",
@@ -327,13 +370,19 @@ const psdTextLayer = (t: TextDesign, width: number, height: number) => {
     top,
     text: {
       text: t.v,
-      transform: [1, 0, 0, 1, canvas.width / 2, canvas.height / 2],
+      transform: [1, 0, 0, 1, 0, 0],
+      left: 0,
+      top: 0,
+      right: canvas.width,
+      bottom: canvas.height,
+      shapeType: "box" as const,
+      boxBounds: [0, 0, canvas.width, canvas.height],
       style: {
-        font: { name: t.f || "Arial" },
-        fontSize: size,
+        font: { name: layout.family },
+        fontSize: layout.size,
         fillColor: hexColor(t.c),
       },
-      paragraphStyle: { justification: "center" },
+      paragraphStyle: { justification: layout.alignment },
     },
   };
 };
