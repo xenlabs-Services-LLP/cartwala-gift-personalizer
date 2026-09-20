@@ -199,7 +199,9 @@ function getDesign(item: PrintItem) {
     attributes,
   };
 }
-const documentSize = (r: string) => {
+const documentSize = (r: string, productTitle = "") => {
+  if (/\bmug\b/i.test(productTitle))
+    return { width: 2550, height: 1050 };
   const m = /^(\d{1,5}):(\d{1,5})$/.exec(r || "");
   const rw = m ? Math.max(1, Number(m[1])) : 1,
     rh = m ? Math.max(1, Number(m[2])) : 1,
@@ -450,7 +452,7 @@ async function buildPrint(item: PrintItem) {
     const reference = await loadImage(attributes["_Personalised Preview"]);
     design.r = `${reference.naturalWidth}:${reference.naturalHeight}`;
   }
-  const { width, height } = documentSize(design.r),
+  const { width, height } = documentSize(design.r, item.productTitle),
     composite = makeCanvas(width, height),
     ctx = composite.getContext("2d");
   if (!ctx) throw new Error("Print canvas is unavailable.");
