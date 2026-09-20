@@ -8,6 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const assets = path.resolve(here, "../assets/birthday-sample");
 const apiVersion = "2026-07";
 const templateId = "cw-bd-001";
+const mugCollectionHandle = "customised-mugs";
 
 const targets = [
   {
@@ -76,6 +77,23 @@ async function main() {
     const product = data.products.nodes.find((item) => item.handle === target.handle);
     if (!product) throw new Error(`Required existing mug product was not found: ${target.handle}`);
     products.push({ target, product });
+  }
+
+  const collectionData = await gql(`query CollectionByHandle($query:String!){collections(first:5,query:$query){nodes{id handle products(first:250){nodes{id}}}}}`, { query: `handle:${mugCollectionHandle}` });
+  const mugCollection = collectionData.collections.nodes.find((item) => item.handle === mugCollectionHandle);
+  if (!mugCollection) throw new Error(`Required mug collection was not found: ${mugCollectionHandle}`);
+  const currentCollectionProductIds = new Set(mugCollection.products.nodes.map((item) => item.id));
+  const missingCollectionProductIds = products
+    .map(({ product }) => product.id)
+    .filter((productId) => !currentCollectionProductIds.has(productId));
+  if (missingCollectionProductIds.length) {
+    const added = await gql(`mutation AddMugsToCollection($id:ID!,$productIds:[ID!]!){collectionAddProducts(id:$id,productIds:$productIds){collection{id handle} userErrors{field message}}}`, {
+      id: mugCollection.id,
+      productIds: missingCollectionProductIds,
+    });
+    const addError = added.collectionAddProducts.userErrors?.[0]?.message;
+    if (addError) throw new Error(`Could not add mugs to ${mugCollectionHandle}: ${addError}`);
+    console.log(`Added ${missingCollectionProductIds.length} mug products to ${mugCollectionHandle}.`);
   }
 
   const templateTag = `cw-mug-template-${templateId}`;
