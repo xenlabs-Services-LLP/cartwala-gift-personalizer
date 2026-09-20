@@ -1,5 +1,5 @@
 /* Keep wide mug mockups fully visible in theme product cards. */
-html.cw-mug-collection-page #MainContent > .shopify-section:first-child {
+html.cw-mug-collection-page body:has(.cw-mug-gallery) #MainContent > .shopify-section:first-child {
   display: none !important;
 }
 
