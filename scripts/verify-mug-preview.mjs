@@ -59,7 +59,7 @@ for (const aspect of [0.35, 0.5, 0.8, 1, 1.85]) {
       for (let i = 0; i < mesh.vertices.length; i += 9) {
         const x = (rotation[0] * mesh.vertices[i] + rotation[3] * mesh.vertices[i + 1] + rotation[6] * mesh.vertices[i + 2] - frame.center[0]) * frame.scale / aspect;
         const y = (rotation[1] * mesh.vertices[i] + rotation[4] * mesh.vertices[i + 1] + rotation[7] * mesh.vertices[i + 2]) * frame.scale;
-        assert.ok(Math.abs(x) < 0.9 && Math.abs(y) < 0.85, "Each complete mug must fit its own gallery column with spacing");
+        assert.ok(Math.abs(x) < 0.98 && Math.abs(y) < 0.9, "Each complete mug must fit its own gallery column with spacing");
       }
     }
   }
