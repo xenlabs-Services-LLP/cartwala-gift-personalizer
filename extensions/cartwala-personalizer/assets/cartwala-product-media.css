@@ -1,0 +1,38 @@
+/* Keep wide mug mockups fully visible in theme product cards. */
+.product-card__media:has(> a[href*="/products/"][href*="mug"]) {
+  aspect-ratio: 3 / 2 !important;
+  background: #fff;
+}
+
+.product-card__media > a[href*="/products/"][href*="mug"] {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.product-card__media > a[href*="/products/"][href*="mug"] > img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+/* The personalizer marks mug product pages, so unrelated galleries stay untouched. */
+body:has(.cw-personalizer[data-product-kind="mug"]) .product-gallery__main {
+  aspect-ratio: 3 / 2 !important;
+  background: #fff;
+}
+
+body:has(.cw-personalizer[data-product-kind="mug"]) .product-gallery__main > img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+body:has(.cw-personalizer[data-product-kind="mug"]) .product-gallery__thumbs button img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center !important;
+}
