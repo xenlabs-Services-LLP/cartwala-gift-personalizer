@@ -1769,12 +1769,15 @@
       if (!openButton) return;
       const root = openButton.closest("[data-cw-personalizer]");
       const mugDialog = root?.querySelector("[data-cw-mug-dialog]");
-      if (!mugDialog || mugDialog.open) return;
-      if (typeof mugDialog.showModal === "function") {
-        mugDialog.showModal();
-      } else {
-        mugDialog.setAttribute("open", "");
-      }
+      if (!mugDialog) return;
+      setTimeout(() => {
+        if (mugDialog.open) return;
+        if (typeof mugDialog.showModal === "function") {
+          mugDialog.showModal();
+        } else {
+          mugDialog.setAttribute("open", "");
+        }
+      });
     },
     true,
   );
