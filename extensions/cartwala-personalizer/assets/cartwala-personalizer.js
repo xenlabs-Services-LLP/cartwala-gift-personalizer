@@ -151,6 +151,27 @@
     );
     if (!mugDialog || !stage || !open || !close || !sceneElements.length) return;
 
+    const mountPreviewInGallery = () => {
+      if (preview.dataset.cwGalleryMounted === "true") return;
+      const scope = root.closest(".shopify-section") || document;
+      const images = Array.from(
+        scope.querySelectorAll(
+          "[data-gallery-main] img,.product__media img,[data-product-media] img,.product-gallery img,.product__media-item img,.slider-mobile-gutter img",
+        ),
+      );
+      const image = images.find((candidate) => candidate.offsetParent !== null) || images[0];
+      if (!image) return;
+      const host =
+        image.closest(
+          ".product__media-item,[data-product-media],.product-media-container,.product__media",
+        ) || image.parentElement;
+      if (!host) return;
+      host.classList.add("cw-mug-gallery-host");
+      preview.classList.add("cw-mug-preview--gallery");
+      host.appendChild(preview);
+      preview.dataset.cwGalleryMounted = "true";
+    };
+
     const panelCount = 56;
     const panelWidth = 11.5;
     const handleGapStart = 10;
@@ -164,6 +185,10 @@
       const rim = document.createElement("div");
       const base = document.createElement("div");
       handle.className = "cw-mug-preview__handle";
+      if (mugModel === "love-handle") {
+        handle.innerHTML =
+          '<svg viewBox="0 0 120 112" aria-hidden="true" focusable="false"><path d="M60 103C48 91 12 65 12 35C12 10 43 3 60 25C77 3 108 10 108 35C108 65 72 91 60 103Z"/></svg>';
+      }
       body.className = "cw-mug-preview__body";
       rim.className = "cw-mug-preview__rim";
       base.className = "cw-mug-preview__base";
@@ -240,19 +265,25 @@
       return colourControl.value || colourControl.dataset.value || "White";
     };
     const applyColour = () => {
-      const modelColour =
-        mugModel === "magic"
-          ? "#171717"
-          : mugModel === "red" || mugModel === "love-handle"
-            ? "#d92f3f"
-            : "#ffffff";
       const selectedColour = selectedColourName();
-      const colour = selectedColour
+      const optionColour = selectedColour
         ? colourFromName(selectedColour)
-        : modelColour;
-      scenes.forEach(({ scene }) =>
-        scene.style.setProperty("--cw-mug-colour", colour),
-      );
+        : "";
+      const bodyColour = mugModel === "magic" ? "#171717" : "#ffffff";
+      const handleColour =
+        optionColour ||
+        (mugModel === "magic"
+          ? "#171717"
+          : mugModel === "red"
+            ? "#d92f3f"
+            : "#ffffff");
+      const rimColour =
+        optionColour || (mugModel === "red" ? "#d92f3f" : "#ffffff");
+      scenes.forEach(({ scene }) => {
+        scene.style.setProperty("--cw-mug-body-colour", bodyColour);
+        scene.style.setProperty("--cw-mug-handle-colour", handleColour);
+        scene.style.setProperty("--cw-mug-rim-colour", rimColour);
+      });
     };
 
     let pointerStartX = 0;
@@ -280,6 +311,7 @@
           panel.style.backgroundImage = handleGap ? "none" : `url("${safeUrl}")`;
         });
       });
+      mountPreviewInGallery();
       preview.hidden = false;
       render();
     };
@@ -304,6 +336,7 @@
     close.addEventListener("click", closeMugDialog);
     magicToggle?.addEventListener("click", () => {
       const heated = root.classList.toggle("is-magic-heated");
+      preview.classList.toggle("is-magic-heated", heated);
       magicToggle.textContent = heated
         ? magicToggle.dataset.hotLabel
         : magicToggle.dataset.coldLabel;
@@ -1500,6 +1533,7 @@
         };
 
         const showProductPreview = (url) => {
+          if (root.dataset.productKind === "mug") return;
           const scope = root.closest(".shopify-section") || document;
           const main =
             scope.querySelector(

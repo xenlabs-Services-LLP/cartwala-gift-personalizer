@@ -54,6 +54,7 @@
   }
 
   const applySavedPreview=root=>{
+    if(root?.dataset.productKind==='mug')return;
     const src=root?.querySelector('[data-cw-result-image]')?.src;
     if(!src||!src.startsWith('blob:'))return;
     const scope=root.closest('.shopify-section')||document;
