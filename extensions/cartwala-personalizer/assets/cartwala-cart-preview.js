@@ -1,5 +1,7 @@
 (()=>{
   if(window.cartwalaCartPreviewLoaded)return;window.cartwalaCartPreviewLoaded=true;
+  const pagePath=window.location.pathname.replace(/\/+$/,'');
+  if(pagePath==='/collections/customised-mugs'||pagePath.startsWith('/collections/customised-mugs/'))document.documentElement.classList.add('cw-mug-collection-page');
   window.addEventListener('click',event=>{
     const link=event.target.closest?.('a[href]');
     if(!link?.closest('cart-drawer,#CartDrawer,#cart-drawer,[data-cart-drawer],.cart-drawer'))return;
