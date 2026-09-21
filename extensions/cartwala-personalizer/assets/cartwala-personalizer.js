@@ -883,9 +883,54 @@
       });
       render();
     };
-    const applyTexture = (url) => {
+    const usesThreeViewArtwork = () => {
+      try {
+        const config = JSON.parse(
+          root.querySelector("[data-cw-config]")?.dataset.cwConfig || "{}",
+        );
+        return config.canvasRatio === "1536:1024";
+      } catch {
+        return false;
+      }
+    };
+    const threeViewTexture = (url) =>
+      new Promise((resolve) => {
+        const source = new Image();
+        source.crossOrigin = "anonymous";
+        source.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = 1536;
+          canvas.height = 512;
+          const context = canvas.getContext("2d");
+          const panels = [
+            [180, 235, 365, 500],
+            [570, 235, 395, 500],
+            [990, 235, 370, 500],
+          ];
+          panels.forEach((panel, index) => {
+            context.drawImage(
+              source,
+              panel[0],
+              panel[1],
+              panel[2],
+              panel[3],
+              index * 512,
+              0,
+              512,
+              512,
+            );
+          });
+          resolve(canvas.toDataURL("image/png"));
+        };
+        source.onerror = () => resolve(url);
+        source.src = url;
+      });
+    const applyTexture = async (url) => {
       if (typeof url !== "string" || !url) return;
-      scenes.forEach(({ renderer }) => renderer.setTexture(url));
+      const textureUrl = usesThreeViewArtwork()
+        ? await threeViewTexture(url)
+        : url;
+      scenes.forEach(({ renderer }) => renderer.setTexture(textureUrl));
       mountPreviewInGallery();
       preview.hidden = false;
       setHeated(mugModel === "magic");
