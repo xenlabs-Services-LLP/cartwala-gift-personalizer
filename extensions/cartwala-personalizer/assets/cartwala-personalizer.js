@@ -75,7 +75,7 @@
           ? String(field?.defaultValue || "").slice(0, 500)
           : "",
         maxLength: clamp(field?.maxLength, 1, 500, 100),
-        maxLines: clamp(field?.maxLines, 1, 5, 1),
+        maxLines: clamp(field?.maxLines, 1, 5, 2),
         color: /^#[0-9a-f]{6}$/i.test(String(field?.color))
           ? String(field.color)
           : "#111111",
@@ -2230,11 +2230,7 @@
               const fittedLineHeight = fittedSize * 1.08;
               const firstLineY = -((lines.length - 1) * fittedLineHeight) / 2;
               lines.forEach((line, index) =>
-                context.fillText(
-                  line,
-                  textX,
-                  firstLineY + index * fittedLineHeight,
-                ),
+                context.fillText(line, textX, firstLineY + index * fittedLineHeight),
               );
               context.restore();
             }
