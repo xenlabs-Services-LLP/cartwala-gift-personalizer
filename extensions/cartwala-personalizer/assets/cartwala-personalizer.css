@@ -459,6 +459,11 @@ body.cw-personalization-complete
   outline: 2px solid #ff620033;
   border-color: #ff6200;
 }
+.cw-personalizer textarea.cw-personalizer__text-input {
+  resize: none;
+  min-height: 84px;
+  line-height: 1.35;
+}
 .cw-personalizer__preview:disabled {
   opacity: 0.45;
   cursor: not-allowed;
