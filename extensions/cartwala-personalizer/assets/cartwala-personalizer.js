@@ -75,6 +75,7 @@
           ? String(field?.defaultValue || "").slice(0, 500)
           : "",
         maxLength: clamp(field?.maxLength, 1, 500, 100),
+        maxLines: clamp(field?.maxLines, 1, 5, 1),
         color: /^#[0-9a-f]{6}$/i.test(String(field?.color))
           ? String(field.color)
           : "#111111",
@@ -1490,8 +1491,13 @@
             (field.required
               ? ` (${root.dataset.labelRequired || "Required"})`
               : "");
-          const input = document.createElement("input");
-          input.type = "text";
+          const input = document.createElement(
+            field.maxLines > 1 ? "textarea" : "input",
+          );
+          if (field.maxLines > 1) {
+            input.rows = field.maxLines;
+            input.dataset.cwMaxLines = String(field.maxLines);
+          } else input.type = "text";
           input.maxLength = field.maxLength;
           input.value = field.defaultValue || "";
           input.placeholder = field.placeholder || field.label || "Your Text";
@@ -1777,6 +1783,13 @@
         textStates.forEach((state) => {
           const refresh = () => {
             invalidate();
+            if (state.field.maxLines > 1) {
+              const lines = state.input.value.replace(/\r/g, "").split("\n");
+              if (lines.length > state.field.maxLines)
+                state.input.value = lines
+                  .slice(0, state.field.maxLines)
+                  .join("\n");
+            }
             const customerValue = state.input.value;
             const previewValue = customerValue.trim()
               ? customerValue
@@ -2182,10 +2195,15 @@
                 ((state.fittedFontSize || state.fontSize) * dimensions.width) /
                 1200;
               context.font = `700 ${baseSize}px "${font}", sans-serif`;
+              const lines = value
+                .replace(/\r/g, "")
+                .split("\n")
+                .slice(0, state.field.maxLines || 1);
               const measuredWidth = Math.max(
                 1,
-                context.measureText(value).width,
+                ...lines.map((line) => context.measureText(line).width),
               );
+              const lineHeight = baseSize * 1.08;
               const fittedSize = Math.max(
                 1,
                 baseSize *
@@ -2193,7 +2211,7 @@
                     ? Math.min(
                         1,
                         boxWidth / measuredWidth,
-                        boxHeight / (baseSize * 1.05),
+                        boxHeight / (lineHeight * lines.length),
                       )
                     : 1),
               );
@@ -2209,7 +2227,15 @@
                   : state.field.alignment === "right"
                     ? boxWidth / 2
                     : 0;
-              context.fillText(value, textX, 0);
+              const fittedLineHeight = fittedSize * 1.08;
+              const firstLineY = -((lines.length - 1) * fittedLineHeight) / 2;
+              lines.forEach((line, index) =>
+                context.fillText(
+                  line,
+                  textX,
+                  firstLineY + index * fittedLineHeight,
+                ),
+              );
               context.restore();
             }
             fileStates.forEach((state) =>
