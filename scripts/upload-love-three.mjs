@@ -6,7 +6,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const here = path.dirname(fileURLToPath(import.meta.url));
 const catalog = process.env.CARTWALA_LOVE_CATALOG || "three";
-const assetRevision = catalog === "ten" ? "shape-match-v2" : "initial";
+const assetRevision = catalog === "ten" ? "shape-match-v3" : "initial";
 const assets = path.resolve(here, catalog === "ten" ? "../assets/love-ten-live" : "../assets/love-three-live");
 const apiVersion = "2026-07";
 const mugCollectionHandle = "customised-mugs";
