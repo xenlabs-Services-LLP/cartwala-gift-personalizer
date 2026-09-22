@@ -6,6 +6,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const here = path.dirname(fileURLToPath(import.meta.url));
 const catalog = process.env.CARTWALA_LOVE_CATALOG || "three";
+const assetRevision = catalog === "ten" ? "shape-match-v2" : "initial";
 const assets = path.resolve(here, catalog === "ten" ? "../assets/love-ten-live" : "../assets/love-three-live");
 const apiVersion = "2026-07";
 const mugCollectionHandle = "customised-mugs";
@@ -148,7 +149,10 @@ async function main() {
 
   for (const design of designs) {
     const designRows = rows.filter((row) => row.design.code === design.code);
-    const configured = designRows.find((row) => row.product.personalizer?.jsonValue?.enabled)?.product.personalizer?.jsonValue;
+    const configured = designRows.find((row) =>
+      row.product.personalizer?.jsonValue?.enabled &&
+      row.product.personalizer?.jsonValue?.assetRevision === assetRevision
+    )?.product.personalizer?.jsonValue;
     const overlayUrl = configured?.overlayUrl || await uploadFile(`${design.code}-overlay.png`);
     const maskUrls = [];
     for (let index = 0; index < design.photos; index += 1) {
@@ -156,6 +160,7 @@ async function main() {
     }
     const config = {
       enabled: true,
+      assetRevision,
       overlayUrl,
       canvasRatio: "2550:1050",
       photoFields: design.photoLayouts.map((layout, index) => ({
@@ -213,7 +218,7 @@ async function main() {
         if (error) throw new Error(`${product.handle}: ${error.message}`);
       }
 
-      const alt = `${design.code} ${model.label} Love Mug – Left Front Right Views`;
+      const alt = `${design.code} ${model.label} Love Mug – shape-corrected ${assetRevision}`;
       if (!product.media.nodes.some((media) => media.alt === alt)) {
         const imageUrl = await uploadFile(`${design.code}-${model.key}-mockup.${mockupExtension}`);
         const media = await gql(`mutation AttachImage($productId:ID!,$media:[CreateMediaInput!]!){productCreateMedia(productId:$productId,media:$media){media{id alt status} mediaUserErrors{field message}}}`, { productId: product.id, media: [{ originalSource: imageUrl, mediaContentType: "IMAGE", alt }] });
@@ -224,6 +229,12 @@ async function main() {
           await gql(`mutation Reorder($id:ID!,$moves:[MoveInput!]!){productReorderMedia(id:$id,moves:$moves){job{id} mediaUserErrors{field message}}}`, { id: product.id, moves: [{ id: newMedia.id, newPosition: "0" }] });
         } catch (error) {
           console.warn(`${product.handle}: image attached; featured-order retry required: ${error.message}`);
+        }
+        const oldMediaIds = product.media.nodes.map((media) => media.id).filter((id) => id !== newMedia.id);
+        if (oldMediaIds.length) {
+          const removed = await gql(`mutation DeleteOldMedia($productId:ID!,$mediaIds:[ID!]!){productDeleteMedia(productId:$productId,mediaIds:$mediaIds){deletedMediaIds mediaUserErrors{field message}}}`, { productId: product.id, mediaIds: oldMediaIds });
+          const deleteError = removed.productDeleteMedia.mediaUserErrors?.[0];
+          if (deleteError) throw new Error(`${product.handle}: ${deleteError.message}`);
         }
       }
 
