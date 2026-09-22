@@ -31,3 +31,8 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: flyctl deploy --remote-only -a cartwala-gift-personalizer
+
+      - name: Upload Friends mug catalog
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl ssh console -a cartwala-gift-personalizer -C "node scripts/upload-friends-ten.mjs"
