@@ -5,11 +5,12 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const here = path.dirname(fileURLToPath(import.meta.url));
-const assets = path.resolve(here, "../assets/love-three-live");
+const catalog = process.env.CARTWALA_LOVE_CATALOG || "three";
+const assets = path.resolve(here, catalog === "ten" ? "../assets/love-ten-live" : "../assets/love-three-live");
 const apiVersion = "2026-07";
 const mugCollectionHandle = "customised-mugs";
 
-const designs = [
+const originalDesigns = [
   {
     code: "CW-LV-001", slug: "blush-love-always", name: "Blush Love Always", photos: 1,
     textLabel: "Your Names", textPlaceholder: "Your Names", textColor: "#97543e",
@@ -37,6 +38,11 @@ const designs = [
   },
 ];
 
+const designs = catalog === "ten"
+  ? JSON.parse(fs.readFileSync(path.join(assets, "manifest.json"), "utf8"))
+  : originalDesigns;
+const mockupExtension = catalog === "ten" ? "jpg" : "png";
+
 const models = [
   { key: "normal", label: "Classic White Mug", modelTag: "cw-mug-model-white", price: "250.00", compareAtPrice: "450.00", sku: "CW-MUG-NORMAL" },
   { key: "magic", label: "Magic Hot Water Reveal Mug", modelTag: "cw-mug-model-magic", price: "400.00", compareAtPrice: "800.00", sku: "CW-MUG-MAGIC" },
@@ -46,7 +52,7 @@ const models = [
 
 const handleFor = (design, model) => `personalized-love-${design.slug}-${model.key}-mug`;
 const titleFor = (design, model) => `Personalized ${design.name} Love Mug – ${model.label}`;
-const mimeFor = (name) => name.endsWith(".png") ? "image/png" : "application/octet-stream";
+const mimeFor = (name) => name.endsWith(".png") ? "image/png" : name.endsWith(".jpg") ? "image/jpeg" : "application/octet-stream";
 
 async function main() {
   const sessions = await prisma.session.findMany();
@@ -67,7 +73,7 @@ async function main() {
   const requiredAssets = designs.flatMap((design) => [
     `${design.code}-overlay.png`,
     ...design.photoLayouts.map((_, index) => `${design.code}-photo-${index + 1}-mask.png`),
-    ...models.map((model) => `${design.code}-${model.key}-mockup.png`),
+    ...models.map((model) => `${design.code}-${model.key}-mockup.${mockupExtension}`),
   ]);
   for (const name of requiredAssets) if (!fs.existsSync(path.join(assets, name))) throw new Error(`Missing asset ${name}`);
 
@@ -209,7 +215,7 @@ async function main() {
 
       const alt = `${design.code} ${model.label} Love Mug – Left Front Right Views`;
       if (!product.media.nodes.some((media) => media.alt === alt)) {
-        const imageUrl = await uploadFile(`${design.code}-${model.key}-mockup.png`);
+        const imageUrl = await uploadFile(`${design.code}-${model.key}-mockup.${mockupExtension}`);
         const media = await gql(`mutation AttachImage($productId:ID!,$media:[CreateMediaInput!]!){productCreateMedia(productId:$productId,media:$media){media{id alt status} mediaUserErrors{field message}}}`, { productId: product.id, media: [{ originalSource: imageUrl, mediaContentType: "IMAGE", alt }] });
         const newMedia = media.productCreateMedia.media?.[0];
         const mediaError = media.productCreateMedia.mediaUserErrors?.[0];
