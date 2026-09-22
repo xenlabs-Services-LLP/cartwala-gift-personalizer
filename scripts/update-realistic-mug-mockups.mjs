@@ -110,7 +110,7 @@ async function main() {
     const product = await getProduct(target.handle);
     if (!product) throw new Error(`Product not found: ${target.handle}`);
 
-    const newAlt = `${target.code} ${target.model} realistic three-view mug mockup v2`;
+    const newAlt = `${target.code} ${target.model} realistic three-view mug mockup v3`;
     const existing = product.media.nodes.find((media) => media.alt === newAlt);
     if (existing) {
       completed += 1;
