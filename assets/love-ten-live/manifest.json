@@ -1,0 +1,310 @@
+[
+  {
+    "code": "CW-LV-004",
+    "slug": "crimson-you-and-me",
+    "name": "Crimson You and Me",
+    "photos": 2,
+    "textLabel": "Your Names",
+    "textPlaceholder": "Your Names",
+    "textColor": "#fff1d1",
+    "photoLayouts": [
+      {
+        "x": 17.529,
+        "y": 49.714,
+        "width": 24.51,
+        "height": 71.905
+      },
+      {
+        "x": 82.471,
+        "y": 49.714,
+        "width": 24.51,
+        "height": 71.905
+      }
+    ],
+    "textLayout": {
+      "x": 50.0,
+      "y": 52.857,
+      "width": 28.235,
+      "height": 11.429
+    }
+  },
+  {
+    "code": "CW-LV-005",
+    "slug": "midnight-moon-love",
+    "name": "Midnight Moon Love",
+    "photos": 1,
+    "textLabel": "Your Names",
+    "textPlaceholder": "Your Names",
+    "textColor": "#f7dc91",
+    "photoLayouts": [
+      {
+        "x": 16.471,
+        "y": 49.524,
+        "width": 23.922,
+        "height": 68.571
+      }
+    ],
+    "textLayout": {
+      "x": 53.333,
+      "y": 57.143,
+      "width": 28.235,
+      "height": 11.429
+    }
+  },
+  {
+    "code": "CW-LV-006",
+    "slug": "rose-gold-infinity",
+    "name": "Rose Gold Infinity",
+    "photos": 2,
+    "textLabel": "Your Names",
+    "textPlaceholder": "Your Names",
+    "textColor": "#9b594c",
+    "photoLayouts": [
+      {
+        "x": 16.863,
+        "y": 42.857,
+        "width": 25.49,
+        "height": 61.905
+      },
+      {
+        "x": 82.941,
+        "y": 42.857,
+        "width": 25.49,
+        "height": 61.905
+      }
+    ],
+    "textLayout": {
+      "x": 50.0,
+      "y": 57.143,
+      "width": 25.49,
+      "height": 11.429
+    }
+  },
+  {
+    "code": "CW-LV-007",
+    "slug": "lavender-love-moments",
+    "name": "Lavender Love Moments",
+    "photos": 3,
+    "textLabel": "Your Names",
+    "textPlaceholder": "Your Names",
+    "textColor": "#6f3158",
+    "photoLayouts": [
+      {
+        "x": 14.314,
+        "y": 49.524,
+        "width": 25.49,
+        "height": 68.571
+      },
+      {
+        "x": 82.745,
+        "y": 26.667,
+        "width": 17.255,
+        "height": 38.095
+      },
+      {
+        "x": 82.745,
+        "y": 73.333,
+        "width": 17.255,
+        "height": 38.095
+      }
+    ],
+    "textLayout": {
+      "x": 50.0,
+      "y": 57.143,
+      "width": 24.314,
+      "height": 11.429
+    }
+  },
+  {
+    "code": "CW-LV-008",
+    "slug": "black-gold-forever-us",
+    "name": "Black Gold Forever Us",
+    "photos": 1,
+    "textLabel": "Your Names",
+    "textPlaceholder": "Your Names",
+    "textColor": "#f2ce7b",
+    "photoLayouts": [
+      {
+        "x": 16.863,
+        "y": 49.524,
+        "width": 24.314,
+        "height": 75.238
+      }
+    ],
+    "textLayout": {
+      "x": 52.941,
+      "y": 57.143,
+      "width": 28.235,
+      "height": 11.429
+    }
+  },
+  {
+    "code": "CW-LV-009",
+    "slug": "emerald-eternal-love",
+    "name": "Emerald Eternal Love",
+    "photos": 2,
+    "textLabel": "Your Names",
+    "textPlaceholder": "Your Names",
+    "textColor": "#f1cf82",
+    "photoLayouts": [
+      {
+        "x": 14.314,
+        "y": 49.524,
+        "width": 21.176,
+        "height": 72.381
+      },
+      {
+        "x": 85.686,
+        "y": 49.524,
+        "width": 21.176,
+        "height": 72.381
+      }
+    ],
+    "textLayout": {
+      "x": 50.0,
+      "y": 57.143,
+      "width": 27.059,
+      "height": 11.429
+    }
+  },
+  {
+    "code": "CW-LV-010",
+    "slug": "peach-polaroid-memories",
+    "name": "Peach Polaroid Memories",
+    "photos": 3,
+    "textLabel": "Your Names",
+    "textPlaceholder": "Your Names",
+    "textColor": "#9b4e42",
+    "photoLayouts": [
+      {
+        "x": 15.882,
+        "y": 47.619,
+        "width": 21.176,
+        "height": 64.762
+      },
+      {
+        "x": 74.51,
+        "y": 33.333,
+        "width": 17.255,
+        "height": 48.571
+      },
+      {
+        "x": 87.843,
+        "y": 61.905,
+        "width": 16.471,
+        "height": 47.619
+      }
+    ],
+    "textLayout": {
+      "x": 49.412,
+      "y": 57.143,
+      "width": 26.667,
+      "height": 11.429
+    }
+  },
+  {
+    "code": "CW-LV-011",
+    "slug": "blue-memory-collage",
+    "name": "Blue Memory Collage",
+    "photos": 5,
+    "textLabel": "Your Names",
+    "textPlaceholder": "Your Names",
+    "textColor": "#f0f4f5",
+    "photoLayouts": [
+      {
+        "x": 15.294,
+        "y": 28.571,
+        "width": 17.255,
+        "height": 30.476
+      },
+      {
+        "x": 16.078,
+        "y": 70.476,
+        "width": 17.255,
+        "height": 30.476
+      },
+      {
+        "x": 50.0,
+        "y": 72.857,
+        "width": 18.824,
+        "height": 31.429
+      },
+      {
+        "x": 82.745,
+        "y": 28.571,
+        "width": 17.255,
+        "height": 30.476
+      },
+      {
+        "x": 82.745,
+        "y": 70.476,
+        "width": 17.255,
+        "height": 30.476
+      }
+    ],
+    "textLayout": {
+      "x": 50.0,
+      "y": 41.429,
+      "width": 26.667,
+      "height": 10.952
+    }
+  },
+  {
+    "code": "CW-LV-012",
+    "slug": "minimal-always-us",
+    "name": "Minimal Always Us",
+    "photos": 1,
+    "textLabel": "Your Names",
+    "textPlaceholder": "Your Names",
+    "textColor": "#8f5542",
+    "photoLayouts": [
+      {
+        "x": 18.824,
+        "y": 47.619,
+        "width": 25.882,
+        "height": 62.857
+      }
+    ],
+    "textLayout": {
+      "x": 53.725,
+      "y": 56.19,
+      "width": 28.235,
+      "height": 11.429
+    }
+  },
+  {
+    "code": "CW-LV-013",
+    "slug": "burgundy-heart-collage",
+    "name": "Burgundy Heart Collage",
+    "photos": 3,
+    "textLabel": "Your Names",
+    "textPlaceholder": "Your Names",
+    "textColor": "#f5d28b",
+    "photoLayouts": [
+      {
+        "x": 17.843,
+        "y": 49.524,
+        "width": 20.392,
+        "height": 72.381
+      },
+      {
+        "x": 81.569,
+        "y": 28.571,
+        "width": 18.431,
+        "height": 37.143
+      },
+      {
+        "x": 81.569,
+        "y": 72.857,
+        "width": 18.431,
+        "height": 37.143
+      }
+    ],
+    "textLayout": {
+      "x": 49.412,
+      "y": 56.19,
+      "width": 27.451,
+      "height": 11.429
+    }
+  }
+]
