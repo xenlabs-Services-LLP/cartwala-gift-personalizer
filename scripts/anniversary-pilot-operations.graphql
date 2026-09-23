@@ -1,0 +1,59 @@
+query AnniversaryCollection($query: String!) {
+  collections(first: 5, query: $query) {
+    nodes { id handle products(first: 250) { nodes { id } } }
+  }
+}
+
+query AnniversaryProduct($query: String!) {
+  products(first: 5, query: $query) {
+    nodes {
+      id
+      handle
+      tags
+      variants(first: 10) { nodes { id } }
+      personalizer: metafield(namespace: "cartwala_personalizer", key: "personalizer_config") { jsonValue }
+    }
+  }
+}
+
+mutation CreateAnniversaryProduct($product: ProductCreateInput!) {
+  productCreate(product: $product) {
+    product { id handle tags variants(first: 10) { nodes { id } } }
+    userErrors { field message }
+  }
+}
+
+mutation StageAnniversaryAsset($input: [StagedUploadInput!]!) {
+  stagedUploadsCreate(input: $input) {
+    stagedTargets { url resourceUrl parameters { name value } }
+    userErrors { field message }
+  }
+}
+
+mutation RegisterAnniversaryFile($files: [FileCreateInput!]!) {
+  fileCreate(files: $files) {
+    files { id fileStatus ... on MediaImage { image { url } } ... on GenericFile { url } }
+    userErrors { field message }
+  }
+}
+
+mutation AddAnniversaryProducts($id: ID!, $productIds: [ID!]!) {
+  collectionAddProducts(id: $id, productIds: $productIds) {
+    collection { id handle }
+    userErrors { field message }
+  }
+}
+
+mutation SaveAnniversaryConfig($metafields: [MetafieldsSetInput!]!) {
+  metafieldsSet(metafields: $metafields) {
+    metafields { id key }
+    userErrors { field message code }
+  }
+}
+
+mutation UpdateAnniversaryVariants($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+  productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+    productVariants { id }
+    userErrors { field message }
+  }
+}
