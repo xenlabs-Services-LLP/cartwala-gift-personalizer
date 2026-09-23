@@ -1,0 +1,33 @@
+[
+  {
+    "code": "CW-AN-001",
+    "slug": "champagne-ribbon-vows",
+    "name": "Champagne Ribbon Vows",
+    "title": "HAPPY ANNIVERSARY",
+    "quote": "Together is our favourite place to be.",
+    "photos": 2,
+    "textLabel": "Your Message",
+    "textPlaceholder": "Your Message (Optional)",
+    "textColor": "#855843",
+    "photoLayouts": [
+      {
+        "x": 16.275,
+        "y": 49.524,
+        "width": 25.098,
+        "height": 76.19
+      },
+      {
+        "x": 83.725,
+        "y": 49.048,
+        "width": 25.098,
+        "height": 76.19
+      }
+    ],
+    "textLayout": {
+      "x": 50,
+      "y": 69.8,
+      "width": 22.5,
+      "height": 12.5
+    }
+  }
+]
