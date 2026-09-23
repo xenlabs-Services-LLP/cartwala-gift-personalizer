@@ -1793,7 +1793,9 @@
             const customerValue = state.input.value;
             const previewValue = customerValue.trim()
               ? customerValue
-              : state.field.placeholder || state.field.label || "Your Text";
+              : state.field.required
+                ? state.field.placeholder || state.field.label || "Your Text"
+                : "";
             state.textContent.textContent = previewValue;
             state.previewText.hidden = !previewValue;
             state.previewText.classList.toggle(
