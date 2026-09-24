@@ -390,7 +390,7 @@ root.querySelector('#confirmOrder').onclick=async()=>{
   orderStatus.textContent='Connecting previews and print files to your order…';
   const response=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({previewUrls,printUrls,sourceUrls,shirtSizes:people.map(person=>person.size),backPrint:includeBack})});const saved=await response.json();if(!response.ok||!saved.designId)throw new Error(saved.error||'Could not save design');
   const items=people.map((person,i)=>({id:variantIds[i],quantity:1,properties:{'_Cartwala Signature Day Design':saved.designId,'Person':person.name,'T-shirt size':person.size,'_T-shirt preview':previewUrls[i].front}}));
-  const cartResponse=await fetch('/cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});if(!cartResponse.ok)throw new Error('Design saved, but the T-shirts could not be added to cart. Please contact Cartwala before ordering.');
+  const cartResponse=await fetch('/cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});if(!cartResponse.ok){const problem=await cartResponse.json().catch(()=>({}));throw new Error('Design saved, but cart rejected the T-shirts: '+(problem.description||problem.message||'HTTP '+cartResponse.status)+'. Please retry. Your previews are saved.')}
   window.location.assign('/checkout');
  }catch(error){orderStatus.textContent=error.message||'Could not prepare the order. Please try again.'}finally{selected=priorSelected;side=priorSide;draw();confirming=false;button.disabled=false}
 };
