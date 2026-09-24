@@ -6,6 +6,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 import { DESIGN_ATTRIBUTE } from "../lib/signature-day.server";
+import { buildSignatureDayPrintPdf, orderedShirts } from "../lib/signature-day-print-pdf.client";
 type Attribute = { key: string; value: string };
 type PrintItem = {
   orderId: string;
@@ -657,6 +658,17 @@ export default function PrintFilesPage() {
       setWorking("");
     }
   };
+  const downloadSignaturePdf = async (orderName: string, design: typeof designs[string]) => {
+    const pdf = await buildSignatureDayPrintPdf(design);
+    const url = URL.createObjectURL(new Blob([new Uint8Array(pdf)], { type: "application/pdf" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeFile(orderName)}-signature-day-A4-print.pdf`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  };
   return (
     <s-page heading="Print Files">
       <s-section heading="Signature Day T-shirts">
@@ -666,14 +678,20 @@ export default function PrintFilesPage() {
             return <div key={`${order.orderName}:${order.designId}`} style={{padding: 16, border: "1px solid #ddd", marginBottom: 12}}>
               <strong>{order.orderName} · {order.productTitle}</strong>
               <p>{order.financialStatus} · {design?.printUrls.length || 0} T-shirts</p>
-              {design && order.financialStatus === "PAID" ? design.printUrls.map((shirt, index) =>
-                <div key={index} style={{marginBottom: 8}}>
-                  <strong>Shirt {index + 1} · {design.shirtSizes[index]}</strong>{" · "}
-                  <a href={shirt.front} target="_blank" rel="noreferrer">Front A4 print</a>{" · "}
-                  {shirt.back && <><a href={shirt.back} target="_blank" rel="noreferrer">Back print</a>{" · "}</>}
-                  <a href={design.sourceUrls[index]} target="_blank" rel="noreferrer">Original photo</a>{" · "}
-                  <a href={design.previewUrls[index].front} target="_blank" rel="noreferrer">T-shirt preview</a>
-                </div>) : <p>{!design ? "Saved print files not found." : "Files appear after payment."}</p>}
+              {design && order.financialStatus === "PAID" ? <>
+                <button type="button" disabled={Boolean(working)} onClick={() => run(`${order.orderName}:${order.designId}`, () => downloadSignaturePdf(order.orderName, design))}>
+                  {working === `${order.orderName}:${order.designId}` ? "Preparing A4 PDF…" : "Download A4 print PDF (S–XXL)"}
+                </button>
+                <p>Full-page front, followed by the back print for each T-shirt. Sizes are grouped from S to XXL.</p>
+                {orderedShirts(design).map(({shirt, index, size}) =>
+                  <div key={index} style={{marginBottom: 14, borderBottom: "1px solid #eee", paddingBottom: 8}}>
+                    <strong>{size} · Shirt {index + 1}</strong>
+                    <div><a href={shirt.front} target="_blank" rel="noreferrer">Front A4 print</a>{" · "}
+                      <a href={design.previewUrls[index].front} target="_blank" rel="noreferrer">T-shirt preview</a></div>
+                    {shirt.back && <div><a href={shirt.back} target="_blank" rel="noreferrer">Back A4 print</a></div>}
+                    <a href={design.sourceUrls[index]} target="_blank" rel="noreferrer">Original photo</a>
+                  </div>)}
+              </> : <p>{!design ? "Saved print files not found." : "Files appear after payment."}</p>}
             </div>;
           })}
       </s-section>
