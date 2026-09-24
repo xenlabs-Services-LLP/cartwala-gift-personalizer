@@ -276,11 +276,19 @@ async function ensureOriginalUploaded(person,index){
 }
 function fileBlob(canvas,type,quality){return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Could not prepare print image')),type,quality))}
 async function uploadAsset(blob,name){const form=new FormData();form.append('intent','upload');form.append('file',blob,name);const response=await fetch(PROXY,{method:'POST',body:form});const result=await response.json().catch(()=>({}));if(!response.ok||!result.url)throw new Error(result.error||(response.status===404||response.headers.get('content-type')?.indexOf('application/json')===-1?'Photo upload connection is not active on this store yet. Please try again later.':'Could not save '+name+' (HTTP '+response.status+'). Please try again.'));return result.url}
-async function uploadBatchAssets(assets){
+async function uploadBatchAssets(assets,label){
  const total=assets.reduce((size,asset)=>size+asset.blob.size,0);
  if(assets.length===1||total>18*1024*1024)return Promise.all(assets.map(asset=>uploadAsset(asset.blob,asset.name)));
  const form=new FormData();form.append('intent','upload_batch');assets.forEach(asset=>form.append('file',asset.blob,asset.name));
- const response=await fetch(PROXY,{method:'POST',body:form});const result=await response.json().catch(()=>({}));
+ const response=await new Promise((resolve,reject)=>{
+  const xhr=new XMLHttpRequest();xhr.open('POST',PROXY);
+  xhr.upload.onprogress=e=>{if(e.lengthComputable)orderStatus.textContent='Uploading '+label+': '+Math.round(e.loaded/e.total*100)+'% of '+(e.total/1048576).toFixed(1)+' MB';};
+  xhr.upload.onload=()=>{orderStatus.textContent='Shopify processing '+label+'…'};
+  xhr.onload=()=>{let result={};try{result=JSON.parse(xhr.responseText)}catch(_){}resolve({status:xhr.status,ok:xhr.status>=200&&xhr.status<300,result})};
+  xhr.onerror=()=>reject(new Error('Network interrupted while uploading '+label+'. Completed T-shirts are saved; please retry.'));
+  xhr.send(form);
+ });
+ const result=response.result;
  if(response.status===404||result.error==='Invalid upload')return Promise.all(assets.map(asset=>uploadAsset(asset.blob,asset.name)));
  if(!response.ok||!Array.isArray(result.urls)||result.urls.length!==assets.length)throw new Error(result.error||'Could not save the T-shirt print files. Please try again.');
  return result.urls;
@@ -307,23 +315,27 @@ root.querySelector('#confirmOrder').onclick=async()=>{
   let base=null,layout=null;
   if(people.some((_,i)=>!printCache.previews[i]?.front||!printCache.prints[i]?.front||(includeBack&&(!printCache.previews[i]?.back||!printCache.prints[i]?.back))))({base,layout}=await makePrintBase());
   try{
-   let pending=[];
-   async function savePending(){
+   let pending=[],cacheSaveTask=Promise.resolve();const inFlight=[];
+   function savePending(){
     if(!pending.length)return;
     const current=pending;pending=[];
-    orderStatus.textContent='Saving T-shirts '+(current[0].index+1)+(current.length>1?'–'+(current.at(-1).index+1):'')+' of '+people.length+'…';
-    const urls=await uploadBatchAssets(current.flatMap(item=>item.assets));let offset=0;
-    for(const item of current){
-     const values=urls.slice(offset,offset+item.assets.length);offset+=item.assets.length;
-     const print={front:values[0]},preview={front:values[1]};
-     if(includeBack){print.back=values[2];preview.back=values[3]}
-     printCache.prints[item.index]=print;printCache.previews[item.index]=preview;
-     printUrls[item.index]=print;previewUrls[item.index]=preview;
-    }
-    await saveDraft().catch(()=>{});
+    const label='T-shirts '+(current[0].index+1)+(current.length>1?'–'+(current.at(-1).index+1):'')+' of '+people.length;
+    const job=(async()=>{
+     const urls=await uploadBatchAssets(current.flatMap(item=>item.assets),label);let offset=0;
+     for(const item of current){
+      const values=urls.slice(offset,offset+item.assets.length);offset+=item.assets.length;
+      const print={front:values[0]},preview={front:values[1]};
+      if(includeBack){print.back=values[2];preview.back=values[3]}
+      printCache.prints[item.index]=print;printCache.previews[item.index]=preview;
+      printUrls[item.index]=print;previewUrls[item.index]=preview;
+     }
+     cacheSaveTask=cacheSaveTask.then(()=>saveDraft().catch(()=>{}));await cacheSaveTask;
+    })().then(()=>({ok:true}),error=>({ok:false,error}));
+    inFlight.push(job);
    }
+   async function finishOldest(){const completed=await inFlight.shift();if(!completed.ok)throw completed.error}
    for(let i=0;i<people.length;i++){
-    if(printCache.previews[i]?.front&&printCache.prints[i]?.front&&(!includeBack||(printCache.previews[i]?.back&&printCache.prints[i]?.back))){await savePending();previewUrls[i]=printCache.previews[i];printUrls[i]=printCache.prints[i];continue}
+    if(printCache.previews[i]?.front&&printCache.prints[i]?.front&&(!includeBack||(printCache.previews[i]?.back&&printCache.prints[i]?.back))){savePending();previewUrls[i]=printCache.previews[i];printUrls[i]=printCache.prints[i];continue}
     orderStatus.textContent='Preparing T-shirt '+(i+1)+' of '+people.length+'…';
     const frontPrint=await makeFrontPrint(base,layout,i);
     const frontBlob=await fileBlob(frontPrint,'image/jpeg',.9);frontPrint.width=frontPrint.height=0;
@@ -334,12 +346,13 @@ root.querySelector('#confirmOrder').onclick=async()=>{
      side='back';draw();const backPreviewBlob=await fileBlob(canvas,'image/jpeg',.82);
      assets.push({blob:backBlob,name:'signature-back-print-'+(i+1)+'.png'},{blob:backPreviewBlob,name:'signature-shirt-back-'+(i+1)+'.jpg'});
     }
-    if(pending.length&&(pending.reduce((count,item)=>count+item.assets.length,0)+assets.length>4||pending.reduce((size,item)=>size+item.assets.reduce((sum,asset)=>sum+asset.blob.size,0),0)+assets.reduce((sum,asset)=>sum+asset.blob.size,0)>18*1024*1024))await savePending();
+    if(pending.length&&(pending.reduce((count,item)=>count+item.assets.length,0)+assets.length>4||pending.reduce((size,item)=>size+item.assets.reduce((sum,asset)=>sum+asset.blob.size,0),0)+assets.reduce((sum,asset)=>sum+asset.blob.size,0)>18*1024*1024))savePending();
     pending.push({index:i,assets});
-    if(pending.reduce((count,item)=>count+item.assets.length,0)>=4)await savePending();
+    if(pending.reduce((count,item)=>count+item.assets.length,0)>=4)savePending();
+    if(inFlight.length>=2)await finishOldest();
     await new Promise(resolve=>setTimeout(resolve,0));
    }
-   await savePending();
+   savePending();while(inFlight.length)await finishOldest();
   }finally{if(base)base.width=base.height=0}
   orderStatus.textContent='Connecting previews and print files to your order…';
   const response=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({previewUrls,printUrls,sourceUrls,shirtSizes:people.map(person=>person.size),backPrint:includeBack})});const saved=await response.json();if(!response.ok||!saved.designId)throw new Error(saved.error||'Could not save design');
