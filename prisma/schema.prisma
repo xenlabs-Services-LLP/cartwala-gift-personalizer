@@ -33,3 +33,16 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+model SignatureDayDesign {
+  id          String   @id @default(uuid())
+  shop        String
+  previewUrls Json
+  printUrls   Json
+  sourceUrls  Json
+  shirtSizes  Json
+  backPrint   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([shop, createdAt])
+}

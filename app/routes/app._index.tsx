@@ -1574,14 +1574,14 @@ export default function PersonalizerHome() {
               value={config.overlayUrl}
               placeholder="https://cdn.shopify.com/..."
               onInput={(event) =>
-                setConfig({ ...config, overlayUrl: event.currentTarget.value })
+                setConfig({ ...config, overlayUrl: (event.currentTarget.value ?? '') })
               }
             />
             <s-select
               label="Artwork ratio"
               value={config.canvasRatio}
               onChange={(event) =>
-                setConfig({ ...config, canvasRatio: event.currentTarget.value })
+                setConfig({ ...config, canvasRatio: (event.currentTarget.value ?? '') })
               }
             >
               {!["1:1", "2:3", "3:2", "4:5", "5:4"].includes(
@@ -1621,7 +1621,7 @@ export default function PersonalizerHome() {
               onInput={(event) =>
                 setAddCount(
                   clamp(
-                    event.currentTarget.value,
+                    (event.currentTarget.value ?? ''),
                     1,
                     Math.max(1, MAX_FIELDS - config.photoFields.length),
                     1,
@@ -1701,7 +1701,7 @@ export default function PersonalizerHome() {
                   onChange={(event) => {
                     setMugSetup((current) => ({
                       ...current,
-                      category: event.currentTarget.value as MugCategory,
+                      category: (event.currentTarget.value ?? '') as MugCategory,
                     }));
                     setDirty(true);
                   }}
@@ -1717,7 +1717,7 @@ export default function PersonalizerHome() {
                   label="Mug model"
                   value={mugSetup.model}
                   onChange={(event) => {
-                    const model = event.currentTarget.value as MugModel;
+                    const model = (event.currentTarget.value ?? '') as MugModel;
                     const defaults = MUG_MODEL_DEFAULTS[model];
                     setMugSetup((current) => ({
                       ...current,
@@ -1741,7 +1741,7 @@ export default function PersonalizerHome() {
                   onInput={(event) => {
                     setMugSetup((current) => ({
                       ...current,
-                      templateId: event.currentTarget.value
+                      templateId: (event.currentTarget.value ?? '')
                         .toLowerCase()
                         .replace(/[^a-z0-9-]/g, "-"),
                     }));
@@ -1756,7 +1756,7 @@ export default function PersonalizerHome() {
                   onInput={(event) => {
                     setMugSetup((current) => ({
                       ...current,
-                      price: event.currentTarget.value,
+                      price: (event.currentTarget.value ?? ''),
                     }));
                     setDirty(true);
                   }}
@@ -1767,7 +1767,7 @@ export default function PersonalizerHome() {
                   onInput={(event) => {
                     setMugSetup((current) => ({
                       ...current,
-                      compareAtPrice: event.currentTarget.value,
+                      compareAtPrice: (event.currentTarget.value ?? ''),
                     }));
                     setDirty(true);
                   }}
@@ -2043,7 +2043,7 @@ export default function PersonalizerHome() {
               label="Customer-facing label"
               value={field.label}
               onInput={(event) =>
-                updatePhoto(field.id, { label: event.currentTarget.value })
+                updatePhoto(field.id, { label: (event.currentTarget.value ?? '') })
               }
             />
             <s-grid gridTemplateColumns="1fr 1fr 1fr 1fr" gap="base">
@@ -2060,7 +2060,7 @@ export default function PersonalizerHome() {
                     0,
                     100,
                     field.x,
-                    event.currentTarget.value,
+                    (event.currentTarget.value ?? ''),
                   )
                 }
               />
@@ -2077,7 +2077,7 @@ export default function PersonalizerHome() {
                     0,
                     100,
                     field.y,
-                    event.currentTarget.value,
+                    (event.currentTarget.value ?? ''),
                   )
                 }
               />
@@ -2094,7 +2094,7 @@ export default function PersonalizerHome() {
                     2,
                     100,
                     field.width,
-                    event.currentTarget.value,
+                    (event.currentTarget.value ?? ''),
                   )
                 }
               />
@@ -2111,7 +2111,7 @@ export default function PersonalizerHome() {
                     2,
                     100,
                     field.height,
-                    event.currentTarget.value,
+                    (event.currentTarget.value ?? ''),
                   )
                 }
               />
@@ -2121,7 +2121,7 @@ export default function PersonalizerHome() {
               value={field.maskUrl}
               placeholder="Optional transparent mask"
               onInput={(event) =>
-                updatePhoto(field.id, { maskUrl: event.currentTarget.value })
+                updatePhoto(field.id, { maskUrl: (event.currentTarget.value ?? '') })
               }
             />
             <imageFetcher.Form method="post" encType="multipart/form-data">
@@ -2187,7 +2187,7 @@ export default function PersonalizerHome() {
                 label="Customer-facing label"
                 value={field.label}
                 onInput={(event) =>
-                  updateText(field.id, { label: event.currentTarget.value })
+                  updateText(field.id, { label: (event.currentTarget.value ?? '') })
                 }
               />
               <s-text-field
@@ -2195,7 +2195,7 @@ export default function PersonalizerHome() {
                 value={field.placeholder}
                 onInput={(event) =>
                   updateText(field.id, {
-                    placeholder: event.currentTarget.value,
+                    placeholder: (event.currentTarget.value ?? ''),
                   })
                 }
               />
@@ -2214,7 +2214,7 @@ export default function PersonalizerHome() {
                     1,
                     500,
                     field.maxLength,
-                    event.currentTarget.value,
+                    (event.currentTarget.value ?? ''),
                   )
                 }
               />
@@ -2222,7 +2222,7 @@ export default function PersonalizerHome() {
                 label="Default text color"
                 value={field.color}
                 onInput={(event) =>
-                  updateText(field.id, { color: event.currentTarget.value })
+                  updateText(field.id, { color: (event.currentTarget.value ?? '') })
                 }
               />
               <s-number-field
@@ -2238,7 +2238,7 @@ export default function PersonalizerHome() {
                     8,
                     300,
                     field.fontSize,
-                    event.currentTarget.value,
+                    (event.currentTarget.value ?? ''),
                   )
                 }
               />
@@ -2255,7 +2255,7 @@ export default function PersonalizerHome() {
                     -180,
                     180,
                     field.rotation,
-                    event.currentTarget.value,
+                    (event.currentTarget.value ?? ''),
                   )
                 }
               />
@@ -2274,7 +2274,7 @@ export default function PersonalizerHome() {
                     0,
                     100,
                     field.x,
-                    event.currentTarget.value,
+                    (event.currentTarget.value ?? ''),
                   )
                 }
               />
@@ -2291,7 +2291,7 @@ export default function PersonalizerHome() {
                     0,
                     100,
                     field.y,
-                    event.currentTarget.value,
+                    (event.currentTarget.value ?? ''),
                   )
                 }
               />
@@ -2308,7 +2308,7 @@ export default function PersonalizerHome() {
                     2,
                     100,
                     field.width,
-                    event.currentTarget.value,
+                    (event.currentTarget.value ?? ''),
                   )
                 }
               />
@@ -2325,7 +2325,7 @@ export default function PersonalizerHome() {
                     2,
                     100,
                     field.height,
-                    event.currentTarget.value,
+                    (event.currentTarget.value ?? ''),
                   )
                 }
               />
@@ -2334,7 +2334,7 @@ export default function PersonalizerHome() {
                 value={field.fontFamily}
                 onChange={(event) =>
                   updateText(field.id, {
-                    fontFamily: event.currentTarget.value,
+                    fontFamily: (event.currentTarget.value ?? ''),
                   })
                 }
               >
@@ -2356,7 +2356,7 @@ export default function PersonalizerHome() {
               value={field.alignment}
               onChange={(event) =>
                 updateText(field.id, {
-                  alignment: event.currentTarget.value as TextField["alignment"],
+                  alignment: (event.currentTarget.value ?? '') as TextField["alignment"],
                 })
               }
             >
@@ -2444,7 +2444,7 @@ export default function PersonalizerHome() {
               label="Customer-facing label"
               value={field.label}
               onInput={(event) =>
-                updateFile(field.id, { label: event.currentTarget.value })
+                updateFile(field.id, { label: (event.currentTarget.value ?? '') })
               }
             />
             <s-grid gridTemplateColumns="2fr 1fr" gap="base">
@@ -2452,7 +2452,7 @@ export default function PersonalizerHome() {
                 label="Allowed file extensions"
                 value={field.accept}
                 onInput={(event) =>
-                  updateFile(field.id, { accept: event.currentTarget.value })
+                  updateFile(field.id, { accept: (event.currentTarget.value ?? '') })
                 }
               />
               <s-number-field
@@ -2468,7 +2468,7 @@ export default function PersonalizerHome() {
                     1,
                     200,
                     field.maxSizeMb,
-                    event.currentTarget.value,
+                    (event.currentTarget.value ?? ''),
                   )
                 }
               />
@@ -2497,14 +2497,14 @@ export default function PersonalizerHome() {
               label="Customer-facing label"
               value={field.label}
               onInput={(event) =>
-                updateLink(field.id, { label: event.currentTarget.value })
+                updateLink(field.id, { label: (event.currentTarget.value ?? '') })
               }
             />
             <s-text-field
               label="Placeholder"
               value={field.placeholder}
               onInput={(event) =>
-                updateLink(field.id, { placeholder: event.currentTarget.value })
+                updateLink(field.id, { placeholder: (event.currentTarget.value ?? '') })
               }
             />
             <s-switch

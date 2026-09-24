@@ -21,7 +21,12 @@ api_version = "2026-07"
   uri = "/webhooks/app/scopes_update"
 
 [access_scopes]
-scopes = "read_files,read_orders,read_products,write_files,write_products"
+scopes = "read_files,read_orders,read_products,write_files,write_products,write_app_proxy"
+
+[app_proxy]
+url = "/signature-day"
+prefix = "apps"
+subpath = "cartwala-signature-day"
 
 [auth]
 redirect_urls = [ "https://cartwala-gift-personalizer.fly.dev/auth/callback" ]
