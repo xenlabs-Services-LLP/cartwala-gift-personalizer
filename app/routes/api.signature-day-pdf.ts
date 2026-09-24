@@ -4,7 +4,7 @@ import { makeCustomerPdf, paidOrderDesigns, verifyPdfToken } from "../lib/signat
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const token = verifyPdfToken(new URL(request.url).searchParams.get("token") || "");
   if (!token) return new Response("This download link has expired", { status: 403 });
-  const designs = await paidOrderDesigns(token.shop, token.orderId, token.customerId);
+  const designs = await paidOrderDesigns(token.shop, token.orderId, token.customerId, token.checkoutToken);
   if (!designs.length) return new Response("Preview not available", { status: 404 });
   const pdf = await makeCustomerPdf(designs);
   const orderNumber = token.orderId.split("/").pop();

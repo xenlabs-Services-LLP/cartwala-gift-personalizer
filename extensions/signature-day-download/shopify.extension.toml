@@ -10,5 +10,9 @@ uid = "a14e4b58-8d06-428d-91ab-520495b8957b"
 target = "customer-account.order-status.block.render"
 module = "./src/OrderStatus.tsx"
 
+[[extensions.targeting]]
+target = "purchase.thank-you.customer-information.render-after"
+module = "./src/ThankYou.tsx"
+
 [extensions.capabilities]
 network_access = true

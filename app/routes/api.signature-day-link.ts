@@ -15,6 +15,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const designs = await paidOrderDesigns(shop, orderId, customerGid);
   if (!designs.length) return cors(Response.json({ available: false }));
   const download = new URL("/api/signature-day-pdf", process.env.SHOPIFY_APP_URL);
-  download.searchParams.set("token", signedPdfToken(shop, orderId, customerGid));
+  download.searchParams.set("token", signedPdfToken(shop, orderId, { customerId: customerGid }));
   return cors(Response.json({ available: true, downloadUrl: download.toString() }));
 };
