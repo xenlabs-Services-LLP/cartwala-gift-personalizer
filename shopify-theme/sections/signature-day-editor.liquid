@@ -1,0 +1,406 @@
+<div id="signature-day-store">
+  <section class="product-intro" id="productIntro">
+   <div class="product-photo"><img src="https://cdn.shopify.com/s/files/1/0803/7931/4361/files/signature-day-white-shirt-mockup.png?v=1790180938" alt="White Signature Day T-shirt front mockup" width="760" height="728"></div>
+   <div class="product-details">
+    <h1>{{ product.title | escape }}</h1>
+    <p>A4 photo collage on a white T-shirt. Upload one photo for each T-shirt and choose a different main photo for each person.</p>
+    <div class="product-offer"><span class="regular-price">₹250</span><strong>₹150 per T-shirt</strong><span>For 1–10 T-shirts</span></div>
+    <div class="product-tier"><strong>11 or more T-shirts: ₹130 each</strong><span>The lower price applies to every T-shirt in the order.</span></div>
+    <div class="product-tier"><strong>Optional back print: +₹30 per T-shirt</strong><span>Choose it for the whole order or leave every back blank.</span></div>
+    <p class="product-count" id="productCount" aria-live="polite">The order total is calculated from the number of photos you upload.</p>
+    <button class="next customize-button" id="customizeNow" type="button">Customize Now</button>
+   </div>
+  </section>
+  <div class="editor" id="editor" hidden>
+  <button class="back-to-product" id="backToProduct" type="button">← Product details</button>
+  <h2 class="sd-heading">Customize {{ product.title | escape }}</h2>
+  <p class="sd-subheading">A4 group collage preview · one uploaded photo = one T-shirt</p>
+  <div class="sd-main">
+ <section class="panel" id="setup">
+  <h2>One class, one design per person</h2>
+  <p>Every photo appears around the collage. Choose a person to see their portrait highlighted in the center of their T-shirt.</p>
+  <label>Try a group size</label><div class="presets"><button id="p15" type="button">15 people</button><button id="p30" type="button">30 people</button></div>
+  <label for="files">Add your group's photos</label>
+  <input class="photo-input" id="files" type="file" accept="image/*" aria-label="Add one photo from your phone">
+  <label class="files-upload" for="filesFallback">Add several photos from Files</label><input class="photo-input" id="filesFallback" type="file" accept=".jpg,.jpeg,.png,.webp" multiple>
+  <button type="button" id="resetDesign" class="reset-design">Reset all photos and design</button>
+  <p class="status" id="uploadStatus" role="status">Upload photos in any shape. The design crops every tile to one matching ratio between 1:1 and 2:3; the middle photo uses the same ratio at four times the width and height. On your phone, use Chrome if the picker closes inside ChatGPT.</p>
+  <section class="back-config" id="backConfig">
+   <h3>Back print for the whole order</h3>
+   <label class="back-order-toggle"><input type="checkbox" id="includeBack"> Add back print to every T-shirt (+₹30 each)</label>
+   <p>All T-shirts in this group have the same front/back choice. Select the details only if you want back printing.</p>
+   <div class="back-choices" id="backChoices" hidden>
+    <label><input type="checkbox" data-back-field="college"> College name</label>
+    <label><input type="checkbox" data-back-field="name"> Student name</label>
+    <label><input type="checkbox" data-back-field="roll"> Roll number</label>
+    <label><input type="checkbox" data-back-field="group"> Group name</label>
+    <label><input type="checkbox" data-back-field="year"> Academic year</label>
+   </div>
+   <div class="back-shared" id="backShared" hidden>
+    <label data-shared="college">College name <input type="text" data-back-value="college" maxlength="70" placeholder="Enter college name"></label>
+    <label data-shared="group">Group name <input type="text" data-back-value="group" maxlength="50" placeholder="Enter group name"></label>
+    <label data-shared="year">Academic year <input type="text" data-back-value="year" maxlength="30" placeholder="For example, 2025–2026"></label>
+   </div>
+   <p class="back-help" id="backHelp" hidden>For individual names and roll numbers, use the photo list below. Back printing applies to every shirt.</p>
+   <p class="back-validation" id="backValidation" role="alert" hidden></p>
+  </section>
+  <div class="pricing" aria-live="polite"><strong>Price estimate</strong><div id="priceSummary"></div><small>Regular front price: ₹250 per shirt. 1–10 shirts: ₹150 each; 11+ shirts: ₹130 each. Back print: +₹30 per shirt when selected for the whole order.</small></div>
+  <p class="notice">This preview stays in your browser. Sample portraits are colored placeholders; upload your photos to calculate the order price.</p>
+  <div class="counts" id="counts"></div>
+  <div class="roster" id="roster"></div>
+  <button class="next" id="nextStep" type="button">Next: preview T-shirts →</button>
+ </section>
+ <section class="stage" id="previews" tabindex="-1" hidden>
+  <div class="toolbar"><strong id="previewTitle"></strong><button type="button" id="download">Save this T-shirt preview</button></div>
+  <div class="price-inline" id="previewPrice" aria-live="polite"></div>
+  <div class="side-tabs" role="group" aria-label="T-shirt side"><button id="frontView" type="button" aria-pressed="true">Front</button><button id="backView" type="button" aria-pressed="false">Back</button></div>
+  <canvas id="preview" width="1200" height="1400" aria-label="T-shirt preview"></canvas>
+  <p class="back-preview-note" id="backPreviewNote" role="status" hidden></p>
+  <div class="preview-nav"><button type="button" id="cropCenter">Crop selected person's photo</button><button type="button" id="previousShirt">← Previous T-shirt</button><button type="button" id="nextShirt">Next T-shirt →</button><button type="button" id="backToPhotos">Change photos / sizes</button></div>
+  <button class="next review-button" id="reviewOrder" type="button">Check previews and total →</button>
+  <p class="notice">Front collage: A4 proportion (210 × 297 mm). The back text layout is a visual preview; its final print size, placement and order integration need production testing.</p>
+ </section>
+</div>
+<section class="review-panel" id="orderReview" tabindex="-1" hidden>
+ <h2>Review your T-shirts</h2>
+ <p>Check every front and back preview before confirming the design.</p>
+ <div id="reviewSummary"></div>
+ <button type="button" id="returnToPreview">← Check previews again</button>
+ <button type="button" class="next" id="confirmOrder">Add T-shirts to cart</button>
+ <p class="status" id="orderStatus" role="status">Your original photos and print files will be saved before checkout opens.</p>
+</section>
+</div>
+
+<dialog id="cropDialog" class="crop-dialog" aria-labelledby="cropTitle">
+ <h2 id="cropTitle">Adjust photo</h2>
+ <p>Drag to position the face. Zoom in or out, then save. This crop is used in the collage and the center portrait.</p>
+ <canvas id="cropCanvas" width="340" height="440" aria-label="Photo crop area"></canvas>
+ <label for="cropZoom">Zoom</label><input id="cropZoom" type="range" min="1" max="3" step="0.02" value="1">
+ <div class="crop-actions"><button type="button" id="cropReset">Reset</button><button type="button" id="cropCancel">Cancel</button><button type="button" id="cropSave" class="next">Save crop</button></div>
+</dialog>
+<dialog id="savedDialog" class="crop-dialog" aria-labelledby="savedTitle">
+ <h2 id="savedTitle">Preview ready to save</h2>
+ <p id="saveMessage">On iPhone, touch and hold the image below, then choose Save to Photos. You can also tap Download PNG.</p>
+ <img id="savedImage" class="saved-image" alt="Saved T-shirt preview" width="280" height="327">
+ <a id="downloadLink" class="download-link" download="signature-day-preview.png">Download PNG</a>
+ <button id="savedClose" type="button" style="margin-top:10px;width:100%">Close</button>
+</dialog>
+
+</div>
+<style>
+@scope (#signature-day-store) {
+
+#signature-day-store{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#191919;background:#f5f5f5}*{box-sizing:border-box}
+.editor[hidden],.product-intro[hidden]{display:none}.product-intro{max-width:1160px;margin:28px auto;padding:24px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:32px;align-items:center;background:#fff;border:1px solid #e5e5e5;border-radius:18px}.product-photo{background:#f2efec;border-radius:14px;padding:16px}.product-photo img{display:block;width:100%;height:auto;object-fit:contain;background:#fff}.product-details h1{font-size:clamp(1.6rem,3vw,2.4rem);line-height:1.2;margin:0 0 12px}.product-details p{color:#555}.product-offer{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:22px 0 12px}.product-offer strong{font-size:1.55rem;color:#a74200}.regular-price{text-decoration:line-through;color:#777}.product-offer>span:last-child{width:100%;color:#555}.product-tier{display:grid;gap:4px;padding:13px 0;border-top:1px solid #e6e6e6}.product-tier span{color:#555}.product-count{padding:10px 12px;background:#fff5eb;border-radius:8px}.customize-button{font-size:1.1rem;max-width:360px;padding:14px 20px}.back-to-product{margin:20px max(24px,calc((100vw - 1320px)/2)) 0}
+.review-button{max-width:430px}.review-panel{max-width:920px;margin:20px auto;padding:24px;background:#fff;border:1px solid #ddd;border-radius:16px}.review-panel[hidden]{display:none}.review-panel h2{margin:0}.review-panel dl{display:grid;grid-template-columns:1fr auto;gap:10px;margin:16px 0 20px}.review-panel dt,.review-panel dd{margin:0;padding:8px 0;border-bottom:1px solid #eee}.review-panel dd{text-align:right;font-weight:650}.review-panel .review-total{font-size:1.2rem;color:#a74200;font-weight:750}.review-panel button{margin-top:6px}
+header{background:#fff;border-bottom:1px solid #ddd;padding:16px max(20px,calc((100vw - 1320px)/2))}
+header strong{font-size:1.25rem}header span{color:#666;margin-left:12px}
+.sd-main{max-width:1320px;margin:auto;padding:24px;display:grid;grid-template-columns:340px minmax(0,1fr);gap:24px}
+.panel,.stage{background:#fff;border:1px solid #ddd;border-radius:16px;padding:22px}.panel{align-self:start}
+h1{font-size:1.35rem;margin:0 0 10px}p{line-height:1.5;color:#555;margin:8px 0 16px}
+label{display:block;font-weight:650;margin:16px 0 7px}.presets{display:flex;gap:8px}
+button{border:1px solid #d1d1d1;background:#fff;color:#222;border-radius:10px;padding:11px 14px;font:inherit;cursor:pointer}
+button[aria-pressed=true],button:hover{border-color:#ed7100;background:#fff2e8}
+.photo-input{display:block;width:100%;max-width:100%;font:inherit;color:#333;padding:9px;border:1px solid #ddd;border-radius:10px;background:#fff}
+.photo-input::file-selector-button{background:#f47700;color:#fff;border:0;border-radius:8px;padding:12px 15px;font:inherit;font-weight:700;margin-right:10px}
+.files-upload{margin-top:12px}
+.reset-design{margin-top:12px;color:#9b3500;border-color:#e8bca7}
+.next{display:block;width:100%;background:#f47700;color:#fff;border:0;font-weight:750;margin-top:12px}.next:hover{background:#d86100;color:#fff}
+.status{min-height:1.4em;color:#60400d;font-size:.94rem}.preview-nav{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.roster{max-height:420px;overflow:auto;margin-top:15px}.person{display:grid;grid-template-columns:34px minmax(0,1fr) 51px 51px 66px;align-items:center;gap:4px;width:100%;text-align:left;margin:5px 0;padding:5px}
+.person.active{border-color:#eb6c00;background:#fff0e3}.avatar{height:34px;width:34px;border-radius:6px;object-fit:cover;display:grid;place-items:center;color:#fff;font-weight:700}
+.person select{width:65px;padding:5px;border:1px solid #ddd;border-radius:5px;background:white}.person button{padding:7px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.78rem}
+.person.swapping,.person .swap-button[aria-pressed=true]{border-color:#ed7100;background:#fff0e3}.person .swap-button{color:#af5400;border-color:#ed7100}
+.person .crop-button{padding:7px 3px;color:#af5400;border-color:#ed7100}.crop-dialog{max-width:min(94vw,440px);border:0;border-radius:16px;padding:20px;box-shadow:0 20px 80px #0006}.crop-dialog::backdrop{background:#0009}.crop-dialog h2{margin:0 0 8px;font-size:1.15rem}.crop-dialog canvas{display:block;width:min(100%,340px);height:auto;touch-action:none;background:#ddd;margin:12px auto;border-radius:8px}.crop-actions{display:flex;gap:8px;flex-wrap:wrap}.crop-actions button{flex:1}.crop-dialog input[type=range]{width:100%;accent-color:#f47700}
+.back-config{margin:18px 0;padding:14px;border:1px solid #e5d2c4;border-radius:12px;background:#fffaf6}.back-config h3{margin:0 0 8px}.back-order-toggle{display:flex;align-items:center;gap:8px;margin:10px 0}.back-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.back-choices label{display:flex;align-items:center;gap:7px;margin:0;font-size:.9rem}.back-choices input,.back-order-toggle input{accent-color:#ed7100}.back-shared label{margin:12px 0}.back-shared input,.person-back input[type=text]{display:block;width:100%;min-width:0;margin-top:5px;padding:9px;border:1px solid #ccc;border-radius:7px;font:inherit}.back-help{font-size:.85rem;margin:10px 0 0}.back-validation{color:#a32300;font-weight:650}.person-back{grid-column:1/-1;display:grid;gap:7px;padding:8px 4px;border-top:1px solid #eee}.person-back .personal-field{display:block;margin:0}.side-tabs{display:flex;gap:8px;align-self:stretch}.side-tabs button{flex:1}.back-preview-note{margin:0;text-align:center;color:#555}.pricing{background:#fff5eb;border:1px solid #ffd3a9;border-radius:10px;padding:12px}.pricing strong{display:block;margin-bottom:6px}.pricing small{display:block;margin-top:6px;color:#555;line-height:1.4}.price-inline{align-self:stretch;padding:10px;border-radius:8px;background:#fff5eb;text-align:center;font-weight:650}
+.back-shared label[hidden]{display:none}
+.back-choices[hidden],.back-shared[hidden],.back-help[hidden],.back-validation[hidden]{display:none}
+.saved-image{display:block;width:min(75vw,280px);max-height:55vh;object-fit:contain;margin:12px auto}.download-link{display:block;text-align:center;background:#f47700;color:#fff;border-radius:10px;padding:12px;text-decoration:none;font-weight:700}
+.stage{display:flex;flex-direction:column;align-items:center;gap:13px}.stage[hidden]{display:none}.toolbar{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.toolbar strong{font-size:1.1rem}.stage canvas{max-width:min(100%,640px);height:auto;box-shadow:0 8px 32px #0002;background:#fff}
+.notice{font-size:.88rem;color:#666}.counts{background:#fff5eb;padding:10px;border-radius:8px;font-size:.9rem}
+@media(max-width:850px){.product-intro{display:block;margin:12px;padding:14px}.product-photo{padding:8px}.product-details{padding:18px 4px 4px}.sd-main{display:block;padding:14px}.stage{margin-top:14px}.roster{max-height:250px}}
+
+.sd-heading{max-width:1320px;margin:0 auto;padding:24px 24px 0;font-size:1.7rem}.sd-subheading{max-width:1320px;margin:0 auto;padding:0 24px;color:#555}
+}
+</style>
+<script type="application/json" id="signatureDayVariants">{{ product.variants | json }}</script>
+<script>
+(()=>{const root=document.getElementById('signature-day-store');if(!root)return;
+
+const canvas=root.querySelector('#preview'),ctx=canvas.getContext('2d');
+const shirtImage=new Image();shirtImage.crossOrigin='anonymous';shirtImage.onload=()=>draw();shirtImage.src='https://cdn.shopify.com/s/files/1/0803/7931/4361/files/signature-day-white-shirt-mockup.png?v=1790180938';
+const backImage=new Image();backImage.crossOrigin='anonymous';backImage.onload=()=>draw();backImage.src='https://cdn.shopify.com/s/files/1/0803/7931/4361/files/signature-day-white-shirt-back-mockup.png?v=1790234914';
+const roster=root.querySelector('#roster'),counts=root.querySelector('#counts');
+const colors=['#a33c36','#26829a','#a27631','#855c99','#468269','#244d9b','#ac5d83','#755731'];
+let people=[],selected=0,hasUploaded=false,sideOrder=[],swapFrom=null,side='front',includeBack=false;
+const backFields={college:false,name:false,roll:false,group:false,year:false},backValues={college:'',group:'',year:''};
+function openEditor(open){root.querySelector('#productIntro').hidden=open;root.querySelector('#editor').hidden=!open;(open?root.querySelector('#editor'):root.querySelector('#productIntro')).scrollIntoView({behavior:'smooth',block:'start'})}
+root.querySelector('#customizeNow').onclick=()=>openEditor(true);
+root.querySelector('#backToProduct').onclick=()=>openEditor(false);
+function sample(n){hasUploaded=false;people=Array.from({length:n},(_,i)=>({name:'Person '+String(i+1).padStart(2,'0'),size:'M',image:null,color:colors[i%colors.length],backName:'',roll:''}));sideOrder=people.map((_,i)=>i);swapFrom=null;selected=0;render()}
+function renderPrice(){const units=hasUploaded?people.length:0,front=units>10?130:150,back=includeBack?30:0,total=units*(front+back);const summary=units?units+' shirts × (₹'+front+' front'+(back?' + ₹30 back':'')+') = ₹'+total.toLocaleString('en-IN'):'Upload photos to calculate the order price';root.querySelector('#priceSummary').textContent=summary;root.querySelector('#previewPrice').textContent=summary+(units?' · Regular front total ₹'+(units*250).toLocaleString('en-IN'):' · Sample preview');root.querySelector('#productCount').textContent=units?summary:'The order total is calculated from the number of photos you upload.'}
+function cropSource(image,w,h,crop){const base=Math.max(w/image.width,h/image.height),zoom=crop?.zoom||1,sw=w/(base*zoom),sh=h/(base*zoom);const cx=Math.max(sw/2,Math.min(image.width-sw/2,(crop?.cx??.5)*image.width)),cy=Math.max(sh/2,Math.min(image.height-sh/2,(crop?.cy??.5)*image.height));return {sx:cx-sw/2,sy:cy-sh/2,sw,sh}}
+function cover(image,x,y,w,h,crop,target=ctx){const c=cropSource(image,w,h,crop);target.drawImage(image,c.sx,c.sy,c.sw,c.sh,x,y,w,h)}
+function tile(person,x,y,w,h){ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();if(person.image)cover(person.image,x,y,w,h,person.crop);else{ctx.fillStyle=person.color;ctx.fillRect(x,y,w,h);ctx.fillStyle='#fff';ctx.font='700 '+Math.round(Math.min(w,h)*.33)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(person.name.match(/\d+/)?.[0]||'?',x+w/2,y+h/2)}ctx.restore();ctx.strokeStyle='#fff';ctx.lineWidth=5;ctx.strokeRect(x,y,w,h)}
+function collageGrid(n){if(n<=20)return {cols:6,rows:6};if(n<=32)return {cols:6,rows:8};if(n<=48)return {cols:8,rows:8};if(n<=64)return {cols:8,rows:10};let cols=10,rows=10;while(cols*rows-16<n){if(rows/cols<1.2)rows+=2;else cols+=2}return {cols,rows}}
+function cornerPhotoIndex(index,gapCount){const step=Math.max(1,Math.floor(people.length/gapCount));return sideOrder[(index*step+Math.floor(step/2))%people.length]}
+function esc(text){return String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function dimensionArrow(x1,y1,x2,y2,label,vertical=false){ctx.save();ctx.strokeStyle='#bb4d00';ctx.fillStyle='#bb4d00';ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();const a=Math.atan2(y2-y1,x2-x1),head=13;for(const [px,py,angle] of [[x1,y1,a],[x2,y2,a+Math.PI]]){ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+head*Math.cos(angle+.55),py+head*Math.sin(angle+.55));ctx.lineTo(px+head*Math.cos(angle-.55),py+head*Math.sin(angle-.55));ctx.closePath();ctx.fill()}const mx=(x1+x2)/2,my=(y1+y2)/2;ctx.font='700 28px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';if(vertical){ctx.translate(mx+19,my);ctx.rotate(-Math.PI/2);ctx.fillStyle='#fff';ctx.fillRect(-83,-20,166,40);ctx.fillStyle='#a43d00';ctx.fillText(label,0,0)}else{ctx.fillStyle='#fff';ctx.fillRect(mx-80,my-20,160,40);ctx.fillStyle='#a43d00';ctx.fillText(label,mx,my)}ctx.restore()}
+function drawBack(){ctx.clearRect(0,0,1200,1400);ctx.fillStyle='#e4e1dd';ctx.fillRect(0,0,1200,1400);if(backImage.complete&&backImage.naturalWidth)ctx.drawImage(backImage,30,92,1140,1092);else{ctx.fillStyle='#fff';ctx.fillRect(205,130,790,1045)}
+ const person=people[selected],lines=[];if(includeBack){if(backFields.college&&backValues.college.trim())lines.push({text:backValues.college.trim(),size:32,weight:650});if(backFields.group&&backValues.group.trim())lines.push({text:backValues.group.trim(),size:42,weight:750});if(backFields.name&&person.backName?.trim())lines.push({text:person.backName.trim(),size:52,weight:750});if(backFields.roll&&person.roll?.trim())lines.push({text:'Roll No: '+person.roll.trim(),size:31,weight:600});if(backFields.year&&backValues.year.trim())lines.push({text:backValues.year.trim(),size:29,weight:600})}
+ const note=root.querySelector('#backPreviewNote');note.hidden=false;note.textContent=lines.length?'Back print for '+person.name+'. Only the selected details with text are shown.':'Blank back for '+(person?.name||'this shirt')+'.';
+ let y=470;for(const line of lines){let size=line.size;ctx.font=line.weight+' '+size+'px system-ui';while(ctx.measureText(line.text).width>455&&size>20){size-=2;ctx.font=line.weight+' '+size+'px system-ui'}ctx.fillStyle='#171717';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(line.text,600,y,455);y+=Math.max(60,size+19)}
+ ctx.fillStyle='#4b4b4b';ctx.font='600 25px system-ui';ctx.textAlign='center';ctx.fillText((person?.name||'')+' · back · size '+(person?.size||'M'),600,1260)}
+function draw(){root.querySelector('#frontView').setAttribute('aria-pressed',side==='front');root.querySelector('#backView').setAttribute('aria-pressed',side==='back');root.querySelector('#cropCenter').hidden=side==='back';if(side==='back'){drawBack();return}root.querySelector('#backPreviewNote').hidden=true;const W=1200,H=1400;ctx.clearRect(0,0,W,H);ctx.fillStyle='#e4e1dd';ctx.fillRect(0,0,W,H);
+ // Keep the A4 artwork within the real shirt, with visible fabric on all four sides.
+ if(shirtImage.complete&&shirtImage.naturalWidth){ctx.drawImage(shirtImage,30,92,1140,1092)}else{ctx.fillStyle='#fff';ctx.fillRect(205,130,790,1045)}
+ const n=people.length,{cols,rows}=collageGrid(n),center=4,w=390,h=552,x=405,y=395,cellW=w/cols,cellH=h/rows;
+ const centerCol=(cols-center)/2,centerRow=(rows-center)/2,slots=[];
+ ctx.fillStyle='#fff';ctx.fillRect(x,y,w,h);
+ for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+  if(row>=centerRow&&row<centerRow+center&&col>=centerCol&&col<centerCol+center)continue;
+  slots.push({row,col,x:x+col*cellW,y:y+row*cellH});
+ }
+ // Use equal aspect ratios. Repeat surrounding portraits in spare corner cells so the print has no blank tiles.
+ const cornerDistance=slot=>Math.min(slot.row,rows-1-slot.row)**2+Math.min(slot.col,cols-1-slot.col)**2;
+ const gaps=new Set([...slots].sort((a,b)=>cornerDistance(a)-cornerDistance(b)).slice(0,slots.length-n));
+ const filled=slots.filter(slot=>!gaps.has(slot));
+ sideOrder.forEach((personIndex,i)=>{const slot=filled[i];tile(people[personIndex],slot.x,slot.y,cellW,cellH)});
+ [...gaps].forEach((slot,i)=>tile(people[cornerPhotoIndex(i,gaps.size)],slot.x,slot.y,cellW,cellH));
+ const focus=people[selected],focusX=x+centerCol*cellW,focusY=y+centerRow*cellH;
+ ctx.fillStyle='#fff';ctx.fillRect(focusX,focusY,center*cellW,center*cellH);
+ if(focus)tile(focus,focusX,focusY,center*cellW,center*cellH);
+ ctx.strokeStyle='#ddd';ctx.lineWidth=2;ctx.strokeRect(x,y,w,h);
+ dimensionArrow(x,y-27,x+w,y-27,'8.27 in');dimensionArrow(x+w+35,y,x+w+35,y+h,'11.69 in',true);
+ ctx.font='600 25px system-ui';ctx.textAlign='center';ctx.fillStyle='#4b4b4b';ctx.fillText((focus?.name||'')+' · '+n+' photos · size '+(focus?.size||'M'),600,1260);
+ }
+function swapPhoto(i){if(swapFrom===null){swapFrom=i;render();status.textContent='Choose another photo’s Swap button to exchange its position with '+people[i].name+'. Tap the same button to cancel.';return}if(swapFrom===i){swapFrom=null;render();status.textContent='Swap cancelled.';return}const from=swapFrom,a=sideOrder.indexOf(from),b=sideOrder.indexOf(i);[sideOrder[a],sideOrder[b]]=[sideOrder[b],sideOrder[a]];swapFrom=null;render();status.textContent=people[from].name+' and '+people[i].name+' swapped in the collage.';saveDraft().catch(()=>{status.textContent+=' Save a PNG before closing; browser draft storage failed.'})}
+function render(){root.querySelector('#p15').setAttribute('aria-pressed',!hasUploaded&&people.length===15);root.querySelector('#p30').setAttribute('aria-pressed',!hasUploaded&&people.length===30);counts.textContent=people.length+(hasUploaded?' uploaded photos → ':' sample portraits → ')+people.length+' unique center-photo designs';root.querySelector('#previewTitle').textContent=(people[selected]?.name||'')+' — shirt '+(selected+1)+' of '+people.length;
+ roster.replaceChildren();people.forEach((p,i)=>{
+  const row=document.createElement('div');row.className='person'+(i===selected?' active':'')+(i===swapFrom?' swapping':'');const portrait=p.image?'<img class="avatar" src="'+p.image.src+'" alt="">':'<span class="avatar" style="background:'+p.color+'">'+(i+1)+'</span>';
+  row.innerHTML=portrait+'<button type="button" aria-label="Preview '+esc(p.name)+'">'+esc(p.name)+'</button><button class="crop-button" type="button" '+(p.image?'':'disabled')+' aria-label="Crop '+esc(p.name)+'">Crop</button><button class="swap-button" type="button" aria-pressed="'+(i===swapFrom)+'" aria-label="Swap '+esc(p.name)+'">Swap</button><select aria-label="Size for '+esc(p.name)+'"><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>';
+  row.querySelector('button').addEventListener('click',()=>{selected=i;render()});row.querySelector('.crop-button').addEventListener('click',()=>openCrop(i));row.querySelector('.swap-button').addEventListener('click',()=>swapPhoto(i));row.querySelector('select').value=p.size;row.querySelector('select').addEventListener('change',e=>{p.size=e.target.value;draw();saveDraft().catch(()=>{status.textContent='Size changed, but browser draft storage failed. Save a PNG before closing.'})});
+  if(includeBack&&(backFields.name||backFields.roll)){
+   const personal=document.createElement('div');personal.className='person-back';personal.innerHTML=(backFields.name?'<label class="personal-field">Student name<input type="text" class="back-name" maxlength="50" placeholder="Name for '+esc(p.name)+'" value="'+esc(p.backName||'')+'"></label>':'')+(backFields.roll?'<label class="personal-field">Roll number<input type="text" class="back-roll" maxlength="30" placeholder="Roll number for '+esc(p.name)+'" value="'+esc(p.roll||'')+'"></label>':'');
+   if(backFields.name)personal.querySelector('.back-name').addEventListener('input',e=>{p.backName=e.target.value;draw();saveDraft().catch(()=>{})});
+   if(backFields.roll)personal.querySelector('.back-roll').addEventListener('input',e=>{p.roll=e.target.value;draw();saveDraft().catch(()=>{})});
+   row.append(personal)
+  }
+  roster.append(row)
+ });renderPrice();draw()}
+root.querySelector('#p15').onclick=()=>sample(15);root.querySelector('#p30').onclick=()=>sample(30);
+const status=root.querySelector('#uploadStatus');
+function updateBackControls(){root.querySelector('#includeBack').checked=includeBack;root.querySelector('#backChoices').hidden=!includeBack;root.querySelector('#backShared').hidden=!includeBack;root.querySelector('#backHelp').hidden=!includeBack;root.querySelectorAll('[data-back-field]').forEach(input=>input.checked=backFields[input.dataset.backField]);root.querySelectorAll('[data-shared]').forEach(label=>label.hidden=!backFields[label.dataset.shared]);root.querySelectorAll('[data-back-value]').forEach(input=>input.value=backValues[input.dataset.backValue]);render()}
+root.querySelector('#includeBack').addEventListener('change',e=>{includeBack=e.target.checked;root.querySelector('#backValidation').hidden=true;updateBackControls();saveDraft().catch(()=>{})});
+root.querySelectorAll('[data-back-field]').forEach(input=>input.addEventListener('change',()=>{backFields[input.dataset.backField]=input.checked;updateBackControls();saveDraft().catch(()=>{})}));
+root.querySelectorAll('[data-back-value]').forEach(input=>input.addEventListener('input',()=>{backValues[input.dataset.backValue]=input.value;draw();saveDraft().catch(()=>{})}));
+root.querySelector('#frontView').onclick=()=>{side='front';draw()};root.querySelector('#backView').onclick=()=>{side='back';draw()};
+function openDraftDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open('cartwala-signature-store-preview',2);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('drafts'))req.result.createObjectStore('drafts',{keyPath:'id'});if(!req.result.objectStoreNames.contains('originals'))req.result.createObjectStore('originals')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+let printCache=null;
+function updateConfirmButton(){root.querySelector('#confirmOrder').textContent='Add T-shirts to cart'}
+async function saveOriginals(persons){const entries=persons.filter(p=>p.photoKey&&p.sourceFile);if(!entries.length)return;const db=await openDraftDB();try{await new Promise((resolve,reject)=>{const tx=db.transaction('originals','readwrite');for(const person of entries)tx.objectStore('originals').put(person.sourceFile,person.photoKey);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)})}finally{db.close()}}
+async function savedOriginal(db,key){if(!key)return null;return new Promise((resolve,reject)=>{const request=db.transaction('originals').objectStore('originals').get(key);request.onsuccess=()=>resolve(request.result||null);request.onerror=()=>reject(request.error)})}
+async function saveDraft(){if(!hasUploaded)return;const db=await openDraftDB();const snapshot={id:'current',people:people.map(p=>({name:p.name,size:p.size,color:p.color,crop:p.crop,blob:p.blob,photoKey:p.photoKey,sourceUrl:p.sourceUrl,backName:p.backName,roll:p.roll})),sideOrder,includeBack,backFields:{...backFields},backValues:{...backValues},printCache};await new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readwrite');tx.objectStore('drafts').put(snapshot);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)});db.close()}
+root.querySelector('#resetDesign').onclick=async()=>{if(hasUploaded&&!window.confirm('Remove all uploaded photos, back details and saved design from this browser?'))return;for(const person of people){if(person.image?.src?.startsWith('blob:'))URL.revokeObjectURL(person.image.src)}hasUploaded=false;includeBack=false;printCache=null;side='front';for(const key of Object.keys(backFields))backFields[key]=false;for(const key of Object.keys(backValues))backValues[key]='';root.querySelector('#files').value='';root.querySelector('#filesFallback').value='';root.querySelector('#previews').hidden=true;root.querySelector('#orderReview').hidden=true;sample(15);updateBackControls();try{const db=await openDraftDB();await new Promise((resolve,reject)=>{const tx=db.transaction(['drafts','originals'],'readwrite');tx.objectStore('drafts').delete('current');tx.objectStore('originals').clear();tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();status.textContent='Design reset. Choose your photos to start again.'}catch(_){status.textContent='Design reset on this page. This browser could not clear its saved draft.'}updateConfirmButton();root.querySelector('#files').scrollIntoView({behavior:'smooth',block:'center'})};
+async function restoreDraft(){try{const db=await openDraftDB();const entry=await new Promise((resolve,reject)=>{const req=db.transaction('drafts').objectStore('drafts').get('current');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});if(!entry?.people?.length){db.close();return}const restored=[];for(const p of entry.people){const src=URL.createObjectURL(p.blob);restored.push({...p,sourceFile:await savedOriginal(db,p.photoKey),backName:p.backName||'',roll:p.roll||'',image:await imageFromURL(src)})}db.close();people=restored;printCache=entry.printCache||null;const order=entry.sideOrder;sideOrder=Array.isArray(order)&&order.length===people.length&&new Set(order).size===people.length&&order.every(i=>Number.isInteger(i)&&i>=0&&i<people.length)?order:people.map((_,i)=>i);includeBack=entry.includeBack===true;for(const field of Object.keys(backFields))backFields[field]=Boolean(entry.backFields?.[field]);for(const field of Object.keys(backValues))backValues[field]=String(entry.backValues?.[field]||'');swapFrom=null;hasUploaded=true;selected=0;updateBackControls();const missing=people.filter(p=>!p.sourceFile&&!p.sourceUrl).length;updateConfirmButton();status.textContent=missing?people.length+' previews restored. '+missing+' original files are missing from this browser; use Add photos above to restore them before checkout.':people.length+' photos, back details and crops restored. Your design is ready to continue.'}catch(_){status.textContent='Browser draft could not be restored. You can still upload photos and save a PNG.'}}
+const cropDialog=root.querySelector('#cropDialog'),cropCanvas=root.querySelector('#cropCanvas'),cropCtx=cropCanvas.getContext('2d'),cropZoom=root.querySelector('#cropZoom');
+let editing=null,dragPoint=null;
+function cropDraw(){if(!editing)return;cropCtx.clearRect(0,0,cropCanvas.width,cropCanvas.height);cover(people[editing.index].image,0,0,cropCanvas.width,cropCanvas.height,editing.crop,cropCtx)}
+function openCrop(index){const p=people[index];if(!p?.image)return;editing={index,crop:{...(p.crop||{cx:.5,cy:.42,zoom:1})}};root.querySelector('#cropTitle').textContent='Crop photo: '+p.name;cropZoom.value=editing.crop.zoom;cropDialog.showModal();cropDraw()}
+root.querySelector('#cropCenter').onclick=()=>openCrop(selected);
+cropZoom.oninput=()=>{if(!editing)return;editing.crop.zoom=Number(cropZoom.value);cropDraw()};
+cropCanvas.onpointerdown=e=>{if(!editing)return;dragPoint={x:e.clientX,y:e.clientY};cropCanvas.setPointerCapture(e.pointerId)};
+cropCanvas.onpointermove=e=>{if(!dragPoint||!editing)return;const rect=cropCanvas.getBoundingClientRect(),person=people[editing.index],crop=editing.crop,source=cropSource(person.image,cropCanvas.width,cropCanvas.height,crop);crop.cx-=(e.clientX-dragPoint.x)/rect.width*source.sw/person.image.width;crop.cy-=(e.clientY-dragPoint.y)/rect.height*source.sh/person.image.height;crop.cx=Math.max(0,Math.min(1,crop.cx));crop.cy=Math.max(0,Math.min(1,crop.cy));dragPoint={x:e.clientX,y:e.clientY};cropDraw()};
+cropCanvas.onpointerup=cropCanvas.onpointercancel=()=>{dragPoint=null};
+root.querySelector('#cropReset').onclick=()=>{if(!editing)return;editing.crop={cx:.5,cy:.42,zoom:1};cropZoom.value=1;cropDraw()};
+root.querySelector('#cropCancel').onclick=()=>cropDialog.close();
+root.querySelector('#cropSave').onclick=async()=>{if(!editing)return;people[editing.index].crop={...editing.crop};selected=editing.index;cropDialog.close();render();if(!root.querySelector('#previews').hidden)root.querySelector('#previews').scrollIntoView({behavior:'smooth',block:'start'});try{await saveDraft();status.textContent='Crop saved for '+people[selected].name+'. The updated T-shirt is shown below.'}catch(_){status.textContent='Crop updated in preview, but this browser could not store the draft. Save a PNG before closing.'}};
+cropDialog.onclose=()=>{editing=null;dragPoint=null};
+function showPreview(){const alert=root.querySelector('#backValidation');alert.hidden=true;if(includeBack){let message='',field=null;if(!Object.values(backFields).some(Boolean)){message='Select at least one detail for the back print.';field=root.querySelector('[data-back-field]')}else{for(const [key,label] of [['college','college name'],['group','group name'],['year','academic year']]){if(backFields[key]&&!backValues[key].trim()){message='Enter the '+label+' for every T-shirt.';field=root.querySelector('[data-back-value="'+key+'"]');break}}if(!message){for(let i=0;i<people.length;i++){if(backFields.name&&!people[i].backName.trim()){message='Enter the student name for '+people[i].name+'.';field=roster.querySelectorAll('.back-name')[i];break}if(backFields.roll&&!people[i].roll.trim()){message='Enter the roll number for '+people[i].name+'.';field=roster.querySelectorAll('.back-roll')[i];break}}}}if(message){alert.textContent=message;alert.hidden=false;field?.focus();alert.scrollIntoView({behavior:'smooth',block:'center'});return}}const stage=root.querySelector('#previews');stage.hidden=false;draw();stage.scrollIntoView({behavior:'smooth',block:'start'});stage.focus({preventScroll:true})}
+root.querySelector('#nextStep').onclick=showPreview;
+root.querySelector('#reviewOrder').onclick=()=>{if(!hasUploaded){status.textContent='Upload one photo for each T-shirt before reviewing the order.';root.querySelector('#files').scrollIntoView({behavior:'smooth',block:'center'});return}showPreview();if(!root.querySelector('#backValidation').hidden)return;const units=people.length,front=units>10?130:150,back=includeBack?30:0,sizes={};people.forEach(p=>{sizes[p.size]=(sizes[p.size]||0)+1});const details=includeBack?Object.keys(backFields).filter(key=>backFields[key]).map(key=>({college:'College name',name:'Student name',roll:'Roll number',group:'Group name',year:'Academic year'})[key]).join(', '):'No back print';const rows=[['T-shirts / uploaded photos',units],['Sizes',Object.entries(sizes).map(([size,count])=>size+' × '+count).join(', ')],['Front print',units+' × ₹'+front+' = ₹'+(units*front).toLocaleString('en-IN')],['Back print',includeBack?units+' × ₹30 = ₹'+(units*back).toLocaleString('en-IN'):'None'],['Back details',details],['Estimated total','₹'+(units*(front+back)).toLocaleString('en-IN')]];const list=document.createElement('dl');rows.forEach(([label,value],i)=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;if(i===rows.length-1){dt.className='review-total';dd.className='review-total'}list.append(dt,dd)});root.querySelector('#reviewSummary').replaceChildren(list);const review=root.querySelector('#orderReview');review.hidden=false;updateConfirmButton();root.querySelector('#orderStatus').textContent=people.some(p=>!p.sourceFile&&!p.sourceUrl)?'Some original files are missing from this browser. Add the missing photos above to restore them.':'Your original photos and print files will be saved before checkout opens.';review.scrollIntoView({behavior:'smooth',block:'start'});review.focus({preventScroll:true});saveDraft().catch(()=>{})};
+root.querySelector('#returnToPreview').onclick=()=>root.querySelector('#previews').scrollIntoView({behavior:'smooth',block:'start'});
+root.querySelector('#previousShirt').onclick=()=>{selected=(selected-1+people.length)%people.length;render()};
+root.querySelector('#nextShirt').onclick=()=>{selected=(selected+1)%people.length;render()};
+root.querySelector('#backToPhotos').onclick=()=>root.querySelector('#setup').scrollIntoView({behavior:'smooth'});
+function imageFromURL(src,crossOrigin=false){return new Promise((resolve,reject)=>{const image=new Image();if(crossOrigin)image.crossOrigin='anonymous';image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('Photo format could not be opened'));image.src=src})}
+function canvasBlob(c){return new Promise((resolve,reject)=>c.toBlob(blob=>blob?resolve(blob):reject(new Error('Photo resize failed')),'image/jpeg',.78))}
+async function photoKey(file){try{const bytes=await file.arrayBuffer(),digest=await crypto.subtle.digest('SHA-256',bytes);return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('')}catch(_){return [file.name,file.size,file.lastModified].join(':')}}
+async function smallerPhoto(file,key){let source,bitmap,original;
+ try{
+  // Decode one photo at a time. Keep only a compact preview in memory.
+  if('createImageBitmap' in window){try{bitmap=await createImageBitmap(file,{resizeWidth:600,resizeQuality:'medium'})}catch(_){} }
+  if(!bitmap){source=URL.createObjectURL(file);original=await imageFromURL(source)}
+  const input=bitmap||original,scale=Math.min(1,600/Math.max(input.width,input.height));
+  const mini=document.createElement('canvas');mini.width=Math.max(1,Math.round(input.width*scale));mini.height=Math.max(1,Math.round(input.height*scale));
+  mini.getContext('2d').drawImage(input,0,0,mini.width,mini.height);
+  const blob=await canvasBlob(mini),smallURL=URL.createObjectURL(blob);mini.width=mini.height=0;
+  return {name:file.name.replace(/\.[^.]+$/,'').slice(0,30),size:'M',image:await imageFromURL(smallURL),blob,sourceFile:file,photoKey:key,color:'#777',crop:{cx:.5,cy:.42,zoom:1},backName:'',roll:''};
+ }finally{if(bitmap)bitmap.close();if(source)URL.revokeObjectURL(source)}
+}
+async function handlePhotos(e){
+ const files=Array.from(e.target.files||[]).filter(f=>f.type.startsWith('image/')||/\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
+ if(!files.length){status.textContent='No photos selected. Choose JPG, PNG or WebP images.';return}
+ const picker=e.target;picker.disabled=true;const good=[],reconnectedPeople=[],known=new Set(hasUploaded?people.map(person=>person.photoKey).filter(Boolean):[]);let skipped=0,duplicates=0,reconnected=0;
+ try{
+  for(let i=0;i<files.length;i++){
+   status.textContent='Preparing photo '+(i+1)+' of '+files.length+'…';
+   try{const key=await photoKey(files[i]);if(known.has(key)){const match=people.find(person=>person.photoKey===key&&!person.sourceFile&&!person.sourceUrl);if(match){match.sourceFile=files[i];reconnectedPeople.push(match);reconnected++}else duplicates++;continue}known.add(key);good.push(await smallerPhoto(files[i],key))}catch(_){skipped++}
+   // Yield to iPhone's browser between large photos, keeping controls responsive.
+   await new Promise(resolve=>setTimeout(resolve,0));
+  }
+  if(!good.length&&!reconnected){status.textContent=duplicates?'Those photos are already in this design. Choose different photos.':'No photos opened. Try JPG photos, or open this link in Safari and select a smaller group.';return}
+  if(!good.length){try{await saveOriginals(reconnectedPeople);status.textContent=reconnected+' originals reconnected without changing your design. '+people.filter(p=>!p.sourceFile&&!p.sourceUrl).length+' originals remaining.'}catch(_){status.textContent=reconnected+' originals reconnected for this page. Browser storage is full, so avoid refreshing before adding to cart.'}updateConfirmButton();queueOriginalUploads(reconnectedPeople);if(!root.querySelector('#orderReview').hidden)orderStatus.textContent=people.some(p=>!p.sourceFile&&!p.sourceUrl)?'Originals connected: '+reconnected+'. Please select the remaining '+people.filter(p=>!p.sourceFile&&!p.sourceUrl).length+' photos.':'All original photos are connected. Tap Add T-shirts to cart again.';return}
+  const start=hasUploaded?people.length:0;people=hasUploaded?people.concat(good):good;sideOrder=hasUploaded?sideOrder.concat(good.map((_,i)=>start+i)):people.map((_,i)=>i);swapFrom=null;hasUploaded=true;selected=start;render();updateConfirmButton();root.querySelector('#previews').hidden=true;root.querySelector('#orderReview').hidden=true;status.textContent=people.length+' unique photos ready'+(reconnected?' · '+reconnected+' originals reconnected':'')+(duplicates?' · '+duplicates+' duplicates skipped':'')+(skipped?' · '+skipped+' unreadable files skipped':'')+'. Choose the back details you want, then tap Next: preview T-shirts.';root.querySelector('#backConfig').scrollIntoView({behavior:'smooth',block:'start'});try{await saveOriginals(good.concat(reconnectedPeople));await saveDraft()}catch(_){status.textContent+=' Browser storage is full; avoid refreshing before adding to cart.'}queueOriginalUploads(good.concat(reconnectedPeople))
+ }finally{picker.disabled=false;picker.value=''}
+}
+root.querySelector('#files').addEventListener('change',handlePhotos);
+root.querySelector('#filesFallback').addEventListener('change',handlePhotos);
+let savedURL=null;
+root.querySelector('#download').onclick=async()=>{const button=root.querySelector('#download');button.disabled=true;let draftSaved=true;try{await saveDraft()}catch(_){draftSaved=false}try{const blob=await new Promise((resolve,reject)=>canvas.toBlob(x=>x?resolve(x):reject(new Error('Could not create PNG')),'image/png'));if(savedURL)URL.revokeObjectURL(savedURL);savedURL=URL.createObjectURL(blob);root.querySelector('#savedImage').src=savedURL;const link=root.querySelector('#downloadLink');link.href=savedURL;link.download='signature-day-'+String(selected+1).padStart(2,'0')+'-'+side+'-preview.png';root.querySelector('#saveMessage').textContent=draftSaved?'Your photos and back details are saved in this browser. On iPhone, touch and hold the image and choose Save to Photos, or tap Download PNG.':'Browser draft storage is unavailable. Save the PNG now. On iPhone, touch and hold the image and choose Save to Photos.';root.querySelector('#savedDialog').showModal()}catch(_){status.textContent='Could not create PNG in this browser. Please try Safari or Chrome.'}finally{button.disabled=false}};
+root.querySelector('#savedClose').onclick=()=>root.querySelector('#savedDialog').close();
+
+// The print canvas contains the artwork only. Its 2480 × 3508 pixels match
+// A4 at 300 DPI; the customer PDF instead uses the on-shirt mockup previews.
+const PRINT_W=2480,PRINT_H=3508,PROXY='/apps/cartwala-signature-day';
+const orderStatus=root.querySelector('#orderStatus');
+let originalUploadTask=Promise.resolve();
+function queueOriginalUploads(persons){originalUploadTask=originalUploadTask.then(async()=>{for(const person of persons){try{await ensureOriginalUploaded(person,people.indexOf(person))}catch(_){/* Keep the original in IndexedDB; checkout can retry the upload. */}}});}
+async function ensureOriginalUploaded(person,index){
+ if(person.sourceUrl)return person.sourceUrl;
+ if(person.uploading)return person.uploading;
+ if(!person.sourceFile)throw new Error('An original photo is missing from this browser. Add the missing photo above.');
+ person.uploading=(async()=>{const extension=person.sourceFile.type==='image/png'?'png':person.sourceFile.type==='image/webp'?'webp':'jpg';const url=await uploadAsset(person.sourceFile,'signature-original-'+(index+1)+'.'+extension);person.sourceUrl=url;try{await saveDraft()}catch(_){}return url})();
+ try{return await person.uploading}finally{person.uploading=null}
+}
+function fileBlob(canvas,type,quality){return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Could not prepare print image')),type,quality))}
+async function uploadAsset(blob,name){const form=new FormData();form.append('intent','upload');form.append('file',blob,name);const response=await fetch(PROXY,{method:'POST',body:form});const result=await response.json().catch(()=>({}));if(!response.ok||!result.url)throw new Error(result.error||(response.status===404||response.headers.get('content-type')?.indexOf('application/json')===-1?'Photo upload connection is not active on this store yet. Please try again later.':'Could not save '+name+' (HTTP '+response.status+'). Please try again.'));return result.url}
+async function uploadBatchAssets(assets,label){
+ const total=assets.reduce((size,asset)=>size+asset.blob.size,0);
+ if(assets.length===1||total>18*1024*1024)return Promise.all(assets.map(asset=>uploadAsset(asset.blob,asset.name)));
+ const form=new FormData();form.append('intent','upload_batch');assets.forEach(asset=>form.append('file',asset.blob,asset.name));
+ const response=await new Promise((resolve,reject)=>{
+  const xhr=new XMLHttpRequest();xhr.open('POST',PROXY);
+  xhr.upload.onprogress=e=>{if(e.lengthComputable)orderStatus.textContent='Uploading '+label+': '+Math.round(e.loaded/e.total*100)+'% of '+(e.total/1048576).toFixed(1)+' MB';};
+  xhr.upload.onload=()=>{orderStatus.textContent='Shopify processing '+label+'…'};
+  xhr.onload=()=>{let result={};try{result=JSON.parse(xhr.responseText)}catch(_){}resolve({status:xhr.status,ok:xhr.status>=200&&xhr.status<300,result})};
+  xhr.onerror=()=>reject(new Error('Network interrupted while uploading '+label+'. Completed T-shirts are saved; please retry.'));
+  xhr.send(form);
+ });
+ const result=response.result;
+ if(response.status===404||result.error==='Invalid upload')return Promise.all(assets.map(asset=>uploadAsset(asset.blob,asset.name)));
+ if(!response.ok||!Array.isArray(result.urls)||result.urls.length!==assets.length)throw new Error(result.error||'Could not save the T-shirt print files. Please try again.');
+ return result.urls;
+}
+async function assembleFrontBatch(baseUrl,layout,items){
+ const form=new FormData();form.append('intent','assemble_front_batch');form.append('baseUrl',baseUrl);
+ form.append('x',String(layout.cc*layout.cw));form.append('y',String(layout.cr*layout.ch));form.append('width',String(layout.center*layout.cw));form.append('height',String(layout.center*layout.ch));
+ items.forEach(item=>{form.append('tile',item.tile,'signature-center-'+(item.index+1)+'.jpg');form.append('preview',item.preview,'signature-shirt-'+(item.index+1)+'.jpg')});
+ const label='T-shirts '+(items[0].index+1)+'–'+(items.at(-1).index+1)+' of '+people.length;
+ return new Promise((resolve,reject)=>{const xhr=new XMLHttpRequest();xhr.open('POST',PROXY);
+  xhr.upload.onprogress=e=>{if(e.lengthComputable)orderStatus.textContent='Uploading '+label+': '+Math.round(e.loaded/e.total*100)+'% of '+(e.total/1048576).toFixed(1)+' MB'};
+  xhr.upload.onload=()=>{orderStatus.textContent='Creating A4 print PDF for '+label+'…'};
+  xhr.onload=()=>{let data={};try{data=JSON.parse(xhr.responseText)}catch(_){}if(xhr.status>=200&&xhr.status<300&&data.printUrl&&data.previewUrls?.length===items.length)resolve(data);else reject(new Error(data.error||'Could not create the A4 print PDF. Try again.'))};
+  xhr.onerror=()=>reject(new Error('Network interrupted. Saved T-shirts are kept; tap Add to cart to retry.'));xhr.send(form)})
+}
+async function supportsFrontAssembler(){try{const form=new FormData();form.append('intent','assemble_front_batch');const response=await fetch(PROXY,{method:'POST',body:form});const result=await response.json();return result.error==='Invalid A4 print batch'}catch(_){return false}}
+async function originalImage(person){let bitmap=null,url=null;try{if(person.sourceFile){if('createImageBitmap' in window){bitmap=await createImageBitmap(person.sourceFile);return {image:bitmap,close:()=>bitmap.close()}}url=URL.createObjectURL(person.sourceFile);const image=await imageFromURL(url);return {image,close:()=>URL.revokeObjectURL(url)}}const image=await imageFromURL(person.sourceUrl,true);return {image,close:()=>{}}}catch(error){if(bitmap)bitmap.close();if(url)URL.revokeObjectURL(url);throw error}}
+function printTile(target,image,x,y,w,h,crop){target.save();target.beginPath();target.rect(x,y,w,h);target.clip();cover(image,x,y,w,h,crop,target);target.restore();target.strokeStyle='#fff';target.lineWidth=5;target.strokeRect(x,y,w,h)}
+function printLayout(){const {cols,rows}=collageGrid(people.length),center=4,cw=PRINT_W/cols,ch=PRINT_H/rows,cc=(cols-center)/2,cr=(rows-center)/2,slots=[];for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){if(row>=cr&&row<cr+center&&col>=cc&&col<cc+center)continue;slots.push({row,col,x:col*cw,y:row*ch})}const distance=slot=>Math.min(slot.row,rows-1-slot.row)**2+Math.min(slot.col,cols-1-slot.col)**2;const gaps=new Set([...slots].sort((a,b)=>distance(a)-distance(b)).slice(0,slots.length-people.length));return {cw,ch,cc,cr,center,filled:slots.filter(slot=>!gaps.has(slot)),gaps:[...gaps]}}
+async function makePrintBase(){const base=document.createElement('canvas');base.width=PRINT_W;base.height=PRINT_H;const target=base.getContext('2d');target.fillStyle='#fff';target.fillRect(0,0,PRINT_W,PRINT_H);const layout=printLayout();for(let index=0;index<people.length;index++){orderStatus.textContent='Preparing A4 collage '+(index+1)+' of '+people.length+'…';const source=await originalImage(people[index]);const slot=layout.filled[sideOrder.indexOf(index)];printTile(target,source.image,slot.x,slot.y,layout.cw,layout.ch,people[index].crop);const repeats=layout.gaps.filter((_,i)=>cornerPhotoIndex(i,layout.gaps.length)===index);for(const gap of repeats)printTile(target,source.image,gap.x,gap.y,layout.cw,layout.ch,people[index].crop);source.close();await new Promise(resolve=>setTimeout(resolve,0))}return {base,layout}}
+async function makeFrontPrint(base,layout,index){const output=document.createElement('canvas');output.width=PRINT_W;output.height=PRINT_H;const target=output.getContext('2d');target.drawImage(base,0,0);const focus=await originalImage(people[index]);printTile(target,focus.image,layout.cc*layout.cw,layout.cr*layout.ch,layout.center*layout.cw,layout.center*layout.ch,people[index].crop);focus.close();return output}
+async function makeCenterTile(layout,index){const output=document.createElement('canvas');output.width=Math.round(layout.center*layout.cw);output.height=Math.round(layout.center*layout.ch);const focus=await originalImage(people[index]);printTile(output.getContext('2d'),focus.image,0,0,output.width,output.height,people[index].crop);focus.close();return output}
+function makeBackPrint(index){const output=document.createElement('canvas');output.width=PRINT_W;output.height=PRINT_H;const target=output.getContext('2d');const person=people[index],lines=[];if(backFields.college)lines.push([backValues.college,84]);if(backFields.group)lines.push([backValues.group,108]);if(backFields.name)lines.push([person.backName,126]);if(backFields.roll)lines.push(['Roll No: '+person.roll,82]);if(backFields.year)lines.push([backValues.year,78]);let y=1150;for(const [value,baseSize] of lines){let size=baseSize;target.font='700 '+size+'px system-ui';while(target.measureText(value).width>1550&&size>48){size-=3;target.font='700 '+size+'px system-ui'}target.fillStyle='#171717';target.textAlign='center';target.textBaseline='middle';target.fillText(value,PRINT_W/2,y,1550);y+=Math.max(155,size+46)}return output}
+function orderVariants(){const variants=JSON.parse(document.getElementById('signatureDayVariants').textContent||'[]'),tier=people.length>10?'11+ shirts':'1–10 shirts',unitPrice=(people.length>10?130:150)+(includeBack?30:0);return people.map(person=>{const match=variants.find(v=>v.available!==false&&String(v.option1||'').toUpperCase()===person.size&&String(v.option2||'').toLowerCase()===(includeBack?'front + back':'front only')&&String(v.option3||'')===tier&&Number(v.price)/100===unitPrice);if(!match)throw new Error('Checkout pricing is not ready for '+person.size+'. Your preview is safe; please try again after setup is complete.');return match.id})}
+let confirming=false;
+root.querySelector('#confirmOrder').onclick=async()=>{
+ if(confirming)return;
+ if(!hasUploaded||people.some(person=>!person.sourceFile&&!person.sourceUrl)){const missing=people.filter(person=>!person.sourceFile&&!person.sourceUrl).length;orderStatus.textContent=missing+' original files are missing from this browser. Add these photos above before checkout; your design and crops are saved.';return}
+ let variantIds;try{variantIds=orderVariants()}catch(error){orderStatus.textContent=error.message;return}
+ confirming=true;const button=root.querySelector('#confirmOrder');button.disabled=true;
+ const priorSelected=selected,priorSide=side;
+ try{
+  const sourceUrls=[];for(let i=0;i<people.length;i++){orderStatus.textContent='Saving original photo '+(i+1)+' of '+people.length+'…';sourceUrls.push(await ensureOriginalUploaded(people[i],i))}
+  const signature=JSON.stringify({photos:people.map(p=>[p.photoKey,p.size,p.crop,p.backName,p.roll]),sideOrder,includeBack,backFields,backValues});
+  if(printCache?.signature!==signature)printCache={signature,previews:[],prints:[]};
+  const previewUrls=[],printUrls=[];
+  let base=null,layout=null;
+  if(people.some((_,i)=>!printCache.previews[i]?.front||!printCache.prints[i]?.front||(includeBack&&(!printCache.previews[i]?.back||!printCache.prints[i]?.back))))({base,layout}=await makePrintBase());
+  try{
+   if(!includeBack&&await supportsFrontAssembler()){
+    let sharedBaseUrl=printCache.sharedBaseUrl;
+    if(base&&!sharedBaseUrl){orderStatus.textContent='Saving shared A4 collage once…';sharedBaseUrl=await uploadAsset(await fileBlob(base,'image/jpeg',.9),'signature-a4-shared.jpg');printCache.sharedBaseUrl=sharedBaseUrl;await saveDraft().catch(()=>{})}
+    let pending=[];
+    async function saveFrontBatch(){if(!pending.length)return;const current=pending;pending=[];const result=await assembleFrontBatch(sharedBaseUrl,layout,current);current.forEach((item,page)=>{
+     const print={front:result.printUrl+'#page='+(page+1)},preview={front:result.previewUrls[page]};
+     printCache.prints[item.index]=print;printCache.previews[item.index]=preview;printUrls[item.index]=print;previewUrls[item.index]=preview;
+    });await saveDraft().catch(()=>{})}
+    for(let i=0;i<people.length;i++){
+     if(printCache.previews[i]?.front&&printCache.prints[i]?.front){await saveFrontBatch();previewUrls[i]=printCache.previews[i];printUrls[i]=printCache.prints[i];continue}
+     orderStatus.textContent='Preparing T-shirt '+(i+1)+' of '+people.length+'…';
+     const center=await makeCenterTile(layout,i),tile=await fileBlob(center,'image/jpeg',.9);center.width=center.height=0;
+     selected=i;side='front';draw();const preview=await fileBlob(canvas,'image/jpeg',.82);
+     if(pending.length&&pending.reduce((sum,item)=>sum+item.tile.size+item.preview.size,0)+tile.size+preview.size>18*1024*1024)await saveFrontBatch();
+     pending.push({index:i,tile,preview});if(pending.length>=4)await saveFrontBatch();
+     await new Promise(resolve=>setTimeout(resolve,0));
+    }
+    await saveFrontBatch();
+   }else{
+   let pending=[],cacheSaveTask=Promise.resolve();const inFlight=[];
+   function savePending(){
+    if(!pending.length)return;
+    const current=pending;pending=[];
+    const label='T-shirts '+(current[0].index+1)+(current.length>1?'–'+(current.at(-1).index+1):'')+' of '+people.length;
+    const job=(async()=>{
+     const urls=await uploadBatchAssets(current.flatMap(item=>item.assets),label);let offset=0;
+     for(const item of current){
+      const values=urls.slice(offset,offset+item.assets.length);offset+=item.assets.length;
+      const print={front:values[0]},preview={front:values[1]};
+      if(includeBack){print.back=values[2];preview.back=values[3]}
+      printCache.prints[item.index]=print;printCache.previews[item.index]=preview;
+      printUrls[item.index]=print;previewUrls[item.index]=preview;
+     }
+     cacheSaveTask=cacheSaveTask.then(()=>saveDraft().catch(()=>{}));await cacheSaveTask;
+    })().then(()=>({ok:true}),error=>({ok:false,error}));
+    inFlight.push(job);
+   }
+   async function finishOldest(){const completed=await inFlight.shift();if(!completed.ok)throw completed.error}
+   for(let i=0;i<people.length;i++){
+    if(printCache.previews[i]?.front&&printCache.prints[i]?.front&&(!includeBack||(printCache.previews[i]?.back&&printCache.prints[i]?.back))){savePending();previewUrls[i]=printCache.previews[i];printUrls[i]=printCache.prints[i];continue}
+    orderStatus.textContent='Preparing T-shirt '+(i+1)+' of '+people.length+'…';
+    const frontPrint=await makeFrontPrint(base,layout,i);
+    const frontBlob=await fileBlob(frontPrint,'image/jpeg',.9);frontPrint.width=frontPrint.height=0;
+    selected=i;side='front';draw();const frontPreviewBlob=await fileBlob(canvas,'image/jpeg',.82);
+    const assets=[{blob:frontBlob,name:'signature-a4-front-'+(i+1)+'.jpg'},{blob:frontPreviewBlob,name:'signature-shirt-front-'+(i+1)+'.jpg'}];
+    if(includeBack){
+     const backPrint=makeBackPrint(i);const backBlob=await fileBlob(backPrint,'image/png');backPrint.width=backPrint.height=0;
+     side='back';draw();const backPreviewBlob=await fileBlob(canvas,'image/jpeg',.82);
+     assets.push({blob:backBlob,name:'signature-back-print-'+(i+1)+'.png'},{blob:backPreviewBlob,name:'signature-shirt-back-'+(i+1)+'.jpg'});
+    }
+    if(pending.length&&(pending.reduce((count,item)=>count+item.assets.length,0)+assets.length>4||pending.reduce((size,item)=>size+item.assets.reduce((sum,asset)=>sum+asset.blob.size,0),0)+assets.reduce((sum,asset)=>sum+asset.blob.size,0)>18*1024*1024))savePending();
+    pending.push({index:i,assets});
+    if(pending.reduce((count,item)=>count+item.assets.length,0)>=4)savePending();
+    if(inFlight.length>=2)await finishOldest();
+    await new Promise(resolve=>setTimeout(resolve,0));
+   }
+   savePending();while(inFlight.length)await finishOldest();
+   }
+  }finally{if(base)base.width=base.height=0}
+  orderStatus.textContent='Connecting previews and print files to your order…';
+  let designId=printCache.designId;
+  if(!designId){const response=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({previewUrls,printUrls,sourceUrls,shirtSizes:people.map(person=>person.size),backPrint:includeBack})});const saved=await response.json();if(!response.ok||!saved.designId)throw new Error(saved.error||'Could not save design');designId=saved.designId;printCache.designId=designId;await saveDraft().catch(()=>{})}
+  const grouped=new Map();people.forEach((person,i)=>{const id=variantIds[i];if(!grouped.has(id))grouped.set(id,{id,quantity:0,properties:{'_Cartwala Signature Day Design':designId,'T-shirt size':person.size,'_T-shirt preview':previewUrls[i].front}});grouped.get(id).quantity++});
+  const cartResponse=await fetch('/cart.js');if(!cartResponse.ok)throw new Error('Could not check the cart. Please try again.');const cart=await cartResponse.json();
+  const items=[...grouped.values()].map(item=>{const existing=(cart.items||[]).filter(line=>String(line.variant_id)===String(item.id)&&line.properties?.['_Cartwala Signature Day Design']===designId).reduce((sum,line)=>sum+line.quantity,0);return {...item,quantity:item.quantity-existing}});
+  if(items.some(item=>item.quantity<0))throw new Error('This design already has extra T-shirts in the cart. Review the cart before adding again.');
+  const missing=items.filter(item=>item.quantity>0);
+  if(missing.length){const added=await fetch('/cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:missing})});if(!added.ok){const problem=await added.json().catch(()=>({}));throw new Error('Design saved, but cart rejected the T-shirts: '+(problem.description||problem.message||'HTTP '+added.status)+'. Please retry. Your previews are saved.')}}
+  window.location.assign('/cart');
+ }catch(error){orderStatus.textContent=error.message||'Could not prepare the order. Please try again.'}finally{selected=priorSelected;side=priorSide;draw();confirming=false;button.disabled=false}
+};
+sample(15);updateBackControls();restoreDraft();
+
+})();
+</script>
+{% schema %}{"name":"Signature Day editor","settings":[],"presets":[{"name":"Signature Day editor"}]}{% endschema %}
