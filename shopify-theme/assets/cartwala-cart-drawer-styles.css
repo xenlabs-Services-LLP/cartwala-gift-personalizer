@@ -1,0 +1,20 @@
+#cart-drawer .cart-drawer__overlay{background:rgba(20,15,11,.48);backdrop-filter:blur(2px)}
+#cart-drawer .cart-drawer__panel{width:min(440px,100vw);background:#fff;box-shadow:-18px 0 48px rgba(24,19,15,.18)}
+#cart-drawer .cart-drawer__head{flex:none;padding:20px 22px;border-bottom:1px solid #efe9e5;background:#fff}
+#cart-drawer .cart-drawer__head strong{font-size:19px;line-height:1.25;color:#25201f}
+#cart-drawer .cart-drawer__items{padding:12px 18px;overscroll-behavior:contain}
+#cart-drawer .cart-line{display:grid;grid-template-columns:84px minmax(0,1fr);column-gap:14px;row-gap:4px;padding:17px 3px;border-bottom:1px solid #eee8e3;align-items:start}
+#cart-drawer .cart-line>img{width:84px;height:92px;object-fit:cover;border:1px solid #f0ece8;border-radius:11px;background:#faf8f6}
+#cart-drawer .cart-line__info{min-width:0}
+#cart-drawer .cart-line__info>a{display:block;color:#282321;font-size:14px;line-height:1.35;text-decoration:none;overflow-wrap:anywhere}
+#cart-drawer .cw-cart-variant{margin-top:5px;color:#716760;font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+#cart-drawer .cart-line__price{grid-column:2;display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0;margin-top:2px}
+#cart-drawer .cart-line__price>strong{font-size:15px;color:#24201f;white-space:nowrap}
+#cart-drawer .cart-line__price [data-cw-remove]{color:#8f5841;text-decoration:underline;text-underline-offset:3px;font-size:12px;padding:5px 0}
+#cart-drawer .cw-cart-qty{width:124px!important;height:36px!important;grid-template-columns:36px 52px 36px!important;margin-top:9px!important}
+#cart-drawer .cw-cart-qty button{width:36px!important;height:36px!important;font-size:20px!important}
+#cart-drawer .cw-cart-qty input{width:52px!important;height:36px!important;font-size:14px!important}
+#cart-drawer .cart-drawer__footer{flex:none;padding:16px 20px max(20px,env(safe-area-inset-bottom));background:#fff;box-shadow:0 -7px 24px rgba(29,21,16,.06);border-top:1px solid #eee8e3}
+#cart-drawer .cart-drawer__footer .btn{min-height:48px;display:flex;align-items:center;justify-content:center;font-weight:700}
+#cart-drawer .cart-drawer__footer .btn-outline{background:#fff!important;border-color:#e96800!important;color:#b74b00!important}
+@media(max-width:479px){#cart-drawer .cart-drawer__panel{border-radius:18px 0 0 18px}#cart-drawer .cart-drawer__head{padding:18px}#cart-drawer .cart-drawer__items{padding:9px 14px}#cart-drawer .cart-drawer__footer{padding-left:18px;padding-right:18px}}
