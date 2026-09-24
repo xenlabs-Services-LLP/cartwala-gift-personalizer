@@ -247,6 +247,17 @@ export async function uploadImageAsset(
   return uploadToShopifyFiles(admin, file, "IMAGE", 20);
 }
 
+export async function uploadPdfAsset(
+  admin: AdminApiContext,
+  file: File,
+): Promise<ShopifyFileAsset> {
+  if (file.type !== "application/pdf" || !/\.pdf$/i.test(file.name) ||
+      file.size < 100 || file.size > 100 * 1024 * 1024) {
+    throw new ShopifyFileUploadError("Invalid A4 print PDF");
+  }
+  return uploadToShopifyFiles(admin, file, "FILE", 30);
+}
+
 /** Stage and create up to four print images in two Admin API mutations. */
 export async function uploadImageAssets(
   admin: AdminApiContext,
