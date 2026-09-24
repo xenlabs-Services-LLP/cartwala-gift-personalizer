@@ -4,13 +4,28 @@
    <div class="product-details">
     <h1>{{ product.title | escape }}</h1>
     <p>Create a white 120 GSM Signature Day T-shirt for each person in your group. Upload one photo per shirt: every collage shows the group, with its wearer's portrait larger in the centre.</p>
-    <p class="product-highlights">A4-proportion collage · Sizes XS–XXL · Optional back print for the whole group</p>
+    <p class="product-highlights">120 GSM polyester · A4-proportion collage · Sizes XS–XXL · Optional back print for the whole group</p>
     <div class="product-offer"><span class="regular-price">₹250</span><strong>₹150 per T-shirt</strong><span>For 1–10 T-shirts</span></div>
     <div class="product-tier"><strong>11 or more T-shirts: ₹130 each</strong><span>The lower price applies to every T-shirt in the order.</span></div>
     <div class="product-tier"><strong>Optional back print: +₹30 per T-shirt</strong><span>Choose it for the whole order or leave every back blank.</span></div>
     <p class="product-count" id="productCount" aria-live="polite">The order total is calculated from the number of photos you upload.</p>
     <button class="next customize-button" id="customizeNow" type="button">Customize Now</button>
    </div>
+  </section>
+  <section class="product-extras" id="productExtras" aria-label="Delivery and shopping information">
+    <div class="delivery-steps">
+      <h2>Estimated delivery</h2>
+      <ol>
+        <li><span class="step-icon" aria-hidden="true">✓</span><strong>Ordered</strong><time id="signatureOrdered"></time></li>
+        <li><span class="step-icon" aria-hidden="true">▣</span><strong>Order ready</strong><span id="signatureReady"></span></li>
+        <li><span class="step-icon" aria-hidden="true">⌖</span><strong>Delivered</strong><span id="signatureDelivered"></span></li>
+      </ol>
+      <p>Estimated making time: 2–3 days. Shipping: 5–6 days. Delivery dates can vary by location.</p>
+    </div>
+    <div class="shopping-confidence">
+      <h2>♢ Shop with confidence</h2>
+      <ul><li>♢ <span>Secure Checkout</span></li><li>♧ <span>Carefully Packed</span></li><li>▣ <span>Tracking Updates</span></li><li>♡ <span>Customer Support</span></li></ul>
+    </div>
   </section>
   <section class="product-seo-content" id="productDescription" aria-label="Signature Day T-shirt details">{{ product.description }}</section>
   <div class="editor" id="editor" hidden>
@@ -94,6 +109,7 @@
 
 #signature-day-store{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#191919;background:#f5f5f5}*{box-sizing:border-box}
 .editor[hidden],.product-intro[hidden],.product-seo-content[hidden]{display:none}.product-intro{max-width:1160px;margin:28px auto;padding:24px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:32px;align-items:center;background:#fff;border:1px solid #e5e5e5;border-radius:18px}.product-photo{background:#f2efec;border-radius:14px;padding:16px}.product-photo img{display:block;width:100%;height:auto;object-fit:contain;background:#fff}.product-details h1{font-size:clamp(1.6rem,3vw,2.4rem);line-height:1.2;margin:0 0 12px}.product-details p{color:#555}.product-highlights{font-size:.88rem;color:#594738!important;font-weight:650}.product-offer{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:22px 0 12px}.product-offer strong{font-size:1.55rem;color:#a74200}.regular-price{text-decoration:line-through;color:#777}.product-offer>span:last-child{width:100%;color:#555}.product-tier{display:grid;gap:4px;padding:13px 0;border-top:1px solid #e6e6e6}.product-tier span{color:#555}.product-count{padding:10px 12px;background:#fff5eb;border-radius:8px}.customize-button{font-size:1.1rem;max-width:360px;padding:14px 20px}.back-to-product{margin:20px max(24px,calc((100vw - 1320px)/2)) 0}.product-seo-content{max-width:1160px;margin:0 auto 28px;padding:22px 26px;background:#fff;border:1px solid #e8e4e0;border-radius:16px;color:#3c3734}.product-seo-content h2{font-size:1.25rem;line-height:1.3;margin:25px 0 10px}.product-seo-content h3{font-size:1rem;margin:17px 0 5px}.product-seo-content p,.product-seo-content li{line-height:1.65;color:#444}.product-seo-content ul,.product-seo-content ol{padding-left:22px}.product-seo-content li{margin:8px 0}
+.product-extras{max-width:1160px;margin:0 auto 22px;padding:0 18px;display:grid;grid-template-columns:1fr 1fr;gap:18px}.product-extras[hidden]{display:none}.product-extras>div{background:#fff;border:1px solid #e2e2e2;border-radius:16px;padding:20px}.product-extras h2{font-size:1.3rem;line-height:1.25;margin:0 0 18px}.delivery-steps ol{list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0;margin:0}.delivery-steps li{text-align:center;min-width:0;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:.85rem}.delivery-steps strong{font-size:.95rem}.step-icon{background:#191919;color:#fff;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;font-size:1.3rem}.delivery-steps time,.delivery-steps li>span:last-child{color:#555;line-height:1.3}.delivery-steps p{font-size:.85rem;margin:18px 0 0;color:#666}.shopping-confidence{background:#fffbf6!important}.shopping-confidence ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}.shopping-confidence li{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:14px;display:flex;align-items:center;gap:10px;color:#f47700;font-size:1.15rem}.shopping-confidence li span{font-size:.9rem;color:#292929;font-weight:700}
 .review-button{max-width:430px}.review-panel{max-width:920px;margin:20px auto;padding:24px;background:#fff;border:1px solid #ddd;border-radius:16px}.review-panel[hidden]{display:none}.review-panel h2{margin:0}.review-panel dl{display:grid;grid-template-columns:1fr auto;gap:10px;margin:16px 0 20px}.review-panel dt,.review-panel dd{margin:0;padding:8px 0;border-bottom:1px solid #eee}.review-panel dd{text-align:right;font-weight:650}.review-panel .review-total{font-size:1.2rem;color:#a74200;font-weight:750}.review-panel button{margin-top:6px}
 header{background:#fff;border-bottom:1px solid #ddd;padding:16px max(20px,calc((100vw - 1320px)/2))}
 header strong{font-size:1.25rem}header span{color:#666;margin-left:12px}
@@ -121,7 +137,7 @@ button[aria-pressed=true],button:hover{border-color:#ed7100;background:#fff2e8}
 .stage{display:flex;flex-direction:column;align-items:center;gap:13px}.stage[hidden]{display:none}.toolbar{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .toolbar strong{font-size:1.1rem}.stage canvas{max-width:min(100%,640px);height:auto;box-shadow:0 8px 32px #0002;background:#fff}
 .notice{font-size:.88rem;color:#666}.counts{background:#fff5eb;padding:10px;border-radius:8px;font-size:.9rem}
-@media(max-width:850px){.product-intro{display:block;margin:12px;padding:14px}.product-photo{padding:8px}.product-details{padding:18px 4px 4px}.sd-main{display:block;padding:14px}.stage{margin-top:14px}.roster{max-height:250px}}
+@media(max-width:850px){.product-intro{display:block;margin:12px;padding:14px}.product-photo{padding:8px}.product-details{padding:18px 4px 4px}.product-extras{grid-template-columns:1fr;padding:0 12px}.sd-main{display:block;padding:14px}.stage{margin-top:14px}.roster{max-height:250px}}
 
 .sd-heading{max-width:1320px;margin:0 auto;padding:24px 24px 0;font-size:1.7rem}.sd-subheading{max-width:1320px;margin:0 auto;padding:0 24px;color:#555}
 }
@@ -137,7 +153,15 @@ const roster=root.querySelector('#roster'),counts=root.querySelector('#counts');
 const colors=['#a33c36','#26829a','#a27631','#855c99','#468269','#244d9b','#ac5d83','#755731'];
 let people=[],selected=0,hasUploaded=false,sideOrder=[],swapFrom=null,side='front',includeBack=false;
 const backFields={college:false,name:false,roll:false,group:false,year:false},backValues={college:'',group:'',year:''};
-function openEditor(open){root.querySelector('#productIntro').hidden=open;root.querySelector('#productDescription').hidden=open;root.querySelector('#editor').hidden=!open;(open?root.querySelector('#editor'):root.querySelector('#productIntro')).scrollIntoView({behavior:'smooth',block:'start'})}
+function openEditor(open){root.querySelector('#productIntro').hidden=open;root.querySelector('#productExtras').hidden=open;root.querySelector('#productDescription').hidden=open;root.querySelector('#editor').hidden=!open;(open?root.querySelector('#editor'):root.querySelector('#productIntro')).scrollIntoView({behavior:'smooth',block:'start'})}
+const dateBase=new Date();const calendarDay=new Date(Date.UTC(dateBase.getFullYear(),dateBase.getMonth(),dateBase.getDate()));
+function dateAt(offset){const day=new Date(calendarDay);day.setUTCDate(day.getUTCDate()+offset);return day}
+function dateText(day){return day.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})}
+function dateRange(from,to){return dateText(dateAt(from))+' – '+dateText(dateAt(to))}
+root.querySelector('#signatureOrdered').textContent=dateText(calendarDay);
+root.querySelector('#signatureOrdered').dateTime=calendarDay.toISOString().slice(0,10);
+root.querySelector('#signatureReady').textContent=dateRange(2,3);
+root.querySelector('#signatureDelivered').textContent=dateRange(7,9);
 root.querySelector('#customizeNow').onclick=()=>openEditor(true);
 root.querySelector('#backToProduct').onclick=()=>openEditor(false);
 function sample(n){hasUploaded=false;people=Array.from({length:n},(_,i)=>({name:'Person '+String(i+1).padStart(2,'0'),size:'M',image:null,color:colors[i%colors.length],backName:'',roll:''}));sideOrder=people.map((_,i)=>i);swapFrom=null;selected=0;render()}
