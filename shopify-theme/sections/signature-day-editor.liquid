@@ -8,7 +8,7 @@
     {% endif %}
     {% if product.images.size > 1 %}
       <div class="signature-product-thumbs" role="group" aria-label="Signature Day T-shirt photos">
-       {% for gallery_image in product.images limit: 4 %}
+       {% for gallery_image in product.images limit: 5 %}
         <button type="button" class="signature-product-thumb" data-gallery-src="{{ gallery_image | image_url: width: 1100 }}" data-gallery-alt="{{ gallery_image.alt | default: product.title | escape }}" aria-label="View product photo {{ forloop.index }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">
          {{ gallery_image | image_url: width: 130 | image_tag: loading: 'lazy', width: 64, height: 64 }}
         </button>
