@@ -4,6 +4,8 @@ import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
+import { DESIGN_ATTRIBUTE } from "../lib/signature-day.server";
 type Attribute = { key: string; value: string };
 type PrintItem = {
   orderId: string;
@@ -60,16 +62,22 @@ type PhotoLayer = {
   top: number;
 };
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
   const response = await admin.graphql(`#graphql
  query CartwalaPrintOrders($after: String) { orders(first: 50, after: $after, reverse: true, sortKey: CREATED_AT) { nodes { id name createdAt displayFinancialStatus lineItems(first: 100) { nodes { id name title quantity customAttributes { key value } product { id title metafield(namespace: "$app", key: "personalizer_config") { jsonValue } } } } } pageInfo { hasNextPage endCursor } } }`);
   const payload = (await response.json()) as any;
   const items: PrintItem[] = [];
+  const signatureOrders: Array<{ orderName: string; createdAt: string; financialStatus: string;
+    productTitle: string; designId: string }> = [];
   for (const order of payload?.data?.orders?.nodes || [])
     for (const line of order?.lineItems?.nodes || []) {
       const attributes: Attribute[] = Array.isArray(line.customAttributes)
         ? line.customAttributes
         : [];
+      const signatureId = attributes.find((a) => a.key === DESIGN_ATTRIBUTE)?.value;
+      if (signatureId) signatureOrders.push({ orderName: order.name, createdAt: order.createdAt,
+        financialStatus: order.displayFinancialStatus || "UNKNOWN", productTitle: line.title || line.name,
+        designId: signatureId });
       if (
         !attributes.some((a) =>
           [
@@ -97,7 +105,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         config: line.product?.metafield?.jsonValue || null,
       });
     }
-  return { items };
+  const uniqueSignatureOrders = [...new Map(signatureOrders.map((order) =>
+    [`${order.orderName}:${order.designId}`, order])).values()];
+  const saved = await prisma.signatureDayDesign.findMany({
+    where: { shop: session.shop, id: { in: signatureOrders.map((o) => o.designId) } },
+  });
+  const designs = Object.fromEntries(saved.map((design) => [design.id, {
+    previewUrls: design.previewUrls as Array<{ front: string; back?: string }>,
+    printUrls: design.printUrls as Array<{ front: string; back?: string }>,
+    sourceUrls: design.sourceUrls as string[],
+    shirtSizes: design.shirtSizes as string[],
+  }]));
+  return { items, signatureOrders: uniqueSignatureOrders, designs };
 };
 const attrMap = (a: Attribute[]) =>
   Object.fromEntries(a.map((x) => [x.key, x.value]));
@@ -617,7 +636,7 @@ async function downloadPsd(item: PrintItem) {
   );
 }
 export default function PrintFilesPage() {
-  const { items } = useLoaderData<typeof loader>();
+  const { items, signatureOrders, designs } = useLoaderData<typeof loader>();
   const [working, setWorking] = useState("");
   const grouped = useMemo(() => {
     const m = new Map<string, PrintItem[]>();
@@ -640,6 +659,24 @@ export default function PrintFilesPage() {
   };
   return (
     <s-page heading="Print Files">
+      <s-section heading="Signature Day T-shirts">
+        {signatureOrders.length === 0 ? <s-paragraph>No Signature Day orders yet.</s-paragraph> :
+          signatureOrders.map((order) => {
+            const design = designs[order.designId];
+            return <div key={`${order.orderName}:${order.designId}`} style={{padding: 16, border: "1px solid #ddd", marginBottom: 12}}>
+              <strong>{order.orderName} · {order.productTitle}</strong>
+              <p>{order.financialStatus} · {design?.printUrls.length || 0} T-shirts</p>
+              {design && order.financialStatus === "PAID" ? design.printUrls.map((shirt, index) =>
+                <div key={index} style={{marginBottom: 8}}>
+                  <strong>Shirt {index + 1} · {design.shirtSizes[index]}</strong>{" · "}
+                  <a href={shirt.front} target="_blank" rel="noreferrer">Front A4 print</a>{" · "}
+                  {shirt.back && <><a href={shirt.back} target="_blank" rel="noreferrer">Back print</a>{" · "}</>}
+                  <a href={design.sourceUrls[index]} target="_blank" rel="noreferrer">Original photo</a>{" · "}
+                  <a href={design.previewUrls[index].front} target="_blank" rel="noreferrer">T-shirt preview</a>
+                </div>) : <p>{!design ? "Saved print files not found." : "Files appear after payment."}</p>}
+            </div>;
+          })}
+      </s-section>
       <s-section heading="Personalised orders">
         <s-paragraph>
           Download a print-ready PNG or an editable layered PSD. PSD keeps full
