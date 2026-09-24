@@ -293,11 +293,24 @@ async function uploadBatchAssets(assets,label){
  if(!response.ok||!Array.isArray(result.urls)||result.urls.length!==assets.length)throw new Error(result.error||'Could not save the T-shirt print files. Please try again.');
  return result.urls;
 }
+async function assembleFrontBatch(baseUrl,layout,items){
+ const form=new FormData();form.append('intent','assemble_front_batch');form.append('baseUrl',baseUrl);
+ form.append('x',String(layout.cc*layout.cw));form.append('y',String(layout.cr*layout.ch));form.append('width',String(layout.center*layout.cw));form.append('height',String(layout.center*layout.ch));
+ items.forEach(item=>{form.append('tile',item.tile,'signature-center-'+(item.index+1)+'.jpg');form.append('preview',item.preview,'signature-shirt-'+(item.index+1)+'.jpg')});
+ const label='T-shirts '+(items[0].index+1)+'–'+(items.at(-1).index+1)+' of '+people.length;
+ return new Promise((resolve,reject)=>{const xhr=new XMLHttpRequest();xhr.open('POST',PROXY);
+  xhr.upload.onprogress=e=>{if(e.lengthComputable)orderStatus.textContent='Uploading '+label+': '+Math.round(e.loaded/e.total*100)+'% of '+(e.total/1048576).toFixed(1)+' MB'};
+  xhr.upload.onload=()=>{orderStatus.textContent='Creating A4 print PDF for '+label+'…'};
+  xhr.onload=()=>{let data={};try{data=JSON.parse(xhr.responseText)}catch(_){}if(xhr.status>=200&&xhr.status<300&&data.printUrl&&data.previewUrls?.length===items.length)resolve(data);else reject(new Error(data.error||'Could not create the A4 print PDF. Try again.'))};
+  xhr.onerror=()=>reject(new Error('Network interrupted. Saved T-shirts are kept; tap Add to cart to retry.'));xhr.send(form)})
+}
+async function supportsFrontAssembler(){try{const form=new FormData();form.append('intent','assemble_front_batch');const response=await fetch(PROXY,{method:'POST',body:form});const result=await response.json();return result.error==='Invalid A4 print batch'}catch(_){return false}}
 async function originalImage(person){let bitmap=null,url=null;try{if(person.sourceFile){if('createImageBitmap' in window){bitmap=await createImageBitmap(person.sourceFile);return {image:bitmap,close:()=>bitmap.close()}}url=URL.createObjectURL(person.sourceFile);const image=await imageFromURL(url);return {image,close:()=>URL.revokeObjectURL(url)}}const image=await imageFromURL(person.sourceUrl,true);return {image,close:()=>{}}}catch(error){if(bitmap)bitmap.close();if(url)URL.revokeObjectURL(url);throw error}}
 function printTile(target,image,x,y,w,h,crop){target.save();target.beginPath();target.rect(x,y,w,h);target.clip();cover(image,x,y,w,h,crop,target);target.restore();target.strokeStyle='#fff';target.lineWidth=5;target.strokeRect(x,y,w,h)}
 function printLayout(){const {cols,rows}=collageGrid(people.length),center=4,cw=PRINT_W/cols,ch=PRINT_H/rows,cc=(cols-center)/2,cr=(rows-center)/2,slots=[];for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){if(row>=cr&&row<cr+center&&col>=cc&&col<cc+center)continue;slots.push({row,col,x:col*cw,y:row*ch})}const distance=slot=>Math.min(slot.row,rows-1-slot.row)**2+Math.min(slot.col,cols-1-slot.col)**2;const gaps=new Set([...slots].sort((a,b)=>distance(a)-distance(b)).slice(0,slots.length-people.length));return {cw,ch,cc,cr,center,filled:slots.filter(slot=>!gaps.has(slot)),gaps:[...gaps]}}
 async function makePrintBase(){const base=document.createElement('canvas');base.width=PRINT_W;base.height=PRINT_H;const target=base.getContext('2d');target.fillStyle='#fff';target.fillRect(0,0,PRINT_W,PRINT_H);const layout=printLayout();for(let index=0;index<people.length;index++){orderStatus.textContent='Preparing A4 collage '+(index+1)+' of '+people.length+'…';const source=await originalImage(people[index]);const slot=layout.filled[sideOrder.indexOf(index)];printTile(target,source.image,slot.x,slot.y,layout.cw,layout.ch,people[index].crop);const repeats=layout.gaps.filter((_,i)=>cornerPhotoIndex(i,layout.gaps.length)===index);for(const gap of repeats)printTile(target,source.image,gap.x,gap.y,layout.cw,layout.ch,people[index].crop);source.close();await new Promise(resolve=>setTimeout(resolve,0))}return {base,layout}}
 async function makeFrontPrint(base,layout,index){const output=document.createElement('canvas');output.width=PRINT_W;output.height=PRINT_H;const target=output.getContext('2d');target.drawImage(base,0,0);const focus=await originalImage(people[index]);printTile(target,focus.image,layout.cc*layout.cw,layout.cr*layout.ch,layout.center*layout.cw,layout.center*layout.ch,people[index].crop);focus.close();return output}
+async function makeCenterTile(layout,index){const output=document.createElement('canvas');output.width=Math.round(layout.center*layout.cw);output.height=Math.round(layout.center*layout.ch);const focus=await originalImage(people[index]);printTile(output.getContext('2d'),focus.image,0,0,output.width,output.height,people[index].crop);focus.close();return output}
 function makeBackPrint(index){const output=document.createElement('canvas');output.width=PRINT_W;output.height=PRINT_H;const target=output.getContext('2d');const person=people[index],lines=[];if(backFields.college)lines.push([backValues.college,84]);if(backFields.group)lines.push([backValues.group,108]);if(backFields.name)lines.push([person.backName,126]);if(backFields.roll)lines.push(['Roll No: '+person.roll,82]);if(backFields.year)lines.push([backValues.year,78]);let y=1150;for(const [value,baseSize] of lines){let size=baseSize;target.font='700 '+size+'px system-ui';while(target.measureText(value).width>1550&&size>48){size-=3;target.font='700 '+size+'px system-ui'}target.fillStyle='#171717';target.textAlign='center';target.textBaseline='middle';target.fillText(value,PRINT_W/2,y,1550);y+=Math.max(155,size+46)}return output}
 function orderVariants(){const variants=JSON.parse(document.getElementById('signatureDayVariants').textContent||'[]'),tier=people.length>10?'11+ shirts':'1–10 shirts',unitPrice=(people.length>10?130:150)+(includeBack?30:0);return people.map(person=>{const match=variants.find(v=>v.available!==false&&String(v.option1||'').toUpperCase()===person.size&&String(v.option2||'').toLowerCase()===(includeBack?'front + back':'front only')&&String(v.option3||'')===tier&&Number(v.price)/100===unitPrice);if(!match)throw new Error('Checkout pricing is not ready for '+person.size+'. Your preview is safe; please try again after setup is complete.');return match.id})}
 let confirming=false;
@@ -315,6 +328,25 @@ root.querySelector('#confirmOrder').onclick=async()=>{
   let base=null,layout=null;
   if(people.some((_,i)=>!printCache.previews[i]?.front||!printCache.prints[i]?.front||(includeBack&&(!printCache.previews[i]?.back||!printCache.prints[i]?.back))))({base,layout}=await makePrintBase());
   try{
+   if(!includeBack&&await supportsFrontAssembler()){
+    let sharedBaseUrl=printCache.sharedBaseUrl;
+    if(base&&!sharedBaseUrl){orderStatus.textContent='Saving shared A4 collage once…';sharedBaseUrl=await uploadAsset(await fileBlob(base,'image/jpeg',.9),'signature-a4-shared.jpg');printCache.sharedBaseUrl=sharedBaseUrl;await saveDraft().catch(()=>{})}
+    let pending=[];
+    async function saveFrontBatch(){if(!pending.length)return;const current=pending;pending=[];const result=await assembleFrontBatch(sharedBaseUrl,layout,current);current.forEach((item,page)=>{
+     const print={front:result.printUrl+'#page='+(page+1)},preview={front:result.previewUrls[page]};
+     printCache.prints[item.index]=print;printCache.previews[item.index]=preview;printUrls[item.index]=print;previewUrls[item.index]=preview;
+    });await saveDraft().catch(()=>{})}
+    for(let i=0;i<people.length;i++){
+     if(printCache.previews[i]?.front&&printCache.prints[i]?.front){await saveFrontBatch();previewUrls[i]=printCache.previews[i];printUrls[i]=printCache.prints[i];continue}
+     orderStatus.textContent='Preparing T-shirt '+(i+1)+' of '+people.length+'…';
+     const center=await makeCenterTile(layout,i),tile=await fileBlob(center,'image/jpeg',.9);center.width=center.height=0;
+     selected=i;side='front';draw();const preview=await fileBlob(canvas,'image/jpeg',.82);
+     if(pending.length&&pending.reduce((sum,item)=>sum+item.tile.size+item.preview.size,0)+tile.size+preview.size>18*1024*1024)await saveFrontBatch();
+     pending.push({index:i,tile,preview});if(pending.length>=4)await saveFrontBatch();
+     await new Promise(resolve=>setTimeout(resolve,0));
+    }
+    await saveFrontBatch();
+   }else{
    let pending=[],cacheSaveTask=Promise.resolve();const inFlight=[];
    function savePending(){
     if(!pending.length)return;
@@ -353,6 +385,7 @@ root.querySelector('#confirmOrder').onclick=async()=>{
     await new Promise(resolve=>setTimeout(resolve,0));
    }
    savePending();while(inFlight.length)await finishOldest();
+   }
   }finally{if(base)base.width=base.height=0}
   orderStatus.textContent='Connecting previews and print files to your order…';
   const response=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({previewUrls,printUrls,sourceUrls,shirtSizes:people.map(person=>person.size),backPrint:includeBack})});const saved=await response.json();if(!response.ok||!saved.designId)throw new Error(saved.error||'Could not save design');
