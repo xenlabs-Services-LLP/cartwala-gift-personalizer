@@ -390,13 +390,14 @@ root.querySelector('#confirmOrder').onclick=async()=>{
   orderStatus.textContent='Connecting previews and print files to your order…';
   let designId=printCache.designId;
   if(!designId){const response=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({previewUrls,printUrls,sourceUrls,shirtSizes:people.map(person=>person.size),backPrint:includeBack})});const saved=await response.json();if(!response.ok||!saved.designId)throw new Error(saved.error||'Could not save design');designId=saved.designId;printCache.designId=designId;await saveDraft().catch(()=>{})}
-  const grouped=new Map();people.forEach((person,i)=>{const id=variantIds[i];if(!grouped.has(id))grouped.set(id,{id,quantity:0,properties:{'_Cartwala Signature Day Design':designId,'T-shirt size':person.size,'_T-shirt preview':previewUrls[i].front}});grouped.get(id).quantity++});
+  const grouped=new Map();people.forEach((person,i)=>{const id=variantIds[i];if(!grouped.has(id))grouped.set(id,{id,quantity:0,properties:{'_Cartwala Signature Day Design':designId,'T-shirt size':person.size,'_T-shirt preview':previewUrls[i].front,'_Cartwala Preview':previewUrls[i].front}});grouped.get(id).quantity++});
   const cartResponse=await fetch('/cart.js');if(!cartResponse.ok)throw new Error('Could not check the cart. Please try again.');const cart=await cartResponse.json();
   const items=[...grouped.values()].map(item=>{const existing=(cart.items||[]).filter(line=>String(line.variant_id)===String(item.id)&&line.properties?.['_Cartwala Signature Day Design']===designId).reduce((sum,line)=>sum+line.quantity,0);return {...item,quantity:item.quantity-existing}});
   if(items.some(item=>item.quantity<0))throw new Error('This design already has extra T-shirts in the cart. Review the cart before adding again.');
   const missing=items.filter(item=>item.quantity>0);
   if(missing.length){const added=await fetch('/cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:missing})});if(!added.ok){const problem=await added.json().catch(()=>({}));throw new Error('Design saved, but cart rejected the T-shirts: '+(problem.description||problem.message||'HTTP '+added.status)+'. Please retry. Your previews are saved.')}}
-  window.location.assign('/cart');
+  orderStatus.textContent='T-shirts added to your cart.';
+  document.dispatchEvent(new CustomEvent('cartwala:item-added'));
  }catch(error){orderStatus.textContent=error.message||'Could not prepare the order. Please try again.'}finally{selected=priorSelected;side=priorSide;draw();confirming=false;button.disabled=false}
 };
 sample(15);updateBackControls();restoreDraft();
