@@ -247,6 +247,87 @@ export async function uploadImageAsset(
   return uploadToShopifyFiles(admin, file, "IMAGE", 20);
 }
 
+/** Stage and create up to four print images in two Admin API mutations. */
+export async function uploadImageAssets(
+  admin: AdminApiContext,
+  files: File[],
+): Promise<ShopifyFileAsset[]> {
+  if (!files.length || files.length > 4 || files.some(
+    (file) => !/\.(png|jpe?g|webp)$/i.test(file.name) ||
+      !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
+      file.size < 100 || file.size > 15 * 1024 * 1024,
+  )) throw new ShopifyFileUploadError("Choose up to four JPG, PNG or WebP images under 15 MB each.");
+
+  const stagedResponse = await admin.graphql(
+    `#graphql
+    mutation CartwalaStagePrintBatch($input: [StagedUploadInput!]!) {
+      stagedUploadsCreate(input: $input) {
+        stagedTargets { url resourceUrl parameters { name value } }
+        userErrors { message }
+      }
+    }`,
+    { variables: { input: files.map((file) => ({
+      filename: file.name, mimeType: file.type, resource: "IMAGE",
+      httpMethod: "POST", fileSize: String(file.size),
+    })) } },
+  );
+  const stagedJson = (await stagedResponse.json()) as GraphQLJson;
+  const stagedError = firstError(stagedJson, "stagedUploadsCreate");
+  const targets = (stagedJson.data?.stagedUploadsCreate as
+    { stagedTargets?: StagedTarget[] } | undefined)?.stagedTargets;
+  if (stagedError || targets?.length !== files.length) throw new ShopifyFileUploadError(
+    stagedError || "Could not prepare all print uploads.",
+  );
+  await Promise.all(files.map((file, index) => sendToStagedTarget(targets[index], file)));
+
+  const createdResponse = await admin.graphql(
+    `#graphql
+    mutation CartwalaCreatePrintBatch($files: [FileCreateInput!]!) {
+      fileCreate(files: $files) {
+        files { id fileStatus ... on MediaImage { image { url } } }
+        userErrors { message }
+      }
+    }`,
+    { variables: { files: targets.map((target, index) => ({
+      alt: files[index].name, contentType: "IMAGE", originalSource: target.resourceUrl,
+    })) } },
+  );
+  const createdJson = (await createdResponse.json()) as GraphQLJson;
+  const createdError = firstError(createdJson, "fileCreate");
+  const created = (createdJson.data?.fileCreate as
+    { files?: Array<{ id: string; fileStatus?: string; image?: { url?: string } }> } | undefined)?.files;
+  const ids = created?.map((file) => file.id).filter(Boolean) ?? [];
+  if (createdError || created?.length !== files.length) {
+    await deleteShopifyFiles(admin, ids).catch(() => undefined);
+    throw new ShopifyFileUploadError(createdError || "Could not save all print files.");
+  }
+  try {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const statusResponse = await admin.graphql(
+        `#graphql
+        query CartwalaPrintBatchStatus($ids: [ID!]!) {
+          nodes(ids: $ids) { ... on MediaImage { fileStatus image { url } } }
+        }`,
+        { variables: { ids } },
+      );
+      const statusJson = (await statusResponse.json()) as GraphQLJson;
+      const statusError = firstError(statusJson);
+      if (statusError) throw new ShopifyFileUploadError(statusError);
+      const nodes = statusJson.data?.nodes as
+        Array<{ fileStatus?: string; image?: { url?: string } } | null> | undefined;
+      if (nodes?.some((node) => node?.fileStatus === "FAILED"))
+        throw new ShopifyFileUploadError("Shopify could not process a print file.");
+      if (nodes?.length === files.length && nodes.every((node) => node?.image?.url))
+        return ids.map((id, index) => ({ id, url: nodes[index]!.image!.url! }));
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    throw new ShopifyFileUploadError("Print files are still processing. Try again in a moment.");
+  } catch (error) {
+    await deleteShopifyFiles(admin, ids).catch(() => undefined);
+    throw error;
+  }
+}
+
 /**
  * Permanently removes app-owned generated assets. Callers must only pass IDs
  * recorded by uploadImageAsset; deleting arbitrary merchant files is unsafe.
