@@ -14,6 +14,9 @@
 #cart-drawer .cw-cart-qty{width:124px!important;height:36px!important;grid-template-columns:36px 52px 36px!important;margin-top:9px!important}
 #cart-drawer .cw-cart-qty button{width:36px!important;height:36px!important;font-size:20px!important}
 #cart-drawer .cw-cart-qty input{width:52px!important;height:36px!important;font-size:14px!important}
+#cart-drawer .cw-signature-line .cw-cart-qty{display:block!important;width:65px!important}
+#cart-drawer .cw-signature-line .cw-cart-qty button{display:none!important}
+#cart-drawer .cw-signature-line .cw-cart-qty input{width:100%!important;border:0!important}
 #cart-drawer .cart-drawer__footer{flex:none;padding:16px 20px max(20px,env(safe-area-inset-bottom));background:#fff;box-shadow:0 -7px 24px rgba(29,21,16,.06);border-top:1px solid #eee8e3}
 #cart-drawer .cart-drawer__footer .btn{min-height:48px;display:flex;align-items:center;justify-content:center;font-weight:700}
 #cart-drawer .cart-drawer__footer .btn-outline{background:#fff!important;border-color:#e96800!important;color:#b74b00!important}
