@@ -41,26 +41,29 @@ export function validateDesign(input: unknown) {
 }
 
 const orderIdPattern = /^gid:\/\/shopify\/Order\/\d+$/;
-export async function paidOrderDesigns(shop: string, orderId: string, customerId?: string) {
-  if (!orderIdPattern.test(orderId)) return [];
+export async function paidOrderDesigns(shop: string, orderId: string, customerId?: string, checkoutToken?: string) {
+  if (!orderIdPattern.test(orderId) || (!customerId && !checkoutToken)) return [];
   const { admin } = await unauthenticated.admin(shop);
   const response = await admin.graphql(`#graphql
     query SignatureDayPaidOrder($id: ID!) {
       order(id: $id) {
         id displayFinancialStatus cancelledAt
         customer { id }
+        ${checkoutToken ? "checkoutToken" : ""}
         lineItems(first: 100) { nodes { customAttributes { key value } } }
       }
     }`, { variables: { id: orderId } });
   const json = await response.json() as {
     data?: { order?: { displayFinancialStatus: string; cancelledAt: string | null;
-      customer?: { id: string } | null; lineItems: { nodes: Array<{ customAttributes: Array<{ key: string; value: string }> }> } } };
+      customer?: { id: string } | null; checkoutToken?: string | null;
+      lineItems: { nodes: Array<{ customAttributes: Array<{ key: string; value: string }> }> } } };
     errors?: Array<{ message: string }>;
   };
   if (json.errors?.length) throw new Error("Order lookup failed");
   const order = json.data?.order;
   if (!order || order.displayFinancialStatus !== "PAID" || order.cancelledAt) return [];
   if (customerId && order.customer?.id !== customerId) return [];
+  if (checkoutToken && order.checkoutToken !== checkoutToken) return [];
   const ids = [...new Set(order.lineItems.nodes.flatMap((line) =>
     line.customAttributes.filter((a) => a.key === DESIGN_ATTRIBUTE &&
       /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(a.value)).map((a) => a.value)))];
@@ -72,9 +75,9 @@ function signingSecret() {
   if (!secret) throw new Error("Signing secret is unavailable");
   return secret;
 }
-export function signedPdfToken(shop: string, orderId: string, customerId: string) {
+export function signedPdfToken(shop: string, orderId: string, proof: { customerId: string } | { checkoutToken: string }) {
   const expiry = Math.floor(Date.now() / 1000) + 5 * 60;
-  const payload = Buffer.from(JSON.stringify({ shop, orderId, customerId, expiry })).toString("base64url");
+  const payload = Buffer.from(JSON.stringify({ shop, orderId, ...proof, expiry })).toString("base64url");
   const signature = createHmac("sha256", signingSecret()).update(payload).digest("base64url");
   return `${payload}.${signature}`;
 }
@@ -87,11 +90,14 @@ export function verifyPdfToken(token: string) {
   if (expected.length !== received.length || !timingSafeEqual(expected, received)) return null;
   try {
     const result = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    const customerProof = typeof result.customerId === "string" &&
+      /^gid:\/\/shopify\/Customer\/\d+$/.test(result.customerId) && result.checkoutToken === undefined;
+    const checkoutProof = typeof result.checkoutToken === "string" &&
+      /^[a-zA-Z0-9_-]{16,256}$/.test(result.checkoutToken) && result.customerId === undefined;
     if (typeof result.shop !== "string" || !/^[-\w]+\.myshopify\.com$/.test(result.shop) ||
-        !orderIdPattern.test(result.orderId) || typeof result.customerId !== "string" ||
-        !/^gid:\/\/shopify\/Customer\/\d+$/.test(result.customerId) ||
+        !orderIdPattern.test(result.orderId) || (!customerProof && !checkoutProof) ||
         !Number.isInteger(result.expiry) || result.expiry < Math.floor(Date.now() / 1000)) return null;
-    return result as { shop: string; orderId: string; customerId: string };
+    return result as { shop: string; orderId: string; customerId?: string; checkoutToken?: string };
   } catch { return null; }
 }
 
