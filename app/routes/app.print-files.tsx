@@ -62,6 +62,12 @@ type PhotoLayer = {
   left: number;
   top: number;
 };
+const orderLookupMessage = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/read_orders|write_orders|access denied|access scope|permission/i.test(message))
+    return "Order access is missing. Add read_orders to Render SCOPES, deploy the Shopify app configuration, then reopen the app and approve the updated permissions.";
+  return "Could not load orders for Print Files. Check the Render logs for the order lookup error.";
+};
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
   let loadError: string | null = null;
@@ -74,7 +80,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const granted = (scopesPayload.data?.currentAppInstallation?.accessScopes || [])
       .map((scope: { handle: string }) => scope.handle);
     if (!granted.includes("read_orders") && !granted.includes("write_orders")) {
-      loadError = "The Cartwala app has not been granted read_orders. Open the app again and approve its updated permissions.";
+      loadError = "The app has not been granted read_orders. Deploy the Shopify app configuration, then reopen the app and approve the updated permissions.";
     } else {
       const response = await admin.graphql(`#graphql
  query CartwalaPrintOrders($after: String) { orders(first: 50, after: $after, reverse: true, sortKey: CREATED_AT) { nodes { id name createdAt displayFinancialStatus lineItems(first: 100) { nodes { id name title quantity customAttributes { key value } product { id title metafield(namespace: "$app", key: "personalizer_config") { jsonValue } } } } } pageInfo { hasNextPage endCursor } } }`);
@@ -83,7 +89,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }
   } catch (error) {
     console.error("Print Files order lookup failed", error);
-    loadError = "Could not load orders for Print Files. Check the app server log for the order lookup error.";
+    loadError = orderLookupMessage(error);
   }
   const items: PrintItem[] = [];
   const signatureOrders: Array<{ orderName: string; createdAt: string; financialStatus: string;
