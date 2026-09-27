@@ -11,7 +11,9 @@ const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
   apiVersion: ApiVersion.July26,
-  scopes: process.env.SCOPES?.split(","),
+  // Keep the required order scope even when the hosting environment has an
+  // older SCOPES value than shopify.app.toml.
+  scopes: [...new Set([...(process.env.SCOPES || "").split(",").map((scope) => scope.trim()).filter(Boolean), "read_orders"])],
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
