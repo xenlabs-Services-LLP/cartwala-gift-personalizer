@@ -7,13 +7,25 @@ import {
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
 
+// Match shopify.app.toml even when Render has a missing or outdated SCOPES value.
+const requiredScopes = [
+  "read_files",
+  "read_orders",
+  "read_products",
+  "write_files",
+  "write_products",
+  "write_app_proxy",
+];
+const scopes = [...new Set([
+  ...requiredScopes,
+  ...(process.env.SCOPES || "").split(",").map((scope) => scope.trim()).filter(Boolean),
+])];
+
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
   apiVersion: ApiVersion.July26,
-  // Keep the required order scope even when the hosting environment has an
-  // older SCOPES value than shopify.app.toml.
-  scopes: [...new Set([...(process.env.SCOPES || "").split(",").map((scope) => scope.trim()).filter(Boolean), "read_orders"])],
+  scopes,
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
