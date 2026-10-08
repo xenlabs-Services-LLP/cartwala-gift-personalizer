@@ -1,0 +1,28 @@
+name: Validate Gift PSD Fix (No Deploy)
+on:
+  push:
+    branches:
+      - fix/gift-73-psd-print-files
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: TypeScript types
+        run: npm run typecheck
+      - name: Print recovery test
+        run: node scripts/verify-print-recovery.mjs
+      - name: Gift PSD sample-order cases
+        run: node scripts/verify-gift-psd-cases.mjs
+      - name: Personalizer QA
+        run: npm run qa
+      - name: Production build (without deploy)
+        run: npm run build

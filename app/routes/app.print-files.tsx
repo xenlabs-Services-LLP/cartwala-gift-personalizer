@@ -83,7 +83,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       loadError = "The app has not been granted read_orders. Deploy the Shopify app configuration, then reopen the app and approve the updated permissions.";
     } else {
       const response = await admin.graphql(`#graphql
- query CartwalaPrintOrders($after: String) { orders(first: 50, after: $after, reverse: true, sortKey: CREATED_AT) { nodes { id name createdAt displayFinancialStatus lineItems(first: 100) { nodes { id name title quantity customAttributes { key value } product { id title metafield(namespace: "$app", key: "personalizer_config") { jsonValue } } } } } pageInfo { hasNextPage endCursor } } }`);
+ query CartwalaPrintOrders($after: String) { orders(first: 50, after: $after, reverse: true, sortKey: CREATED_AT) { nodes { id name createdAt displayFinancialStatus lineItems(first: 100) { nodes { id name title quantity customAttributes { key value } product { id title metafield(namespace: "$app", key: "personalizer_config") { jsonValue } giftConfig: metafield(namespace: "cartwala_personalizer", key: "gift_config") { jsonValue } } } } } pageInfo { hasNextPage endCursor } } }`);
       payload = (await response.json()) as any;
       if (payload.errors?.length) throw new Error(payload.errors[0].message);
     }
@@ -127,7 +127,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           "Personalised product",
         quantity: line.quantity || 1,
         attributes,
-        config: line.product?.metafield?.jsonValue || null,
+        config: line.product?.giftConfig?.jsonValue || line.product?.metafield?.jsonValue || null,
       });
     }
   const uniqueSignatureOrders = [...new Map(signatureOrders.map((order) =>
@@ -275,8 +275,13 @@ const makeCanvas = (w: number, h: number) => {
   c.height = Math.max(1, Math.ceil(h));
   return c;
 };
-const sourceFor = (a: Record<string, string>, l: string) =>
-  a[`_${l}`] || a[l] || "";
+const sourceFor = (a: Record<string, string>, l: string, id?: string) =>
+  [id ? a[`_Cartwala Source ${id}`] : "", a[`_${l}`], a[l]]
+    .find((source) => /^https?:\/\//i.test(source || "")) || "";
+const missingPhotoSources = (design: Design, attributes: Record<string, string>) =>
+  design.p.filter((photo) => !sourceFor(attributes, photo.l, photo.i));
+const hasPersonalisedPrintContent = (design: Design) =>
+  design.p.length > 0 || design.t.some((text) => text.v.trim().length > 0);
 async function renderPhotoLayer(
   photo: PhotoDesign,
   source: string,
@@ -498,6 +503,15 @@ const psdTextLayer = (t: TextDesign, width: number, height: number) => {
 };
 async function buildPrint(item: PrintItem) {
   const { design, exact, attributes } = getDesign(item);
+  const unavailablePhotos = missingPhotoSources(design, attributes);
+  if (unavailablePhotos.length)
+    throw new Error(
+      "Original photo source missing: " +
+      unavailablePhotos.map((photo) => photo.l).join(", ") +
+      ". Print PSD requires original customer photos.",
+    );
+  if (!hasPersonalisedPrintContent(design))
+    throw new Error("No personalised photo or text was saved for this order.");
   if (!exact && attributes["_Personalised Preview"]) {
     const reference = await loadImage(attributes["_Personalised Preview"]);
     design.r = `${reference.naturalWidth}:${reference.naturalHeight}`;
@@ -508,8 +522,8 @@ async function buildPrint(item: PrintItem) {
   if (!ctx) throw new Error("Print canvas is unavailable.");
   const photoLayers: PhotoLayer[] = [];
   for (const photo of design.p) {
-    const source = sourceFor(attributes, photo.l);
-    if (!source) continue;
+    const source = sourceFor(attributes, photo.l, photo.i);
+    if (!source) throw new Error("Original photo source missing: " + photo.l);
     const layer = await renderPhotoLayer(photo, source, width, height);
     ctx.drawImage(layer.preview, 0, 0);
     photoLayers.push(layer);
@@ -562,9 +576,12 @@ const downloadBlob = (blob: Blob, filename: string) => {
   setTimeout(() => URL.revokeObjectURL(u), 2000);
 };
 async function downloadPng(item: PrintItem) {
-  const p = await buildPrint(item);
-  if (!p.exact && p.attributes["_Personalised Preview"]) {
-    const r = await fetch(assetUrl(p.attributes["_Personalised Preview"]));
+  const saved = getDesign(item);
+  // A flattened saved preview is still useful for legacy recovery orders, but
+  // it is never presented as a layered/print-source-complete PSD.
+  if ((!saved.exact || missingPhotoSources(saved.design, saved.attributes).length > 0) &&
+      saved.attributes["_Personalised Preview"]) {
+    const r = await fetch(assetUrl(saved.attributes["_Personalised Preview"]));
     if (!r.ok) throw new Error("Saved preview could not be downloaded.");
     downloadBlob(
       await r.blob(),
@@ -572,6 +589,7 @@ async function downloadPng(item: PrintItem) {
     );
     return;
   }
+  const p = await buildPrint(item);
   downloadBlob(
     await canvasBlob(p.composite),
     `${safeFile(`${item.orderName}-${item.productTitle}`)}.png`,
@@ -587,10 +605,8 @@ async function downloadPsd(item: PrintItem) {
   )
     return;
   const p = await buildPrint(item);
-  if (!p.photoLayers.length)
-    throw new Error(
-      "Source photo is missing for this order. A layered PSD cannot be created from the flattened preview alone.",
-    );
+  // Orders personalised only with editable text have no photo layers by design.
+  // buildPrint rejects missing photo sources and empty personalisations.
   const { writePsd } = await import("ag-psd");
   const textLayers = p.design.t
     .filter((t) => t.v.trim())
@@ -747,14 +763,9 @@ export default function PrintFilesPage() {
             heading={`${orderName} · ${new Date(orderItems[0].createdAt).toLocaleString()}`}
           >
             {orderItems.map((item) => {
-              const { exact, attributes } = getDesign(item);
-              const hasSource = Object.keys(attributes).some(
-                (k) =>
-                  k.startsWith("_") &&
-                  !k.startsWith("_Cartwala") &&
-                  k !== "_Personalised Preview" &&
-                  /^https?:/i.test(attributes[k] || ""),
-              );
+              const { design, exact, attributes } = getDesign(item);
+              const hasSource = hasPersonalisedPrintContent(design) &&
+                missingPhotoSources(design, attributes).length === 0;
               const pk = `${item.lineItemId}:png`,
                 sk = `${item.lineItemId}:psd`;
               return (
@@ -778,7 +789,7 @@ export default function PrintFilesPage() {
                     {exact
                       ? "Layer data ready"
                       : "Recovery PSD only — check layout before printing"}
-                    {!hasSource ? " · source photo missing" : ""}
+                    {!hasSource ? " · required print content missing" : ""}
                   </div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     <button
