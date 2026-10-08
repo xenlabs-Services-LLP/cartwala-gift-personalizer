@@ -20,6 +20,8 @@ jobs:
         run: npm run typecheck
       - name: Print recovery test
         run: node scripts/verify-print-recovery.mjs
+      - name: Gift PSD sample-order cases
+        run: node scripts/verify-gift-psd-cases.mjs
       - name: Personalizer QA
         run: npm run qa
       - name: Production build (without deploy)
