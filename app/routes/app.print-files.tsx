@@ -83,7 +83,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       loadError = "The app has not been granted read_orders. Deploy the Shopify app configuration, then reopen the app and approve the updated permissions.";
     } else {
       const response = await admin.graphql(`#graphql
- query CartwalaPrintOrders($after: String) { orders(first: 50, after: $after, reverse: true, sortKey: CREATED_AT) { nodes { id name createdAt displayFinancialStatus lineItems(first: 100) { nodes { id name title quantity customAttributes { key value } product { id title metafield(namespace: "$app", key: "personalizer_config") { jsonValue } } } } } pageInfo { hasNextPage endCursor } } }`);
+ query CartwalaPrintOrders($after: String) { orders(first: 50, after: $after, reverse: true, sortKey: CREATED_AT) { nodes { id name createdAt displayFinancialStatus lineItems(first: 100) { nodes { id name title quantity customAttributes { key value } product { id title metafield(namespace: "$app", key: "personalizer_config") { jsonValue } giftConfig: metafield(namespace: "cartwala_personalizer", key: "gift_config") { jsonValue } } } } } pageInfo { hasNextPage endCursor } } }`);
       payload = (await response.json()) as any;
       if (payload.errors?.length) throw new Error(payload.errors[0].message);
     }
@@ -127,7 +127,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           "Personalised product",
         quantity: line.quantity || 1,
         attributes,
-        config: line.product?.metafield?.jsonValue || null,
+        config: line.product?.giftConfig?.jsonValue || line.product?.metafield?.jsonValue || null,
       });
     }
   const uniqueSignatureOrders = [...new Map(signatureOrders.map((order) =>
@@ -275,8 +275,9 @@ const makeCanvas = (w: number, h: number) => {
   c.height = Math.max(1, Math.ceil(h));
   return c;
 };
-const sourceFor = (a: Record<string, string>, l: string) =>
-  a[`_${l}`] || a[l] || "";
+const sourceFor = (a: Record<string, string>, l: string, id?: string) =>
+  [id ? a[`_Cartwala Source ${id}`] : "", a[`_${l}`], a[l]]
+    .find((source) => /^https?:\/\//i.test(source || "")) || "";
 async function renderPhotoLayer(
   photo: PhotoDesign,
   source: string,
@@ -508,7 +509,7 @@ async function buildPrint(item: PrintItem) {
   if (!ctx) throw new Error("Print canvas is unavailable.");
   const photoLayers: PhotoLayer[] = [];
   for (const photo of design.p) {
-    const source = sourceFor(attributes, photo.l);
+    const source = sourceFor(attributes, photo.l, photo.i);
     if (!source) continue;
     const layer = await renderPhotoLayer(photo, source, width, height);
     ctx.drawImage(layer.preview, 0, 0);
@@ -587,10 +588,8 @@ async function downloadPsd(item: PrintItem) {
   )
     return;
   const p = await buildPrint(item);
-  if (!p.photoLayers.length)
-    throw new Error(
-      "Source photo is missing for this order. A layered PSD cannot be created from the flattened preview alone.",
-    );
+  // Orders personalised only with editable text have no photo layers by design.
+  // buildPrint already verifies the presence of print content and required photos.
   const { writePsd } = await import("ag-psd");
   const textLayers = p.design.t
     .filter((t) => t.v.trim())
@@ -747,14 +746,10 @@ export default function PrintFilesPage() {
             heading={`${orderName} · ${new Date(orderItems[0].createdAt).toLocaleString()}`}
           >
             {orderItems.map((item) => {
-              const { exact, attributes } = getDesign(item);
-              const hasSource = Object.keys(attributes).some(
-                (k) =>
-                  k.startsWith("_") &&
-                  !k.startsWith("_Cartwala") &&
-                  k !== "_Personalised Preview" &&
-                  /^https?:/i.test(attributes[k] || ""),
-              );
+              const { design, exact, attributes } = getDesign(item);
+              const hasSource = design.p.length > 0
+                ? design.p.every((photo) => Boolean(sourceFor(attributes, photo.l, photo.i)))
+                : design.t.some((text) => Boolean(text.v.trim()));
               const pk = `${item.lineItemId}:png`,
                 sk = `${item.lineItemId}:psd`;
               return (
@@ -778,7 +773,7 @@ export default function PrintFilesPage() {
                     {exact
                       ? "Layer data ready"
                       : "Recovery PSD only — check layout before printing"}
-                    {!hasSource ? " · source photo missing" : ""}
+                    {!hasSource ? " · required print content missing" : ""}
                   </div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     <button
