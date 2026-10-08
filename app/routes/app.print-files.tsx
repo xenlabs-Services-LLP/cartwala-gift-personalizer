@@ -278,6 +278,10 @@ const makeCanvas = (w: number, h: number) => {
 const sourceFor = (a: Record<string, string>, l: string, id?: string) =>
   [id ? a[`_Cartwala Source ${id}`] : "", a[`_${l}`], a[l]]
     .find((source) => /^https?:\/\//i.test(source || "")) || "";
+const missingPhotoSources = (design: Design, attributes: Record<string, string>) =>
+  design.p.filter((photo) => !sourceFor(attributes, photo.l, photo.i));
+const hasPersonalisedPrintContent = (design: Design) =>
+  design.p.length > 0 || design.t.some((text) => text.v.trim().length > 0);
 async function renderPhotoLayer(
   photo: PhotoDesign,
   source: string,
@@ -499,6 +503,15 @@ const psdTextLayer = (t: TextDesign, width: number, height: number) => {
 };
 async function buildPrint(item: PrintItem) {
   const { design, exact, attributes } = getDesign(item);
+  const unavailablePhotos = missingPhotoSources(design, attributes);
+  if (unavailablePhotos.length)
+    throw new Error(
+      "Original photo source missing: " +
+      unavailablePhotos.map((photo) => photo.l).join(", ") +
+      ". Print PSD requires original customer photos.",
+    );
+  if (!hasPersonalisedPrintContent(design))
+    throw new Error("No personalised photo or text was saved for this order.");
   if (!exact && attributes["_Personalised Preview"]) {
     const reference = await loadImage(attributes["_Personalised Preview"]);
     design.r = `${reference.naturalWidth}:${reference.naturalHeight}`;
@@ -510,7 +523,7 @@ async function buildPrint(item: PrintItem) {
   const photoLayers: PhotoLayer[] = [];
   for (const photo of design.p) {
     const source = sourceFor(attributes, photo.l, photo.i);
-    if (!source) continue;
+    if (!source) throw new Error("Original photo source missing: " + photo.l);
     const layer = await renderPhotoLayer(photo, source, width, height);
     ctx.drawImage(layer.preview, 0, 0);
     photoLayers.push(layer);
@@ -563,9 +576,12 @@ const downloadBlob = (blob: Blob, filename: string) => {
   setTimeout(() => URL.revokeObjectURL(u), 2000);
 };
 async function downloadPng(item: PrintItem) {
-  const p = await buildPrint(item);
-  if (!p.exact && p.attributes["_Personalised Preview"]) {
-    const r = await fetch(assetUrl(p.attributes["_Personalised Preview"]));
+  const saved = getDesign(item);
+  // A flattened saved preview is still useful for legacy recovery orders, but
+  // it is never presented as a layered/print-source-complete PSD.
+  if ((!saved.exact || missingPhotoSources(saved.design, saved.attributes).length > 0) &&
+      saved.attributes["_Personalised Preview"]) {
+    const r = await fetch(assetUrl(saved.attributes["_Personalised Preview"]));
     if (!r.ok) throw new Error("Saved preview could not be downloaded.");
     downloadBlob(
       await r.blob(),
@@ -573,6 +589,7 @@ async function downloadPng(item: PrintItem) {
     );
     return;
   }
+  const p = await buildPrint(item);
   downloadBlob(
     await canvasBlob(p.composite),
     `${safeFile(`${item.orderName}-${item.productTitle}`)}.png`,
@@ -589,7 +606,7 @@ async function downloadPsd(item: PrintItem) {
     return;
   const p = await buildPrint(item);
   // Orders personalised only with editable text have no photo layers by design.
-  // buildPrint already verifies the presence of print content and required photos.
+  // buildPrint rejects missing photo sources and empty personalisations.
   const { writePsd } = await import("ag-psd");
   const textLayers = p.design.t
     .filter((t) => t.v.trim())
@@ -747,9 +764,8 @@ export default function PrintFilesPage() {
           >
             {orderItems.map((item) => {
               const { design, exact, attributes } = getDesign(item);
-              const hasSource = design.p.length > 0
-                ? design.p.every((photo) => Boolean(sourceFor(attributes, photo.l, photo.i)))
-                : design.t.some((text) => Boolean(text.v.trim()));
+              const hasSource = hasPersonalisedPrintContent(design) &&
+                missingPhotoSources(design, attributes).length === 0;
               const pk = `${item.lineItemId}:png`,
                 sk = `${item.lineItemId}:psd`;
               return (
